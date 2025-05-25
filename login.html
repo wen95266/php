@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>登录 - 游戏门户</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>用户登录</h1>
+        <form id="loginForm">
+            <div>
+                <label for="phone">手机号:</label>
+                <input type="tel" id="phone" name="phone_number" required>
+            </div>
+            <div>
+                <label for="password">密码:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">登录</button>
+        </form>
+        <p id="message" class="message"></p>
+        <p>没有账号? <a href="register.html">立即注册</a></p>
+    </div>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
