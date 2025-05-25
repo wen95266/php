@@ -3,18 +3,18 @@ import { registerUser, loginUser, getUserProfile, logoutUser, getToken, getCurre
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded and parsed."); // 调试：确认DOM加载完成
-    // 根据当前页面执行不同逻辑
     const path = window.location.pathname;
     console.log("Current path:", path); // 调试：当前路径
 
-    if (path.includes('register.html')) {
-        console.log("Initializing Register Page");
+    // 修正路径匹配逻辑
+    if (path.endsWith('/register.html') || path.endsWith('/register')) {
+        console.log("Initializing Register Page for path:", path);
         initRegisterPage();
-    } else if (path.includes('login.html')) {
-        console.log("Initializing Login Page");
+    } else if (path.endsWith('/login.html') || path.endsWith('/login')) {
+        console.log("Initializing Login Page for path:", path);
         initLoginPage();
-    } else if (path.includes('index.html') || path === '/' || path.endsWith('/portal-frontend/') || path.endsWith('/portal-frontend')) { // 假设index是主页
-        console.log("Initializing Index Page");
+    } else if (path.endsWith('/index.html') || path === '/' || path.endsWith('/portal-frontend/') || path.endsWith('/portal-frontend')) {
+        console.log("Initializing Index Page for path:", path);
         initIndexPage();
     } else {
         console.log("Path not explicitly handled for initialization:", path);
@@ -226,21 +226,10 @@ async function initIndexPage() {
     } catch (error) {
         console.error("Error during initIndexPage while fetching profile or updating UI:", error);
         if (userInfoEl) userInfoEl.innerHTML = `<p>加载用户信息时出错: ${error.message}。请<a href="login.html">尝试重新登录</a>。</p>`;
-        // 如果错误是由于API请求的Promise被reject（例如网络错误或401后重定向），
-        // 这里的catch可能在页面跳转后才执行，或者不执行。
-        // request函数中的401处理更为关键。
     }
 }
 
 // 辅助函数：通过Telegram Bot发送通知 (前端 -> 后端 -> Telegram)
-// 这是一个概念性的函数，实际实现需要一个后端API端点
 async function notifyAdminViaBot(message) {
     console.log("Simulating BOT NOTIFICATION:", message);
-    // 真实场景:
-    // try {
-    //     // 假设你有一个 api.js 中的函数来调用通知后端
-    //     // await sendAdminNotification(message);
-    // } catch (error) {
-    //     console.warn("发送管理员通知失败 (模拟):", error);
-    // }
 }
