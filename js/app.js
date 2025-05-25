@@ -154,7 +154,7 @@ async function initIndexPage() {
                 gameLinksEl.innerHTML = `
                     <h3>开始游戏:</h3>
                     <ul>
-                        <li><a href="https://doudizhu-your-game.pages.dev?token=${token}" target="_blank">斗地主</a></li>
+                        <li><a href="https://dzz-9fo.pages.dev?token=${token}" target="_blank">斗地主</a></li>
                         <li><a href="https://chudadi-your-game.pages.dev?token=${token}" target="_blank">锄大地</a></li>
                         <li><a href="https://shisanshui-your-game.pages.dev?token=${token}" target="_blank">十三水</a></li>
                     </ul>
