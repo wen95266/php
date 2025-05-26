@@ -1,16 +1,24 @@
 // portal-frontend/js/app.js
-import { registerUser, loginUser, getUserProfile, logoutUser, getToken, getCurrentUser, transferScore } from './api.js';
+import {
+    registerUser,
+    loginUser,
+    getUserProfile,
+    logoutUser,
+    getToken,
+    getCurrentUser,
+    transferScore
+} from './api.js'; // 确保api.js路径正确并导出了这些函数
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Portal_App.js: DOMContentLoaded event fired. V_Final_Focus");
+    console.log("Portal_App.js: DOMContentLoaded event fired. V_COMPLETE_APP_JS");
     const path = window.location.pathname;
     console.log("Portal_App.js: Current path:", path);
 
-    // 初始化通用模态框逻辑
+    // 初始化通用模态框逻辑 (只在index页面实际使用，但监听器可以先设置好)
     const transferScoreModal = document.getElementById('transferScoreModal');
     const closeTransferModalBtn = document.getElementById('closeTransferModalBtn');
     const transferScoreForm = document.getElementById('transferScoreForm');
-    const scoreManagementBtn = document.getElementById('scoreManagementBtn'); // 这个按钮的显示由initIndexPage控制
+    const scoreManagementBtn = document.getElementById('scoreManagementBtn');
 
     if (scoreManagementBtn && transferScoreModal) {
         scoreManagementBtn.addEventListener('click', () => {
@@ -24,28 +32,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitTransferBtn = document.getElementById('submitTransferBtn');
             if(submitTransferBtn) { submitTransferBtn.disabled = false; submitTransferBtn.textContent = '确认赠送';}
         });
+    } else {
+        // 在非index页面这些元素可能不存在，是正常的
+        // console.warn("Portal_App.js: scoreManagementBtn or transferScoreModal not found at DOMContentLoaded (might be other page).");
     }
+
     if (closeTransferModalBtn && transferScoreModal) {
         closeTransferModalBtn.addEventListener('click', () => { transferScoreModal.style.display = 'none'; });
     }
+
     if (transferScoreModal) {
         window.addEventListener('click', (event) => { if (event.target === transferScoreModal) transferScoreModal.style.display = 'none'; });
     }
+
     if (transferScoreForm) {
         transferScoreForm.addEventListener('submit', handleTransferScoreSubmit);
     }
 
     // 页面特定初始化
     if (path.endsWith('/register.html') || path.endsWith('/register')) {
+        console.log("Portal_App.js: Initializing Register Page");
         initRegisterPage();
     } else if (path.endsWith('/login.html') || path.endsWith('/login')) {
+        console.log("Portal_App.js: Initializing Login Page");
         initLoginPage();
-    } else if (path.endsWith('/index.html') || path === '/' || path.includes('portal-frontend')) {
+    } else if (path.endsWith('/index.html') || path === '/' || path.includes('portal-frontend')) { // 涵盖可能的首页路径
+        console.log("Portal_App.js: Initializing Index Page");
         initIndexPage();
     } else {
-        console.warn("Portal_App.js: Path not explicitly handled:", path);
+        console.warn("Portal_App.js: Path not explicitly handled for initialization:", path);
     }
-});
+}); // End of DOMContentLoaded
+
 
 async function handleTransferScoreSubmit(event) {
     event.preventDefault();
@@ -56,41 +74,62 @@ async function handleTransferScoreSubmit(event) {
     const amountInput = document.getElementById('transferAmount');
     const recipientPhoneInput = document.getElementById('recipientPhone');
 
-    if(!transferMessageEl || !submitTransferBtn || !transferScoreModal || !amountInput || !recipientPhoneInput) {return;}
+    if(!transferMessageEl || !submitTransferBtn || !transferScoreModal || !amountInput || !recipientPhoneInput) {
+        console.error("Portal_App.js: Missing elements for transfer score submit.");
+        if(transferMessageEl) transferMessageEl.textContent = "表单元素错误，请刷新页面。";
+        return;
+    }
 
     transferMessageEl.style.display = 'none'; transferMessageEl.className = 'message';
     submitTransferBtn.disabled = true; submitTransferBtn.textContent = '处理中...';
     const gameType = document.getElementById('transferGameType').value;
     const amount = amountInput.value; const recipientPhone = recipientPhoneInput.value;
 
-    if (!amount || parseInt(amount, 10) <= 0) { /* ...错误处理... */ return; }
-    if (!/^[0-9]{11}$/.test(recipientPhone)) { /* ...错误处理... */ return; }
+    if (!amount || parseInt(amount, 10) <= 0) {
+        transferMessageEl.textContent = '赠送数量必须为大于0的整数。';
+        transferMessageEl.classList.add('error'); transferMessageEl.style.display = 'block';
+        submitTransferBtn.disabled = false; submitTransferBtn.textContent = '确认赠送';
+        amountInput.focus(); return;
+    }
+    if (!/^[0-9]{11}$/.test(recipientPhone)) {
+        transferMessageEl.textContent = '接收方手机号格式不正确 (应为11位数字)。';
+        transferMessageEl.classList.add('error'); transferMessageEl.style.display = 'block';
+        submitTransferBtn.disabled = false; submitTransferBtn.textContent = '确认赠送';
+        recipientPhoneInput.focus(); return;
+    }
 
     try {
         const result = await transferScore(gameType, amount, recipientPhone);
+        console.log("Portal_App.js: transferScore API response:", result);
         if (result && result.success) {
             transferMessageEl.textContent = result.message || '积分赠送成功！';
             transferMessageEl.classList.add('success');
-            await refreshScoresDisplay(); // 调用新的刷新积分函数
+            await refreshScoresDisplay();
             setTimeout(() => { if (transferScoreModal.style.display === 'flex') transferScoreModal.style.display = 'none'; }, 2500);
-        } else { /* ...错误处理... */ }
-    } catch (error) { /* ...错误处理... */ }
-    finally { /* ...按钮状态恢复... */ }
+        } else {
+            transferMessageEl.textContent = (result && result.message) ? result.message : '积分赠送失败。';
+            transferMessageEl.classList.add('error');
+        }
+    } catch (error) {
+        transferMessageEl.textContent = (error && error.message) ? error.message : '赠送时发生网络错误。';
+        transferMessageEl.classList.add('error');
+        console.error("Portal_App.js: Error during score transfer API call:", error);
+    } finally {
+        transferMessageEl.style.display = 'block';
+        submitTransferBtn.disabled = false; submitTransferBtn.textContent = '确认赠送';
+    }
 }
 
 async function refreshScoresDisplay() {
     console.log("Portal_App.js: refreshScoresDisplay called.");
     const scoresEl = document.getElementById('scoresDisplay');
-    const token = getToken(); // 确保token仍然有效
-    if (!scoresEl || !token) {
-        console.warn("Portal_App.js: Cannot refresh scores, element or token missing.");
-        return;
-    }
+    const token = getToken();
+    if (!scoresEl || !token) { console.warn("Portal_App.js: Cannot refresh scores, element or token missing."); return; }
     scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li class="loading-text">正在刷新积分...</li></ul>';
     try {
-        const profileData = await getUserProfile(); // 重新获取包含最新积分的用户信息
+        const profileData = await getUserProfile();
         if (profileData && profileData.success && profileData.user && profileData.scores) {
-            populateScores(profileData.scores); // 调用填充积分的函数
+            populateScores(profileData.scores);
         } else {
             scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li>刷新积分失败。</li></ul>';
         }
@@ -102,7 +141,7 @@ async function refreshScoresDisplay() {
 
 function populateScores(scoresData) {
     const scoresEl = document.getElementById('scoresDisplay');
-    if (!scoresEl) return;
+    if (!scoresEl) { console.error("Portal_App.js: scoresEl not found in populateScores."); return; }
     let scoresHTML = '<h3>你的游戏积分:</h3><ul class="scores-list">';
     const gameNames = {'doudizhu':'斗地主','chudadi':'锄大地','shisanshui':'十三水'};
     const gameTypes = ['doudizhu','chudadi','shisanshui'];
@@ -117,10 +156,73 @@ function populateScores(scoresData) {
 }
 
 
+function initRegisterPage() {
+    console.log("Portal_App.js: Initializing Register Page logic.");
+    const registerForm = document.getElementById('registerForm');
+    const messageEl = document.getElementById('message');
+    if (!registerForm || !messageEl) { console.error("Portal_App.js: Missing elements for RegisterPage init."); return; }
+
+    registerForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        messageEl.textContent = '处理中...'; messageEl.className = 'message';
+        const phone = document.getElementById('phone').value;
+        const password = document.getElementById('password').value;
+        const username = document.getElementById('username').value; // 可选
+
+        if (!/^[0-9]{11}$/.test(phone)) { // 假设中国11位手机号
+            messageEl.textContent = '请输入有效的11位手机号。'; messageEl.classList.add('error'); return;
+        }
+        if (password.length < 6) {
+            messageEl.textContent = '密码长度至少6位。'; messageEl.classList.add('error'); return;
+        }
+
+        try {
+            const result = await registerUser(phone, password, username || null);
+            messageEl.textContent = result.message;
+            if (result.success) {
+                messageEl.classList.add('success');
+                setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+            } else {
+                messageEl.classList.add('error');
+            }
+        } catch (error) {
+            messageEl.textContent = (error && error.message) ? error.message : '注册时发生错误。';
+            messageEl.classList.add('error');
+        }
+    });
+}
+
+function initLoginPage() {
+    console.log("Portal_App.js: Initializing Login Page logic.");
+    const loginForm = document.getElementById('loginForm');
+    const messageEl = document.getElementById('message');
+    if (!loginForm || !messageEl) { console.error("Portal_App.js: Missing elements for LoginPage init."); return; }
+
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        messageEl.textContent = '正在登录...'; messageEl.className = 'message';
+        const phone = document.getElementById('phone').value;
+        const password = document.getElementById('password').value;
+        try {
+            const result = await loginUser(phone, password);
+            if (result && result.success) {
+                messageEl.textContent = '登录成功！正在跳转...'; messageEl.classList.add('success');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+            } else {
+                messageEl.textContent = (result && result.message) ? result.message : '登录失败，请检查。';
+                messageEl.classList.add('error');
+            }
+        } catch (error) {
+            messageEl.textContent = (error && error.message) ? error.message : '登录时发生错误。';
+            messageEl.classList.add('error');
+        }
+    });
+}
+
 async function initIndexPage() {
-    console.log("Portal_App.js: initIndexPage called - V_Final_UI_Focus");
+    console.log("Portal_App.js: initIndexPage called - V_COMPLETE_UI_FOCUS");
     const token = getToken();
-    console.log("Portal_App.js: Token for Index Page:", token ? token.substring(0,10)+'...' : "NO_TOKEN");
+    console.log("Portal_App.js: Token for Index Page (from getToken()):", token ? token.substring(0,10)+'...' : "NO_TOKEN");
 
     const userInfoEl = document.getElementById('userInfo');
     const scoresEl = document.getElementById('scoresDisplay');
@@ -131,7 +233,8 @@ async function initIndexPage() {
     const logoutButtonEl = document.getElementById('logoutButton');
 
     if (!userInfoEl || !scoresEl || !gameLinksEl || !loginLinkEl || !registerLinkEl || !scoreManagementBtn || !logoutButtonEl) {
-        console.error("Portal_App.js: Critical UI elements missing on Index Page.");
+        console.error("Portal_App.js: CRITICAL - One or more UI elements missing on Index Page. Check HTML IDs.");
+        if(document.body) document.body.innerHTML = "<h1>页面元素加载错误(UI_IDS_MISMATCH)，请联系管理员。</h1>";
         return;
     }
 
@@ -162,13 +265,24 @@ async function initIndexPage() {
         if (profileData && profileData.success && profileData.user) {
             const user = profileData.user;
             userInfoEl.innerHTML = `<p class="welcome-message">欢迎, <strong>${user.username || user.phone_number}!</strong></p><div class="user-details"><p><strong>手机号:</strong> ${user.phone_number}</p><p><strong>注册时间:</strong> ${new Date(user.created_at).toLocaleDateString('zh-CN',{year:'numeric',month:'numeric',day:'numeric'})}</p></div>`;
-            populateScores(profileData.scores); // 使用新函数填充积分
+            populateScores(profileData.scores);
 
             gameLinksEl.style.display = 'block';
-            const doudizhuGameUrl = 'https://dzz.9526.ip-ddns.com';
+            const doudizhuGameUrl = 'https://dzz.9526.ip-ddns.com'; // 斗地主前端URL
+            // !!! 将 YOUR_DEPLOYED_SHISANSHUI_FRONTEND_URL 替换为你新部署的十三水前端的实际URL !!!
+            const shisanshuiGameUrl = 'YOUR_DEPLOYED_SHISANSHUI_FRONTEND_URL_HERE';
+            // const chudadiGameUrl = 'YOUR_CHUDADI_GAME_URL_HERE'; // 锄大地URL
+
             const currentTokenForLink = getToken();
             if (currentTokenForLink) {
-                gameLinksEl.innerHTML = `<h2>选择游戏</h2><ul class="game-card-list"><li><a href="${doudizhuGameUrl}/?token=${currentTokenForLink}" target="_blank"><h4>斗地主</h4><p class="game-description">经典对战！</p></a></li><li><a href="#" onclick="alert('锄大地待开发');return false;"><h4>锄大地</h4><p class="game-description">技巧比拼！</p></a></li><li><a href="#" onclick="alert('十三水待开发');return false;"><h4>十三水</h4><p class="game-description">智慧对决！</p></a></li></ul> <p class="section-footer-info">所有游戏均使用同一账户积分。</p>`;
+                gameLinksEl.innerHTML = `
+                    <h2>选择游戏</h2>
+                    <ul class="game-card-list">
+                        <li><a href="${doudizhuGameUrl}/?token=${currentTokenForLink}" target="_blank"><h4>斗地主</h4><p class="game-description">经典对战！</p></a></li>
+                        <li><a href="#" onclick="alert('锄大地游戏待开发');return false;"><h4>锄大地</h4><p class="game-description">技巧比拼！</p></a></li>
+                        <li><a href="${shisanshuiGameUrl}/?token=${currentTokenForLink}" target="_blank"><h4>十三水</h4><p class="game-description">智慧对决！</p></a></li>
+                    </ul>
+                    <p class="section-footer-info">所有游戏均使用同一账户积分。</p>`;
             } else { gameLinksEl.innerHTML = `<p style="color:red;">无法生成游戏链接，令牌丢失。</p>`;}
         } else {
             const errMsg = (profileData && profileData.message) ? profileData.message : "无法获取用户信息";
@@ -180,7 +294,3 @@ async function initIndexPage() {
         if (userInfoEl) userInfoEl.innerHTML = `<p style="color:red;">加载页面出错: ${error.message}。</p>`;
     }
 }
-
-// !!! 确保你已从之前的版本复制了 initRegisterPage 和 initLoginPage 的完整函数定义到这里 !!!
-function initRegisterPage() { /* ... 你的完整注册页面逻辑 ... */ }
-function initLoginPage() { /* ... 你的完整登录页面逻辑 ... */ }
