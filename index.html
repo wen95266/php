@@ -17,7 +17,6 @@
                 <ul>
                     <li><a href="login.html" id="loginLink" style="display:none;">登录</a></li>
                     <li><a href="register.html" id="registerLink" style="display:none;">注册</a></li>
-                    <!-- 修改按钮文字，并用 button 元素，因为我们会用JS控制弹窗，而不是直接跳转 -->
                     <li><button id="scoreManagementBtn" class="nav-button" style="display:none;">积分管理</button></li>
                     <li><button id="logoutButton" style="display:none;">登出</button></li>
                 </ul>
@@ -28,16 +27,27 @@
     <div class="container main-content-area">
         <main>
             <section id="userProfileSection">
-                <!-- ... (用户信息和积分展示区，与上一版一致) ... -->
+                <div id="userInfo" class="user-info-card">
+                    <p class="loading-text">正在加载用户信息...</p>
+                </div>
+                <div id="scoresDisplay" class="scores-card">
+                    <h3>你的游戏积分</h3>
+                    <ul class="scores-list">
+                        <li class="loading-text">正在加载积分...</li>
+                    </ul>
+                </div>
             </section>
 
             <section id="gameLinks" class="game-links-section" style="display:none;">
-                <!-- ... (游戏链接区，与上一版一致) ... -->
+                <h2>选择游戏</h2>
+                <ul class="game-card-list">
+                    <!-- JS会填充游戏卡片 -->
+                </ul>
             </section>
         </main>
     </div>
 
-    <!-- 新增：积分赠送模态框 -->
+    <!-- 积分赠送模态框 -->
     <div id="transferScoreModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-button" id="closeTransferModalBtn">×</span>
@@ -49,7 +59,6 @@
                         <option value="doudizhu">斗地主</option>
                         <option value="chudadi">锄大地</option>
                         <option value="shisanshui">十三水</option>
-                        <!-- 如果有通用积分，可以加一个"通用积分"选项 -->
                     </select>
                 </div>
                 <div class="form-group">
@@ -58,7 +67,7 @@
                 </div>
                 <div class="form-group">
                     <label for="recipientPhone">接收方手机号:</label>
-                    <input type="tel" id="recipientPhone" name="recipientPhone" required pattern="[0-9]{5,20}" placeholder="输入11位手机号">
+                    <input type="tel" id="recipientPhone" name="recipientPhone" required pattern="[0-9]{11}" title="请输入11位手机号" placeholder="输入11位手机号">
                 </div>
                 <button type="submit" id="submitTransferBtn">确认赠送</button>
             </form>
