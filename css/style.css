@@ -1,20 +1,268 @@
-body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
-.container { width: 80%; margin: auto; overflow: hidden; padding: 20px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-header { background: #333; color: #fff; padding: 1rem 0; text-align: center; }
-header h1 { margin: 0; }
-header nav { float: right; margin-top: -30px; }
-header nav a, header nav button { color: #fff; text-decoration: none; margin-left: 15px; background: none; border: none; cursor: pointer; font-size: 1em; }
-form div { margin-bottom: 10px; }
-label { display: block; margin-bottom: 5px; }
-input[type="text"], input[type="tel"], input[type="password"] { width: calc(100% - 22px); padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-button[type="submit"], #logoutButton { background: #5cb85c; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
-#logoutButton { background: #d9534f; }
-.message { margin-top: 15px; padding: 10px; border-radius: 5px; }
-.message.success { background-color: #dff0d8; color: #3c763d; border: 1px solid #d6e9c6; }
-.message.error { background-color: #f2dede; color: #a94442; border: 1px solid #ebccd1; }
-section { margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #eee; }
-h3 { margin-top: 0; }
-ul { list-style: none; padding: 0; }
-ul li { padding: 5px 0; border-bottom: 1px dotted #eee; }
-ul li:last-child { border-bottom: none; }
-footer { text-align: center; margin-top: 20px; padding: 10px; background: #333; color: #fff; }
+/* portal-frontend/css/style.css */
+
+/* ==== 全局重置和基础样式 ==== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f7f6; /* 更柔和的背景色 */
+    color: #333;
+    display: flex;
+    flex-direction: column; /* 使页脚能固定在底部（如果内容不足） */
+    min-height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 1100px; /* 稍微加宽一些 */
+    margin: 30px auto; /* 上下边距 */
+    padding: 25px 30px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    flex-grow: 1; /* 使容器在内容不足时也能撑满空间 */
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #0056b3;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ==== 头部和导航 ==== */
+header.main-header {
+    background-color: #343a40; /* 深色导航背景 */
+    color: #fff;
+    padding: 1rem 0;
+    margin-bottom: 30px; /* 与下方内容的间距 */
+}
+
+header.main-header .container { /* 让头部内的容器也应用一些样式 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: transparent; /* 头部容器背景透明 */
+    box-shadow: none;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+header.main-header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #fff; /* 确保标题是白色 */
+}
+header.main-header h1 a { /* 如果标题是链接 */
+    color: #fff;
+    text-decoration: none;
+}
+
+
+nav.main-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+nav.main-nav ul li {
+    margin-left: 20px;
+}
+
+nav.main-nav ul li a,
+nav.main-nav ul li button {
+    color: #f8f9fa; /* 导航链接浅色 */
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    background: none; /* 确保按钮背景透明 */
+    border: none;     /* 确保按钮无边框 */
+    cursor: pointer;  /* 确保按钮有手型指针 */
+    font-size: 1em;   /* 与链接字体大小一致 */
+}
+
+nav.main-nav ul li a:hover,
+nav.main-nav ul li button:hover {
+    background-color: #495057; /* 悬停背景变深 */
+    color: #fff;
+    text-decoration: none;
+}
+nav.main-nav ul li button#logoutButton { /* 登出按钮特定样式 */
+    background-color: #dc3545; /* 红色 */
+    color: white;
+}
+nav.main-nav ul li button#logoutButton:hover {
+    background-color: #c82333;
+}
+
+
+/* ==== 主要内容区域 ==== */
+main {
+    /* .container 已经处理了大部分布局 */
+}
+
+section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #fdfdfd; /* section 背景稍有区分 */
+    border: 1px solid #e9e9e9;
+    border-radius: 6px;
+}
+
+section h2, section h3 {
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* ==== 表单样式 (用于登录、注册页) ==== */
+form div {
+    margin-bottom: 15px;
+}
+
+form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+form input[type="text"],
+form input[type="tel"],
+form input[type="email"],
+form input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+    transition: border-color 0.2s ease;
+}
+
+form input[type="text"]:focus,
+form input[type="tel"]:focus,
+form input[type="email"]:focus,
+form input[type="password"]:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+form button[type="submit"] {
+    background-color: #007bff; /* 主题蓝色 */
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.2s ease;
+}
+
+form button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+p.message, #message { /* 用于显示API反馈消息 */
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+p.message.success, #message.success { /* 假设你会用JS添加 success/error 类 */
+    background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+}
+p.message.error, #message.error {
+    background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+}
+
+
+/* ==== 用户信息和积分展示 ==== */
+#userInfo p, #scoresDisplay ul li {
+    font-size: 1.1em;
+    margin-bottom: 8px;
+}
+#scoresDisplay ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+
+/* ==== 游戏链接/卡片式列表 (示例) ==== */
+#gameLinks ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 20px; /* 卡片间距 */
+}
+
+#gameLinks ul li {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0; /* 移除li的padding，让a标签撑满 */
+    /* flex: 1 1 300px; */ /* 弹性布局，每个卡片基础宽度300px */
+    /* min-width: 280px; */ /* 最小宽度 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden; /* 如果图片超出，则裁剪 */
+}
+#gameLinks ul li:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+
+#gameLinks ul li a {
+    display: block; /* 让a标签成为块级元素，可以设置宽高和padding */
+    padding: 20px;
+    text-decoration: none;
+    color: #333;
+    text-align: center;
+}
+#gameLinks ul li a img.game-thumbnail { /* 假设你有游戏缩略图 */
+    max-width: 100%;
+    height: 150px; /* 固定缩略图高度 */
+    object-fit: cover; /* 图片裁剪以适应 */
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+#gameLinks ul li a h4 { /* 游戏名称 */
+    margin: 10px 0 5px 0;
+    color: #007bff;
+}
+#gameLinks ul li a p.game-description { /* 游戏描述 */
+    font-size: 0.9em;
+    color: #666;
+}
+
+
+/* ==== 页脚 ==== */
+footer.main-footer {
+    text-align: center;
+    margin-top: auto; /* 将页脚推到底部 */
+    padding: 20px;
+    background: #343a40; /* 与头部一致的深色 */
+    color: #adb5bd; /* 页脚文字浅灰色 */
+    font-size: 0.9em;
+}
