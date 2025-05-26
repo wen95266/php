@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>游戏门户</title>
-    <link rel="stylesheet" href="css/style.css"> <!-- 确保路径正确 -->
+    <title>游戏门户 - 欢迎</title>
+    <!-- 引入 Inter 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 引入你的CSS -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header class="main-header">
@@ -12,41 +17,33 @@
             <h1><a href="index.html">游戏大厅</a></h1>
             <nav class="main-nav">
                 <ul>
-                    <!-- JS会根据登录状态显示/隐藏这些 -->
                     <li><a href="login.html" id="loginLink" style="display:none;">登录</a></li>
                     <li><a href="register.html" id="registerLink" style="display:none;">注册</a></li>
+                    <li><a href="index.html" id="manageLink" class="nav-button" style="display:none;">管理中心</a></li>
                     <li><button id="logoutButton" style="display:none;">登出</button></li>
-                    <!-- 你可以添加其他导航链接，例如 "排行榜", "帮助" -->
                 </ul>
             </nav>
         </div>
     </header>
 
-    <div class="container">
+    <div class="container main-content-area">
         <main>
-            <section id="userInfo">
-                <!-- 用户信息将由JS填充 -->
-                <p>正在加载用户信息...</p>
+            <section id="userProfileSection">
+                <div id="userInfo" class="user-info-card">
+                    <p class="loading-text">正在加载用户信息...</p>
+                </div>
+                <div id="scoresDisplay" class="scores-card">
+                    <h3>你的游戏积分</h3>
+                    <ul class="scores-list"> <!-- 添加 class -->
+                        <li class="loading-text">正在加载积分...</li>
+                    </ul>
+                </div>
             </section>
 
-            <section id="scoresDisplay">
-                <!-- 用户积分将由JS填充 -->
-                <h3>你的游戏积分:</h3>
-                <p>正在加载积分...</p>
-            </section>
-
-            <section id="gameLinks" style="display:none;">
-                <h2>选择游戏</h2>
-                <ul>
-                    <!-- 游戏链接将由JS动态生成，例如:
-                    <li>
-                        <a href="DOUDZHU_URL?token=TOKEN">
-                            <img src="assets/doudizhu_thumbnail.png" alt="斗地主" class="game-thumbnail">
-                            <h4>斗地主</h4>
-                            <p class="game-description">经典的扑克游戏，等你来挑战！</p>
-                        </a>
-                    </li>
-                    -->
+            <section id="gameLinks" class="game-links-section" style="display:none;">
+                <h2>选择游戏</h2> <!-- 移到 ul 外面 -->
+                <ul class="game-card-list"> <!-- 添加 class -->
+                    <!-- 游戏链接将由JS动态生成 -->
                 </ul>
             </section>
         </main>
@@ -56,6 +53,6 @@
         <p>© 2023-2024 你的游戏门户. 保留所有权利.</p>
     </footer>
 
-    <script type="module" src="js/app.js"></script> <!-- 确保路径正确 -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
