@@ -1,314 +1,95 @@
-/* portal-frontend/css/style.css - 简约美观版 V2.1 */
+/* portal-frontend/css/style.css */
+/* ... (之前的所有CSS样式保持不变) ... */
 
-/* ==== 全局重置和基础样式 ==== */
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+/* ==== 模态框样式 ==== */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+    padding-top: 60px; /* Location of the box */
 }
 
-html {
-    font-size: 100%; /* 基准字体大小，方便使用rem单位 (通常浏览器默认为16px) */
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.7;
-    background-color: #f8f9fa; /* 非常浅的灰色背景 */
-    color: #212529; /* 深灰色文字 */
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    font-size: 1rem; /* 基础字体大小，约16px */
-}
-
-.container {
-    width: 90%;
-    max-width: 960px;
-    margin: 30px auto;
-    padding: 25px 35px;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
-    flex-grow: 1;
-}
-
-a {
-    color: #0077cc;
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-a:hover {
-    color: #005ea6;
-}
-
-h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    line-height: 1.3;
-    color: #343a40;
-}
-
-/* 增大标题和段落字体 */
-h1 { font-size: 2rem; margin-bottom: 1.25rem; }       /* ~32px */
-h2 { font-size: 1.625rem; margin-bottom: 1rem; }    /* ~26px */
-h3 { font-size: 1.375rem; margin-bottom: 0.875rem; } /* ~22px */
-p { margin-bottom: 1rem; font-size: 1.05rem; color: #495057;} /* ~17px */
-
-
-/* ==== 头部和导航 ==== */
-header.main-header {
-    background-color: #fff;
-    color: #343a40;
-    padding: 1.25rem 0;
-    border-bottom: 1px solid #e9ecef;
-    margin-bottom: 30px;
-}
-
-header.main-header .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: transparent;
-    box-shadow: none;
-    padding: 0; margin: 0 auto;
-}
-
-header.main-header h1 {
-    margin: 0;
-    font-size: 1.625rem; /* ~26px */
-    color: #212529;
-}
-header.main-header h1 a {
-    color: inherit;
-    text-decoration: none;
-}
-
-nav.main-nav ul {
-    list-style: none;
-    display: flex;
-    align-items: center;
-}
-
-nav.main-nav ul li {
-    margin-left: 15px;
-}
-
-nav.main-nav ul li a,
-nav.main-nav ul li button,
-a.nav-button { /* 应用于 "管理中心" 链接 */
-    color: #495057;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 1rem; /* ~16px */
-    padding: 8px 14px;
-    border-radius: 6px;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    background: none; border: none; cursor: pointer; display: inline-block;
-}
-
-nav.main-nav ul li a:hover,
-nav.main-nav ul li button:hover,
-a.nav-button:hover {
-    background-color: #e9ecef;
-    color: #0077cc;
-    text-decoration: none;
-}
-nav.main-nav ul li button#logoutButton {
-    background-color: #e74c3c;
-    color: white;
-    padding: 8px 16px;
-}
-nav.main-nav ul li button#logoutButton:hover {
-    background-color: #c0392b;
-}
-/* 如果需要，可以为管理按钮添加特定样式，比如不同的背景色 */
-/* a#manageLink.nav-button { background-color: #28a745; color: white; } */
-
-
-/* ==== 主要内容区域 ==== */
-.main-content-area { /* 包裹main内容的容器 */
-}
-section {
-    margin-bottom: 30px;
-    padding: 0; /* section 的 padding 由内部卡片或元素自己控制 */
-    border: none;
-    border-radius: 0;
-}
-section:last-child { margin-bottom: 0; }
-
-/* Section 内的标题 */
-section h2,
-#userProfileSection h3, /* 特指用户资料和积分区域的h3 */
-#gameLinks h2 {
-    color: #343a40;
-    margin-top: 0;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #0077cc; /* 蓝色强调下划线 */
-    font-size: 1.5rem; /* ~24px */
-}
-
-
-/* ==== 表单样式 (用于登录、注册页) ==== */
-form { margin-top: 20px; }
-form div { margin-bottom: 20px; }
-form label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 1rem; color: #495057;}
-form input[type="text"], form input[type="tel"], form input[type="email"], form input[type="password"] {
-    width: 100%; padding: 12px 15px; border: 1px solid #ced4da;
-    border-radius: 6px; font-size: 1rem; /* 输入框字体 */
-    transition: border-color 0.2s ease, box-shadow 0.2s ease; background-color: #f8f9fa;
-}
-form input:focus { /* 统一 :focus 样式 */
-    border-color: #0077cc; outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(0, 119, 204, 0.2); background-color: #fff;
-}
-form button[type="submit"] {
-    background-color: #0077cc; color: white; padding: 12px 25px; border: none;
-    border-radius: 6px; cursor: pointer; font-size: 1.05rem; /* 提交按钮字体 */
-    font-weight: 500; transition: background-color 0.2s ease; width: 100%; margin-top: 10px;
-}
-form button[type="submit"]:hover { background-color: #005ea6; }
-.form-link { display: block; text-align: center; margin-top: 20px; font-size: 0.95rem; }
-
-
-/* ==== 消息提示 ==== */
-p.message, #message {
-    margin: 20px 0; padding: 15px 20px; border-radius: 6px;
-    font-weight: 500; font-size: 1rem; /* 消息字体 */
-    border-width: 1px; border-style: solid;
-}
-p.message.success, #message.success { background-color: #e6ffed; color: #006421; border-color: #a3e9b8; }
-p.message.error, #message.error { background-color: #ffebee; color: #c62828; border-color: #ffcdd2; }
-
-
-/* ==== 用户信息和积分卡片样式 ==== */
-#userProfileSection {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 30px;
-    margin-bottom: 30px;
-}
-
-.user-info-card, .scores-card {
-    background-color: #fff;
-    padding: 25px 30px; /* 卡片内边距 */
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* 5% from the top and centered */
+    padding: 30px 40px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 500px; /* Maximum width */
     border-radius: 8px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05); /* 更细微的阴影 */
-    flex: 1 1 320px; /* flex-grow, flex-shrink, flex-basis */
-    min-width: 280px; /* 保证最小宽度 */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
 }
 
-.user-info-card p.welcome-message {
-    font-size: 1.625rem; /* ~26px */
-    color: #212529;
-    margin-bottom: 20px; /* 增大间距 */
-    font-weight: 600;
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #333;
+    text-align: center;
+    font-size: 1.5rem;
 }
-.user-info-card .user-details p {
-    font-size: 1.05rem; /* ~17px */
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute; /* 绝对定位到右上角 */
+    top: 10px;
+    right: 20px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* 模态框内的表单组 */
+.modal-content .form-group {
+    margin-bottom: 20px;
+}
+.modal-content .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
     color: #495057;
-    margin-bottom: 10px;
-    line-height: 1.6;
 }
-.user-info-card .user-details p strong {
-    color: #343a40;
-    margin-right: 8px;
+.modal-content .form-group input[type="number"],
+.modal-content .form-group input[type="tel"],
+.modal-content .form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #f8f9fa;
 }
-
-.scores-card h3 { /* 已被 section h3 覆盖，如果需要特定样式再取消注释 */
-    /* font-size: 1.375rem; */
-    /* color: #343a40; */
-    /* margin-top: 0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; */
-}
-.scores-card .scores-list {
-    list-style: none;
-    padding-left: 0;
-    margin-top: 5px; /* 配合 h3 的 margin-bottom */
-}
-.scores-card .scores-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 5px; /* 调整padding */
-    border-bottom: 1px solid #f1f3f5;
-    font-size: 1.05rem; /* ~17px */
-}
-.scores-card .scores-list li:last-child { border-bottom: none; }
-.scores-card .game-name { font-weight: 500; color: #343a40; }
-.scores-card .game-score { font-weight: bold; color: #0077cc; }
-.scores-card .game-stats { font-size: 0.9em; color: #6c757d; margin-left: 10px; } /* 增加左边距 */
-.loading-text { color: #6c757d; font-style: italic; font-size: 1rem; }
-
-
-/* ==== 游戏链接/卡片式列表 ==== */
-.game-links-section { /* 包裹游戏链接的section */
-}
-ul.game-card-list {
-    list-style: none; padding: 0; display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); /* 调整卡片最小宽度 */
-    gap: 25px;
-}
-ul.game-card-list li {
-    background-color: #fff; border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    overflow: hidden; display: flex; flex-direction: column;
-}
-ul.game-card-list li:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); }
-ul.game-card-list li a {
-    display: flex; flex-direction: column; flex-grow: 1;
-    padding: 20px 25px; /* 卡片内边距 */
-    text-decoration: none; color: #343a40;
-}
-ul.game-card-list li a img.game-thumbnail {
-    width: 100%; height: 150px; object-fit: cover;
-    border-radius: 6px; margin-bottom: 15px;
-    background-color: #e9ecef; /* 图片占位背景色 */
-}
-ul.game-card-list li a h4 { /* 游戏名称 */
-    font-size: 1.25rem; /* ~20px */
-    margin-top: 0; margin-bottom: 8px;
-    color: #0077cc;
-}
-ul.game-card-list li a p.game-description { /* 游戏描述 */
-    font-size: 0.95rem; /* ~15px */
-    color: #5a6268;
-    flex-grow: 1; margin-bottom: 0;
-    line-height: 1.5; /* 描述行高 */
+.modal-content .form-group select {
+    appearance: none; /* 移除默认下拉箭头，可以自定义 */
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.9z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right .7em top 50%, 0 0;
+    background-size: .65em auto, 100%;
+    padding-right: 2.5em; /* 为箭头留出空间 */
 }
 
 
-/* ==== 页脚 ==== */
-footer.main-footer {
-    text-align: center; margin-top: auto; padding: 25px 0;
-    background: #e9ecef; color: #6c757d; font-size: 0.95rem;
-    border-top: 1px solid #dee2e6;
+.modal-content button[type="submit"] {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 1.1em;
+    margin-top: 10px; /* 与上方元素间距 */
 }
 
-/* ==== 响应式调整 (简单示例) ==== */
-@media (max-width: 768px) {
-    html { font-size: 93.75%; } /* 手机上约15px基准 */
-    .container { width: 95%; padding: 20px 25px; margin: 20px auto; }
-    header.main-header .container { flex-direction: column; gap: 15px; }
-    nav.main-nav ul { flex-direction: column; align-items: center; gap: 10px; width: 100%;}
-    nav.main-nav ul li { margin-left: 0; width: 100%; text-align: center;}
-    nav.main-nav ul li a, nav.main-nav ul li button, a.nav-button { width: 80%; display: block; margin: 5px auto; }
-
-    #userProfileSection { flex-direction: column; } /* 用户信息和积分卡片在手机上垂直排列 */
-    ul.game-card-list { grid-template-columns: 1fr; } /* 游戏卡片单列 */
-
-    h1 { font-size: 1.75rem; }
-    h2 { font-size: 1.375rem; }
-    h3 { font-size: 1.125rem; }
-    p { font-size: 1rem; }
-    form input[type="text"], form input[type="tel"], form input[type="email"], form input[type="password"], form button[type="submit"] { font-size: 1rem; }
-}
-
-@media (max-width: 480px) {
-    html { font-size: 87.5%; } /* 更小屏幕上字体再小一点 (14px基准) */
-    .container { padding: 15px 20px; }
-    header.main-header h1 { font-size: 1.5rem; }
+.modal-content p#transferMessage { /* 模态框内的消息提示 */
+    margin-top: 20px;
+    text-align: center;
 }
