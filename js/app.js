@@ -1,181 +1,141 @@
 // portal-frontend/js/app.js
-// 确保你的 api.js 文件与此文件在同一目录，或者路径正确
-// 并且 api.js 中 loginUser 能正确存储token, getToken 能正确读取token
-import { registerUser, loginUser, getUserProfile, logoutUser, getToken, getCurrentUser } from './api.js';
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("Portal_App.js: DOMContentLoaded event fired.");
-    const path = window.location.pathname;
-    console.log("Portal_App.js: Current path:", path);
-
-    if (path.endsWith('/register.html') || path.endsWith('/register')) {
-        console.log("Portal_App.js: Initializing Register Page");
-        initRegisterPage();
-    } else if (path.endsWith('/login.html') || path.endsWith('/login')) {
-        console.log("Portal_App.js: Initializing Login Page");
-        initLoginPage();
-    } else if (path.endsWith('/index.html') || path === '/' || path.includes('portal-frontend')) {
-        console.log("Portal_App.js: Initializing Index Page");
-        initIndexPage();
-    } else {
-        console.warn("Portal_App.js: Path not explicitly handled:", path);
-    }
-});
-
-function initRegisterPage() {
-    const registerForm = document.getElementById('registerForm');
-    const messageEl = document.getElementById('message');
-    if (!registerForm || !messageEl) { console.error("Portal_App.js: Missing elements for RegisterPage."); return; }
-    console.log("Portal_App.js: Register form and messageEl found.");
-    registerForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        messageEl.textContent = '处理中...';
-        const phone = document.getElementById('phone').value;
-        const password = document.getElementById('password').value;
-        const username = document.getElementById('username').value;
-        try {
-            const result = await registerUser(phone, password, username || null);
-            messageEl.textContent = result.message;
-            if (result.success) {
-                messageEl.style.color = 'green';
-                setTimeout(() => { window.location.href = 'login.html'; }, 2000);
-            } else {
-                messageEl.style.color = 'red';
-            }
-        } catch (error) {
-            messageEl.textContent = (error && error.message) ? error.message : '注册时发生错误。';
-            messageEl.style.color = 'red';
-        }
-    });
-}
-
-function initLoginPage() {
-    const loginForm = document.getElementById('loginForm');
-    const messageEl = document.getElementById('message');
-    if (!loginForm || !messageEl) { console.error("Portal_App.js: Missing elements for LoginPage."); return; }
-    console.log("Portal_App.js: Login form and messageEl found.");
-    loginForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        messageEl.textContent = '正在登录...';
-        const phone = document.getElementById('phone').value;
-        const password = document.getElementById('password').value;
-        try {
-            const result = await loginUser(phone, password); // loginUser 内部会处理 token 存储
-            if (result && result.success) {
-                messageEl.textContent = '登录成功！正在跳转...';
-                messageEl.style.color = 'green';
-                setTimeout(() => { window.location.href = 'index.html'; }, 1000);
-            } else {
-                messageEl.textContent = (result && result.message) ? result.message : '登录失败，请检查凭证。';
-                messageEl.style.color = 'red';
-            }
-        } catch (error) {
-            messageEl.textContent = (error && error.message) ? error.message : '登录时发生网络或未知错误。';
-            messageEl.style.color = 'red';
-        }
-    });
-}
+// ... (import 语句和顶层 DOMContentLoaded, initRegisterPage, initLoginPage 保持不变) ...
+// 你应该使用上一轮我提供的 portal-frontend/js/app.js 的完整版本作为基础
 
 async function initIndexPage() {
     console.log("Portal_App.js: initIndexPage called");
-    const tokenForPageLoad = getToken(); // 从 api.js (localStorage) 获取 token
-    console.log("Portal_App.js: Token for Index Page at page load (from getToken()):", tokenForPageLoad ? tokenForPageLoad.substring(0,10)+'...' : "NO_TOKEN_AT_PAGE_LOAD");
+    const token = getToken();
+    console.log("Portal_App.js: Token for Index Page:", token ? token.substring(0,10)+'...' : "NO_TOKEN");
 
     const userInfoEl = document.getElementById('userInfo');
-    const scoresEl = document.getElementById('scoresDisplay');
+    const scoresEl = document.getElementById('scoresDisplay'); // 这个是包含h3和ul的整个div
     const gameLinksEl = document.getElementById('gameLinks');
     const loginLinkEl = document.getElementById('loginLink');
+    const registerLinkEl = document.getElementById('registerLink'); // 获取注册链接
+    const manageLinkEl = document.getElementById('manageLink');     // 获取管理链接
     const logoutButtonEl = document.getElementById('logoutButton');
 
-    if (!userInfoEl || !scoresEl || !gameLinksEl || !loginLinkEl || !logoutButtonEl) {
+    // 确保所有元素都存在
+    if (!userInfoEl || !scoresEl || !gameLinksEl || !loginLinkEl || !registerLinkEl || !manageLinkEl || !logoutButtonEl) {
         console.error("Portal_App.js: One or more critical UI elements for Index Page not found.");
-        if(document.body) document.body.innerHTML = "<h1>页面初始化错误(UI Missing)，请联系管理员。</h1>";
+        if(document.body) document.body.innerHTML = "<h1>页面初始化错误(UI_Missing_Elements)，请联系管理员。</h1>";
         return;
     }
 
-    if (!tokenForPageLoad) {
-        console.log("Portal_App.js: No token at page load, showing login link.");
-        loginLinkEl.style.display = 'block'; logoutButtonEl.style.display = 'none';
-        userInfoEl.innerHTML = '<p>请先<a href="login.html">登录</a>查看内容。</p>';
-        scoresEl.innerHTML = ''; gameLinksEl.style.display = 'none';
+    if (!token) {
+        console.log("Portal_App.js: No token, showing login/register links.");
+        loginLinkEl.style.display = 'inline-block';
+        registerLinkEl.style.display = 'inline-block';
+        manageLinkEl.style.display = 'none';
+        logoutButtonEl.style.display = 'none';
+        userInfoEl.innerHTML = '<p>请先<a href="login.html">登录</a>或<a href="register.html">注册</a>以查看更多内容。</p>';
+        scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li class="loading-text">请先登录查看积分。</li></ul>';
+        gameLinksEl.style.display = 'none';
         return;
     }
 
-    console.log("Portal_App.js: Token exists. Proceeding to fetch profile.");
-    loginLinkEl.style.display = 'none'; logoutButtonEl.style.display = 'block';
+    console.log("Portal_App.js: Token exists. Showing manage/logout, hiding login/register.");
+    loginLinkEl.style.display = 'none';
+    registerLinkEl.style.display = 'none';
+    manageLinkEl.style.display = 'inline-block'; // 显示管理中心
+    logoutButtonEl.style.display = 'block';
+
     if (!logoutButtonEl.dataset.listenerAttached) {
-        logoutButtonEl.addEventListener('click', () => {
-            console.log("Portal_App.js: Logout button clicked.");
-            logoutUser(); // logoutUser 会处理 localStorage 清理和页面跳转
-        });
+        logoutButtonEl.addEventListener('click', logoutUser);
         logoutButtonEl.dataset.listenerAttached = 'true';
     }
+    // manageLinkEl.href = 'profile.html'; // 如果你有单独的profile页面
 
     try {
-        userInfoEl.innerHTML = '<p>正在加载用户信息...</p>'; scoresEl.innerHTML = ''; gameLinksEl.style.display = 'none';
-        const profileData = await getUserProfile(); // getUserProfile 内部会使用 getToken()
+        userInfoEl.innerHTML = '<p class="loading-text">正在加载用户信息...</p>';
+        scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li class="loading-text">正在加载积分...</li></ul>';
+        gameLinksEl.style.display = 'none';
+
+        const profileData = await getUserProfile();
         console.log("Portal_App.js: Profile data received:", profileData);
 
         if (profileData && profileData.success && profileData.user) {
             const user = profileData.user;
             const scores = profileData.scores || {};
-            userInfoEl.innerHTML = `<p>欢迎, <strong>${user.username || user.phone_number}</strong>!</p><p>手机号: ${user.phone_number}</p><p>注册时间: ${new Date(user.created_at).toLocaleDateString()}</p>`;
-            let scoresHTML = '<h3>你的游戏积分:</h3><ul>';
+
+            userInfoEl.innerHTML = `
+                <p class="welcome-message">欢迎, <strong>${user.username || user.phone_number}!</strong></p>
+                <div class="user-details">
+                    <p><strong>手机号:</strong> ${user.phone_number}</p>
+                    <p><strong>注册时间:</strong> ${new Date(user.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' })}</p>
+                </div>
+            `;
+
+            let scoresHTML = '<h3>你的游戏积分:</h3><ul class="scores-list">';
             const gameNames = { 'doudizhu': '斗地主', 'chudadi': '锄大地', 'shisanshui': '十三水' };
             const gameTypes = ['doudizhu', 'chudadi', 'shisanshui'];
-            let hasScores = false;
+            let hasAnyScoreRecord = false;
+
             gameTypes.forEach(gameType => {
-                if (scores[gameType]) {
-                    const gameData = scores[gameType];
-                    scoresHTML += `<li>${gameNames[gameType] || gameType}: ${gameData.score || 0}分 (局数: ${gameData.matches_played || 0}, 胜场: ${gameData.wins || 0})</li>`;
-                    hasScores = true;
-                } else {
-                    scoresHTML += `<li>${gameNames[gameType] || gameType}: 0分 (局数: 0, 胜场: 0)</li>`;
-                }
+                const gameData = scores[gameType] || { score: 0, matches_played: 0, wins: 0 };
+                scoresHTML += `
+                    <li>
+                        <span class="game-name">${gameNames[gameType] || gameType}:</span>
+                        <span class="game-score">${gameData.score}分</span>
+                        <span class="game-stats">(局数: ${gameData.matches_played}, 胜场: ${gameData.wins})</span>
+                    </li>`;
+                if (gameData.matches_played > 0) hasAnyScoreRecord = true;
             });
-            if (!hasScores && Object.keys(scores).length === 0 ) {
-                 scoresHTML += '<li>暂无任何游戏积分记录。</li>';
-            }
+            // 如果用户没有任何游戏的任何记录，可以显示一个统一的提示，但目前是每个游戏都显示0
+            // if (!hasAnyScoreRecord) {
+            //     scoresHTML += '<li>暂无任何游戏记录。</li>';
+            // }
             scoresHTML += '</ul>';
             scoresEl.innerHTML = scoresHTML;
 
-            // ==============================================================
-            // 关键部分：生成游戏链接
-            // ==============================================================
             console.log("Portal_App.js: Preparing game links.");
-            gameLinksEl.style.display = 'block';
-
+            gameLinksEl.style.display = 'block'; // 显示游戏链接区域
             const doudizhuGameUrl = 'https://dzz.9526.ip-ddns.com'; // 斗地主前端URL
-            // 确保我们使用的是当前最新的token来生成链接
-            const tokenForGameLink = getToken(); // 再次从 localStorage 获取最新的 token
-            console.log("Portal_App.js: Token specifically for game link generation:", tokenForGameLink ? tokenForGameLink.substring(0,10)+'...' : "!!_NO_TOKEN_FOR_LINK_!!");
+            const currentTokenForLink = getToken();
 
-            if (tokenForGameLink) {
+            if (currentTokenForLink) {
                 gameLinksEl.innerHTML = `
-                    <h3>开始游戏:</h3>
-                    <ul>
-                        <li><a href="${doudizhuGameUrl}/?token=${tokenForGameLink}" target="_blank">斗地主</a></li>
-                        <li><a href="#" onclick="alert('锄大地游戏待开发'); return false;">锄大地 (待开发)</a></li>
-                        <li><a href="#" onclick="alert('十三水游戏待开发'); return false;">十三水 (待开发)</a></li>
+                    <h2>选择游戏</h2>
+                    <ul class="game-card-list">
+                        <li>
+                            <a href="${doudizhuGameUrl}/?token=${currentTokenForLink}" target="_blank">
+                                <!-- <img src="assets/doudizhu_thumbnail.png" alt="斗地主" class="game-thumbnail"> -->
+                                <h4>斗地主</h4>
+                                <p class="game-description">经典三人扑克游戏，等你来战！</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="alert('锄大地游戏待开发'); return false;">
+                                <!-- <img src="assets/chudadi_thumbnail.png" alt="锄大地" class="game-thumbnail"> -->
+                                <h4>锄大地</h4>
+                                <p class="game-description">港式扑克，出牌技巧大比拼！</p>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="alert('十三水游戏待开发'); return false;">
+                                <!-- <img src="assets/shisanshui_thumbnail.png" alt="十三水" class="game-thumbnail"> -->
+                                <h4>十三水</h4>
+                                <p class="game-description">智慧与运气的结合，摆出最强牌型！</p>
+                            </a>
+                        </li>
                     </ul>
-                    <p><small>游戏将在新标签页打开。</small></p>
                 `;
-                console.log("Portal_App.js: Game links generated. URL for Doudizhu will be approximately: " + `${doudizhuGameUrl}/?token=${tokenForGameLink.substring(0,10)}...`);
             } else {
-                gameLinksEl.innerHTML = `<p style="color:red;">错误：用户令牌丢失，无法生成游戏链接。请尝试重新登录。</p>`;
-                console.error("Portal_App.js: CRITICAL - Token is null or undefined just before generating game links, even though user was thought to be logged in!");
+                gameLinksEl.innerHTML = `<p style="color:red;">错误：无法生成游戏链接，请重新登录。</p>`;
             }
         } else {
-            const errMsg = (profileData && profileData.message) ? profileData.message : "无法获取用户信息或会话已过期";
-            console.warn("Portal_App.js: Failed to get user profile or profile invalid. Message:", errMsg);
+            const errMsg = (profileData && profileData.message) ? profileData.message : "无法连接或会话无效";
+            console.warn("Portal_App.js: Failed to get profile. Message:", errMsg);
             userInfoEl.innerHTML = `<p>获取用户信息失败: ${errMsg}。请尝试<a href="login.html">重新登录</a>。</p>`;
-            // 如果 getUserProfile 因为token问题失败，api.js中的request函数应该已经处理了登出和跳转
+            scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li class="loading-text">无法加载积分。</li></ul>';
         }
     } catch (error) {
-        console.error("Portal_App.js: Exception in initIndexPage (fetching profile/UI update):", error);
-        if (userInfoEl) userInfoEl.innerHTML = `<p>加载页面时发生严重错误: ${error.message}。</p>`;
+        console.error("Portal_App.js: Exception in initIndexPage:", error);
+        if (userInfoEl) userInfoEl.innerHTML = `<p>加载页面时发生错误: ${error.message}。</p>`;
+        if (scoresEl) scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li class="loading-text">加载积分出错。</li></ul>';
     }
 }
 
-// 确保你有 initRegisterPage 和其他必要的函数定义，或者从之前的版本复制过来
-// function initRegisterPage() { /* ... 你的注册页面逻辑 ... */ }
+// 确保你已从之前的版本复制了 initRegisterPage 和 initLoginPage 的完整函数定义
+// function initRegisterPage() { /* ... */ }
+// function initLoginPage() { /* ... */ }
