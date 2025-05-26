@@ -1,157 +1,120 @@
 // portal-frontend/js/app.js
-import { registerUser, loginUser, getUserProfile, logoutUser, getToken, getCurrentUser } from './api.js';
+// 顶部的 import 语句需要包含新的API函数
+import { registerUser, loginUser, getUserProfile, logoutUser, getToken, getCurrentUser, transferScore } from './api.js'; // 添加 transferScore
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("Portal_App.js: DOMContentLoaded event fired.");
-    const path = window.location.pathname;
-    console.log("Portal_App.js: Current path:", path);
-
-    if (path.endsWith('/register.html') || path.endsWith('/register')) {
-        console.log("Portal_App.js: Initializing Register Page");
-        initRegisterPage();
-    } else if (path.endsWith('/login.html') || path.endsWith('/login')) {
-        console.log("Portal_App.js: Initializing Login Page");
-        initLoginPage();
-    } else if (path.endsWith('/index.html') || path === '/' || path.includes('portal-frontend')) {
-        console.log("Portal_App.js: Initializing Index Page");
-        initIndexPage();
-    } else {
-        console.warn("Portal_App.js: Path not explicitly handled:", path);
-    }
-});
-
-// !!! 确保你已经从之前的版本复制了 initRegisterPage 和 initLoginPage 的完整、正确的函数定义到这里 !!!
+// ... (DOMContentLoaded 和其他 init 函数保持你之前的版本) ...
+// 例如:
+// document.addEventListener('DOMContentLoaded', () => { /* ... */ });
 // function initRegisterPage() { /* ... */ }
 // function initLoginPage() { /* ... */ }
 
 
 async function initIndexPage() {
-    console.log("Portal_App.js: initIndexPage called - V2_Debug");
-    const token = getToken(); // 从 api.js (localStorage) 获取 token
-    console.log("Portal_App.js: Token for Index Page (from getToken()):", token ? token.substring(0,10)+'...' : "NO_TOKEN_FOUND");
+    console.log("Portal_App.js: initIndexPage called - V3_ScoreManagement");
+    // ... (token 获取和大部分DOM元素获取与上一版一致) ...
+    const scoreManagementBtn = document.getElementById('scoreManagementBtn'); // 获取积分管理按钮
 
-    const userInfoEl = document.getElementById('userInfo');
-    const scoresEl = document.getElementById('scoresDisplay');
-    const gameLinksEl = document.getElementById('gameLinks');
-    const loginLinkEl = document.getElementById('loginLink');
-    const registerLinkEl = document.getElementById('registerLink');
-    const manageLinkEl = document.getElementById('manageLink');
-    const logoutButtonEl = document.getElementById('logoutButton');
+    // --- 新增：模态框相关的DOM元素获取 ---
+    const transferScoreModal = document.getElementById('transferScoreModal');
+    const closeTransferModalBtn = document.getElementById('closeTransferModalBtn');
+    const transferScoreForm = document.getElementById('transferScoreForm');
+    const transferMessageEl = document.getElementById('transferMessage');
+    const submitTransferBtn = document.getElementById('submitTransferBtn'); // 获取提交按钮，用于控制禁用状态
 
-    // 先确保所有DOM元素都获取到了，如果获取不到，这是HTML结构问题
-    if (!userInfoEl) console.error("Portal_App.js: userInfoEl NOT FOUND!");
-    if (!scoresEl) console.error("Portal_App.js: scoresEl NOT FOUND!");
-    if (!gameLinksEl) console.error("Portal_App.js: gameLinksEl NOT FOUND!");
-    if (!loginLinkEl) console.error("Portal_App.js: loginLinkEl NOT FOUND!");
-    if (!registerLinkEl) console.error("Portal_App.js: registerLinkEl NOT FOUND!");
-    if (!manageLinkEl) console.error("Portal_App.js: manageLinkEl NOT FOUND!");
-    if (!logoutButtonEl) console.error("Portal_App.js: logoutButtonEl NOT FOUND!");
-
-    if (!userInfoEl || !scoresEl || !gameLinksEl || !loginLinkEl || !registerLinkEl || !manageLinkEl || !logoutButtonEl) {
-        console.error("Portal_App.js: CRITICAL - One or more UI elements missing. Page cannot render correctly.");
-        if(document.body) document.body.innerHTML = "<h1>页面元素加载错误，请联系管理员。</h1>";
-        return;
+    if (!scoreManagementBtn || !transferScoreModal || !closeTransferModalBtn || !transferScoreForm || !transferMessageEl || !submitTransferBtn /* || !其他关键元素 */ ) {
+        console.error("Portal_App.js: One or more UI elements for score management or index page not found.");
+        // return; // 可以选择在这里中止，或者让后续逻辑处理null情况
     }
 
-    // 根据Token状态设置初始UI
-    if (!token) {
-        console.log("Portal_App.js: No token. Setting UI for logged out state.");
-        loginLinkEl.style.display = 'inline-block';
-        registerLinkEl.style.display = 'inline-block';
-        manageLinkEl.style.display = 'none';
-        logoutButtonEl.style.display = 'none';
-        userInfoEl.innerHTML = '<p>请先<a href="login.html">登录</a>或<a href="register.html">注册</a>以查看更多内容。</p>';
-        scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li class="loading-text">请先登录查看积分。</li></ul>';
-        gameLinksEl.style.display = 'none';
-        return; // 结束函数，因为未登录
-    }
+    // ... (根据token状态显示/隐藏导航按钮的逻辑，与上一版一致，确保 scoreManagementBtn 也被正确处理)
+    // 例如，在 token 存在的逻辑块中:
+    // loginLinkEl.style.display = 'none';
+    // registerLinkEl.style.display = 'none';
+    // manageLinkEl.style.display = 'none'; // 如果之前有 manageLink，现在隐藏它
+    // scoreManagementBtn.style.display = 'inline-block'; // 显示积分管理按钮
+    // logoutButtonEl.style.display = 'block';
 
-    // 如果有Token，则尝试获取用户资料
-    console.log("Portal_App.js: Token exists. Setting UI for logged in state (pre-API call).");
-    loginLinkEl.style.display = 'none';
-    registerLinkEl.style.display = 'none';
-    manageLinkEl.style.display = 'inline-block'; // 先显示管理按钮
-    logoutButtonEl.style.display = 'block';     // 显示登出按钮
-
-    if (!logoutButtonEl.dataset.listenerAttached) {
-        logoutButtonEl.addEventListener('click', () => {
-            console.log("Portal_App.js: Logout button clicked.");
-            logoutUser(); // logoutUser 应该处理 token 清理和页面跳转
+    // --- 积分管理模态框事件处理 ---
+    if (scoreManagementBtn && transferScoreModal && closeTransferModalBtn && transferScoreForm) {
+        scoreManagementBtn.addEventListener('click', () => {
+            console.log("Portal_App.js: Score Management button clicked.");
+            transferScoreModal.style.display = 'block';
+            transferMessageEl.style.display = 'none'; // 重置消息
+            transferMessageEl.textContent = '';
+            transferScoreForm.reset(); // 重置表单
         });
-        logoutButtonEl.dataset.listenerAttached = 'true';
-    }
 
-    // 设置加载状态文本
-    userInfoEl.innerHTML = '<p class="loading-text">正在加载用户信息...</p>';
-    scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li class="loading-text">正在加载积分...</li></ul>';
-    gameLinksEl.style.display = 'none'; // 先隐藏游戏链接，获取到数据后再显示
+        closeTransferModalBtn.addEventListener('click', () => {
+            transferScoreModal.style.display = 'none';
+        });
 
-    try {
-        console.log("Portal_App.js: Attempting to call getUserProfile(). Token:", token ? token.substring(0,10)+'...' : "NULL_TOKEN_UNEXPECTED");
-        const profileData = await getUserProfile(); // API调用
-        console.log("Portal_App.js: getUserProfile() response received:", profileData);
-
-        if (profileData && profileData.success && profileData.user) {
-            console.log("Portal_App.js: getUserProfile successful. Updating UI with user data.");
-            const user = profileData.user;
-            const scores = profileData.scores || {};
-
-            userInfoEl.innerHTML = `
-                <p class="welcome-message">欢迎, <strong>${user.username || user.phone_number}!</strong></p>
-                <div class="user-details">
-                    <p><strong>手机号:</strong> ${user.phone_number}</p>
-                    <p><strong>注册时间:</strong> ${new Date(user.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' })}</p>
-                </div>
-            `;
-
-            let scoresHTML = '<h3>你的游戏积分:</h3><ul class="scores-list">';
-            const gameNames = { 'doudizhu': '斗地主', 'chudadi': '锄大地', 'shisanshui': '十三水' };
-            const gameTypes = ['doudizhu', 'chudadi', 'shisanshui'];
-            gameTypes.forEach(gameType => {
-                const gameData = scores[gameType] || { score: 0, matches_played: 0, wins: 0 };
-                scoresHTML += `<li><span class="game-name">${gameNames[gameType]||gameType}:</span> <span class="game-score">${gameData.score}分</span> <span class="game-stats">(局数: ${gameData.matches_played}, 胜场: ${gameData.wins})</span></li>`;
-            });
-            scoresHTML += '</ul>';
-            scoresEl.innerHTML = scoresHTML;
-
-            console.log("Portal_App.js: Preparing game links area.");
-            gameLinksEl.style.display = 'block'; // 显示游戏链接区域
-            const doudizhuGameUrl = 'https://dzz.9526.ip-ddns.com';
-            const currentTokenForLink = getToken(); // 再次获取最新的token
-            console.log("Portal_App.js: Token for game link generation (after profile fetch):", currentTokenForLink ? currentTokenForLink.substring(0,10)+'...' : "!!_NO_TOKEN_FOR_LINK_AFTER_PROFILE_!!");
-
-            if (currentTokenForLink) {
-                gameLinksEl.innerHTML = `
-                    <h2>选择游戏</h2>
-                    <ul class="game-card-list">
-                        <li><a href="${doudizhuGameUrl}/?token=${currentTokenForLink}" target="_blank"><h4>斗地主</h4><p class="game-description">经典扑克，等你来战！</p></a></li>
-                        <li><a href="#" onclick="alert('锄大地待开发');return false;"><h4>锄大地</h4><p class="game-description">技巧比拼！</p></a></li>
-                        <li><a href="#" onclick="alert('十三水待开发');return false;"><h4>十三水</h4><p class="game-description">智慧对决！</p></a></li>
-                    </ul>`;
-                console.log("Portal_App.js: Game links HTML set.");
-            } else {
-                gameLinksEl.innerHTML = `<p style="color:red;">错误：用户令牌丢失，无法生成游戏链接。请重新登录。</p>`;
-                console.error("Portal_App.js: Token became null before link generation, AFTER profile fetch attempt.");
+        // 点击模态框外部区域关闭 (可选)
+        window.addEventListener('click', (event) => {
+            if (event.target == transferScoreModal) {
+                transferScoreModal.style.display = 'none';
             }
-        } else {
-            // getUserProfile() 调用不成功或返回数据不合法
-            const errMsg = (profileData && profileData.message) ? profileData.message : "无法连接服务器或会话已过期";
-            console.warn("Portal_App.js: getUserProfile failed or returned invalid data. Message:", errMsg, "Full response:", profileData);
-            userInfoEl.innerHTML = `<p style="color:red;">获取用户信息失败: ${errMsg}。</p><p>请尝试<a href="login.html">重新登录</a>。</p>`;
-            scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li>无法加载积分。</li></ul>';
-            gameLinksEl.style.display = 'none'; // 获取用户信息失败，不显示游戏链接
-            // 如果API明确返回401，api.js中的request函数应该已经处理了登出和跳转
-            // 但如果不是401，而是其他错误，用户可能仍然“登录”着（有token），但看不到数据
-            // 这种情况可以让用户手动登出
-        }
-    } catch (error) {
-        console.error("Portal_App.js: Exception in initIndexPage (API call or UI update):", error);
-        if (userInfoEl) userInfoEl.innerHTML = `<p style="color:red;">加载页面时发生严重错误: ${error.message}。</p>`;
-        if (scoresEl) scoresEl.innerHTML = '<h3>你的游戏积分</h3><ul class="scores-list"><li>加载积分出错。</li></ul>';
-        gameLinksEl.style.display = 'none';
+        });
+
+        transferScoreForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            console.log("Portal_App.js: Transfer score form submitted.");
+            transferMessageEl.style.display = 'none';
+            transferMessageEl.className = 'message'; // 重置class
+            submitTransferBtn.disabled = true; // 禁用按钮防止重复提交
+            submitTransferBtn.textContent = '处理中...';
+
+            const gameType = document.getElementById('transferGameType').value;
+            const amount = document.getElementById('transferAmount').value;
+            const recipientPhone = document.getElementById('recipientPhone').value;
+
+            if (parseInt(amount, 10) <= 0) {
+                transferMessageEl.textContent = '赠送数量必须大于0。';
+                transferMessageEl.classList.add('error');
+                transferMessageEl.style.display = 'block';
+                submitTransferBtn.disabled = false;
+                submitTransferBtn.textContent = '确认赠送';
+                return;
+            }
+
+            try {
+                const result = await transferScore(gameType, amount, recipientPhone);
+                console.log("Portal_App.js: transferScore API response:", result);
+                if (result && result.success) {
+                    transferMessageEl.textContent = result.message || '积分赠送成功！';
+                    transferMessageEl.classList.add('success');
+                    // 赠送成功后，刷新当前用户信息和积分 (重要)
+                    await initIndexPage(); // 重新加载首页数据
+                    // transferScoreForm.reset(); // 也可以在这里重置表单
+                    setTimeout(() => { // 延迟关闭模态框，让用户看到成功消息
+                         if (transferScoreModal.style.display === 'block') { // 避免在重新加载initIndexPage后，模态框可能已被隐藏而报错
+                            transferScoreModal.style.display = 'none';
+                         }
+                    }, 2500);
+                } else {
+                    transferMessageEl.textContent = (result && result.message) ? result.message : '积分赠送失败，请稍后再试。';
+                    transferMessageEl.classList.add('error');
+                }
+            } catch (error) {
+                transferMessageEl.textContent = (error && error.message) ? error.message : '赠送过程中发生网络或未知错误。';
+                transferMessageEl.classList.add('error');
+                console.error("Portal_App.js: Error during score transfer:", error);
+            } finally {
+                transferMessageEl.style.display = 'block';
+                submitTransferBtn.disabled = false;
+                submitTransferBtn.textContent = '确认赠送';
+            }
+        });
+    } else {
+        console.warn("Portal_App.js: Score management modal elements not fully found.");
     }
+
+
+    // ... (try...catch 块调用 getUserProfile 并填充 userInfoEl, scoresEl, gameLinksEl 的逻辑，与上一版一致) ...
+    // 确保在获取 token 后，正确控制 scoreManagementBtn 的显示:
+    // if (!token) { ... scoreManagementBtn.style.display = 'none'; ... }
+    // else { ... scoreManagementBtn.style.display = 'inline-block'; ... }
 }
 
-// !!! 确保你已经从之前的版本复制了 initRegisterPage 和 initLoginPage 的完整、正确的函数定义到这里 !!!
+// 确保你已从之前的版本复制了 initRegisterPage 和 initLoginPage 的完整函数定义
 // function initRegisterPage() { /* ... */ }
 // function initLoginPage() { /* ... */ }
