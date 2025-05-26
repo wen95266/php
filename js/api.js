@@ -1,96 +1,116 @@
-// js/api.js
-const API_BASE_URL = 'https://9526.ip-ddns.com/api'; // 替换成你的API根路径
+// portal-frontend/js/api.js
+const API_BASE_URL = 'https://9526.ip-ddns.com/api'; // 你的后端API基地址
 
+// 这是一个通用的请求函数封装，你需要根据你的实际情况调整
+// 假设它能正确处理请求、错误和返回JSON
 async function request(endpoint, method = 'POST', data = null, requiresAuth = false) {
     const url = `${API_BASE_URL}/${endpoint}`;
-    const headers = {
-        'Content-Type': 'application/json',
-    };
+    const headers = { 'Content-Type': 'application/json' };
+    let currentToken = null;
 
     if (requiresAuth) {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+        currentToken = getToken(); // 从localStorage获取
+        if (currentToken) {
+            headers['Authorization'] = `Bearer ${currentToken}`;
         } else {
-            // 如果需要授权但没有token，可以提前处理，比如跳转登录
-            console.warn('需要授权的请求，但未找到token');
-            // window.location.href = 'login.html'; // 示例跳转
-            // return Promise.reject({ success: false, message: '未授权' });
+            console.warn(`Portal_API.js: Request to ${endpoint} requires auth, but no token found.`);
+            // 可以在这里提前返回错误或让请求继续（后端会返回401）
         }
     }
 
-    const config = {
-        method: method,
-        headers: headers,
-    };
-
+    const config = { method: method, headers: headers };
     if (data && (method === 'POST' || method === 'PUT')) {
         config.body = JSON.stringify(data);
-    } else if (data && method === 'GET') {
-        // 如果是GET请求且有数据，将其作为查询参数附加到URL
-        // (get_user_profile.php 兼容了从请求体或参数获取token，但通常GET不带body)
-        // 这里为了简化，假设带数据的GET请求参数已包含在 endpoint 中，或者 token 走 header
     }
 
+    // console.log(`Portal_API.js: Sending request to ${url}`, config.body ? `with body: ${config.body}` : '');
 
     try {
         const response = await fetch(url, config);
-        if (response.status === 401 && requiresAuth) { // 未授权
-            console.error('API请求未授权 (401)');
-            localStorage.removeItem('authToken'); // 清除无效token
+        // console.log(`Portal_API.js: Raw response from ${endpoint}: Status ${response.status}`);
+        const responseData = await response.json();
+        // console.log(`Portal_API.js: Parsed response from ${endpoint}:`, responseData);
+        if (!response.ok && response.status === 401 && requiresAuth) { // 特别处理401
+            console.error(`Portal_API.js: Unauthorized (401) from ${endpoint}. Clearing token.`);
+            localStorage.removeItem('authToken');
             localStorage.removeItem('currentUser');
-            if (window.location.pathname !== '/login.html' && window.location.pathname !== '/register.html') {
-                 window.location.href = 'login.html'; // 跳转到登录页
+            if (window.location.pathname.indexOf('login.html') === -1 && window.location.pathname.indexOf('register.html') === -1) {
+                window.location.href = 'login.html'; // 跳转到登录页
             }
-            return Promise.reject({ success: false, message: '会话已过期或无效，请重新登录。' });
         }
-        // 尝试解析JSON，如果不是JSON，则返回原始响应
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-            return response.json();
-        } else {
-            return response.text(); // 或者 response.blob() 等
-        }
+        return responseData;
     } catch (error) {
-        console.error('API请求失败:', error);
-        return Promise.reject({ success: false, message: '网络错误或API调用失败: ' + error.message });
+        console.error(`Portal_API.js: Error fetching ${endpoint}:`, error);
+        return { success: false, message: `请求失败: ${error.message}` }; // 返回一个错误对象
     }
 }
 
-// 用户认证相关
+
 export async function registerUser(phone_number, password, username = null) {
     return request('register_phone.php', 'POST', { phone_number, password, username });
 }
 
 export async function loginUser(phone_number, password) {
+    console.log("Portal_API.js: loginUser called for phone:", phone_number);
+    // login_phone.php 是我们之前定义的API端点
     const response = await request('login_phone.php', 'POST', { phone_number, password });
-    if (response.success && response.token) {
-        localStorage.setItem('authToken', response.token);
-        localStorage.setItem('currentUser', JSON.stringify(response.user)); // 存储用户信息
+    console.log("Portal_API.js: loginUser API raw response:", response);
+
+    if (response && response.success && response.token && response.user) {
+        console.log("Portal_API.js: Login successful. Storing token and user data to localStorage.");
+        try {
+            localStorage.setItem('authToken', response.token);
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            const storedToken = localStorage.getItem('authToken');
+            const storedUser = localStorage.getItem('currentUser');
+            console.log("Portal_API.js: authToken stored in localStorage:", storedToken ? storedToken.substring(0,10)+'...' : null);
+            console.log("Portal_API.js: currentUser stored in localStorage:", storedUser);
+        } catch (e) {
+            console.error("Portal_API.js: Error saving to localStorage:", e);
+            alert("无法保存用户会话，请检查浏览器设置。");
+        }
+    } else {
+        console.error("Portal_API.js: Login failed or API response format incorrect. Response:", response);
+        // 登录失败时，清除可能存在的旧token
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        console.log("Portal_API.js: Cleared any existing authToken and currentUser due to login failure.");
     }
     return response;
 }
 
 export async function getUserProfile() {
-    // get_user_profile.php 可以通过 Authorization Bearer Token 获取，所以data可以为null
-    return request('get_user_profile.php', 'GET', null, true);
+    console.log("Portal_API.js: getUserProfile called.");
+    return request('get_user_profile.php', 'GET', null, true); // 假设GET请求，或者你的request函数能处理
 }
 
 export function logoutUser() {
+    console.log("Portal_API.js: logoutUser called. Clearing localStorage.");
+    const tokenBeforeLogout = localStorage.getItem('authToken');
     localStorage.removeItem('authToken');
     localStorage.removeItem('currentUser');
-    // 可选：调用后端API使服务器端session失效，但对于JWT风格的令牌，前端删除即可
-    // request('logout.php', 'POST', null, true); // 如果有logout API
-    if (window.location.pathname !== '/login.html') {
+    const tokenAfterLogout = localStorage.getItem('authToken');
+    console.log("Portal_API.js: authToken before logout:", tokenBeforeLogout ? tokenBeforeLogout.substring(0,10)+'...' : null, "After logout:", tokenAfterLogout);
+    // 可选：调用后端API使服务器端session失效
+    // request('logout.php', 'POST', null, true);
+    if (window.location.pathname.indexOf('login.html') === -1) { // 避免在login页面无限重定向
         window.location.href = 'login.html';
     }
 }
 
 export function getToken() {
-    return localStorage.getItem('authToken');
+    const token = localStorage.getItem('authToken');
+    // console.log("Portal_API.js: getToken() called, returning:", token ? token.substring(0,10)+'...' : null);
+    return token;
 }
 
 export function getCurrentUser() {
     const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
+    // console.log("Portal_API.js: getCurrentUser() called, returning:", userStr);
+    try {
+        return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+        console.error("Portal_API.js: Error parsing currentUser from localStorage", e);
+        return null;
+    }
 }
