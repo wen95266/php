@@ -1,23 +1,25 @@
 // js/app.js
+// 确保你的 api.js 文件与此文件在同一目录，或者路径正确
 import { registerUser, loginUser, getUserProfile, logoutUser, getToken, getCurrentUser } from './api.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded and parsed."); // 调试：确认DOM加载完成
+    console.log("Portal_App.js: DOMContentLoaded event fired.");
     const path = window.location.pathname;
-    console.log("Current path:", path); // 调试：当前路径
+    console.log("Portal_App.js: Current path:", path);
 
-    // 修正路径匹配逻辑
+    // 根据当前页面路径初始化对应的功能
+    // 使用 endsWith 来匹配，更灵活应对 Cloudflare Pages 可能的路径处理
     if (path.endsWith('/register.html') || path.endsWith('/register')) {
-        console.log("Initializing Register Page for path:", path);
+        console.log("Portal_App.js: Initializing Register Page for path:", path);
         initRegisterPage();
     } else if (path.endsWith('/login.html') || path.endsWith('/login')) {
-        console.log("Initializing Login Page for path:", path);
+        console.log("Portal_App.js: Initializing Login Page for path:", path);
         initLoginPage();
-    } else if (path.endsWith('/index.html') || path === '/' || path.endsWith('/portal-frontend/') || path.endsWith('/portal-frontend')) {
-        console.log("Initializing Index Page for path:", path);
+    } else if (path.endsWith('/index.html') || path === '/' || path.endsWith('/portal-frontend/') || path.endsWith('/portal-frontend') || path === '/portal-frontend') { // 覆盖几种可能的首页路径
+        console.log("Portal_App.js: Initializing Index Page for path:", path);
         initIndexPage();
     } else {
-        console.log("Path not explicitly handled for initialization:", path);
+        console.warn("Portal_App.js: Path not explicitly handled for initialization:", path);
     }
 });
 
@@ -25,48 +27,45 @@ function initRegisterPage() {
     const registerForm = document.getElementById('registerForm');
     const messageEl = document.getElementById('message');
 
-    if (registerForm) {
-        console.log("Register form found.");
+    if (registerForm && messageEl) {
+        console.log("Portal_App.js: Register form and message element found.");
         registerForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            console.log("Register form submitted.");
+            console.log("Portal_App.js: Register form submitted.");
             const phone = document.getElementById('phone').value;
             const password = document.getElementById('password').value;
             const username = document.getElementById('username').value;
 
+            messageEl.textContent = ''; // 清空之前的消息
+
             if (!/^[0-9]{5,20}$/.test(phone)) {
                 messageEl.textContent = '请输入有效的手机号 (5-20位数字)。';
                 messageEl.style.color = 'red';
-                console.warn("Invalid phone number format on register:", phone);
                 return;
             }
             if (password.length < 6) {
                 messageEl.textContent = '密码长度至少6位。';
                 messageEl.style.color = 'red';
-                console.warn("Password too short on register.");
                 return;
             }
 
             try {
-                console.log("Attempting to register user:", { phone, username });
                 const result = await registerUser(phone, password, username || null);
-                console.log("Registration API response:", result);
                 messageEl.textContent = result.message;
                 if (result.success) {
                     messageEl.style.color = 'green';
-                    notifyAdminViaBot(`新用户注册: ${phone}`);
-                    setTimeout(() => window.location.href = 'login.html', 2000);
+                    // notifyAdminViaBot(`新用户注册: ${phone}`); // 如果有这个函数
+                    setTimeout(() => { window.location.href = 'login.html'; }, 2000);
                 } else {
                     messageEl.style.color = 'red';
                 }
             } catch (error) {
-                console.error("Error during registration:", error);
-                messageEl.textContent = error.message || '注册过程中发生错误。';
+                messageEl.textContent = (error && error.message) ? error.message : '注册过程中发生错误。';
                 messageEl.style.color = 'red';
             }
         });
     } else {
-        console.warn("Register form not found on register page.");
+        console.warn("Portal_App.js: Register form or message element not found on register page.");
     }
 }
 
@@ -74,162 +73,166 @@ function initLoginPage() {
     const loginForm = document.getElementById('loginForm');
     const messageEl = document.getElementById('message');
 
-    if (loginForm) {
-        console.log("Login form found.");
+    if (loginForm && messageEl) {
+        console.log("Portal_App.js: Login form and message element found.");
         loginForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            console.log("Login form submitted.");
+            console.log("Portal_App.js: Login form submitted.");
             const phone = document.getElementById('phone').value;
             const password = document.getElementById('password').value;
+            messageEl.textContent = '';
 
             try {
-                console.log("Attempting to login user:", phone);
-                const result = await loginUser(phone, password);
-                console.log("Login API response:", result);
-                if (result.success) {
+                const result = await loginUser(phone, password); // loginUser 内部应处理 token 存储
+                if (result && result.success) {
                     messageEl.textContent = '登录成功！正在跳转...';
                     messageEl.style.color = 'green';
-                    notifyAdminViaBot(`用户登录: ${phone}`);
-                    setTimeout(() => window.location.href = 'index.html', 1000);
+                    // notifyAdminViaBot(`用户登录: ${phone}`);
+                    setTimeout(() => { window.location.href = 'index.html'; }, 1000);
                 } else {
-                    messageEl.textContent = result.message;
+                    messageEl.textContent = (result && result.message) ? result.message : '登录失败，请检查凭证。';
                     messageEl.style.color = 'red';
                 }
             } catch (error) {
-                console.error("Error during login:", error);
-                messageEl.textContent = error.message || '登录过程中发生错误。';
+                messageEl.textContent = (error && error.message) ? error.message : '登录过程中发生错误。';
                 messageEl.style.color = 'red';
             }
         });
     } else {
-        console.warn("Login form not found on login page.");
+        console.warn("Portal_App.js: Login form or message element not found on login page.");
     }
 }
 
 async function initIndexPage() {
-    console.log("initIndexPage called"); // 调试1
+    console.log("Portal_App.js: initIndexPage called");
 
-    const token = getToken();
-    console.log("Token on index page (from localStorage):", token); // 调试2
+    const token = getToken(); // 从 localStorage 获取 token
+    console.log("Portal_App.js: Token on index page (from localStorage):", token ? token.substring(0,10)+'...' : null);
 
     const userInfoEl = document.getElementById('userInfo');
     const scoresEl = document.getElementById('scoresDisplay');
     const gameLinksEl = document.getElementById('gameLinks');
-    console.log("gameLinksEl (HTML element found by getElementById):", gameLinksEl); // 调试3
-
     const loginLinkEl = document.getElementById('loginLink');
     const logoutButtonEl = document.getElementById('logoutButton');
 
-    if (!token) {
-        console.log("No token found in localStorage, user is not logged in. Showing login link."); // 调试4
-        if (loginLinkEl) loginLinkEl.style.display = 'block';
-        if (logoutButtonEl) logoutButtonEl.style.display = 'none';
-        if (userInfoEl) userInfoEl.innerHTML = '<p>请先<a href="login.html">登录</a>查看内容。</p>';
-        if (gameLinksEl) {
-            console.log("Hiding gameLinksEl because no token.");
-            gameLinksEl.style.display = 'none';
-        }
-        return; // 结束函数执行，因为用户未登录
+    if (!userInfoEl || !scoresEl || !gameLinksEl || !loginLinkEl || !logoutButtonEl) {
+        console.error("Portal_App.js: One or more critical UI elements for index page not found. Aborting initIndexPage.");
+        return;
     }
 
-    // 如果代码执行到这里，说明 token 存在
-    console.log("Token found in localStorage. User is considered logged in. Proceeding to fetch profile and show game links."); // 调试5
-    if (loginLinkEl) loginLinkEl.style.display = 'none';
-    if (logoutButtonEl) {
-        logoutButtonEl.style.display = 'block';
-        // 确保只添加一次事件监听器
-        if (!logoutButtonEl.dataset.listenerAttached) {
-            logoutButtonEl.addEventListener('click', () => {
-                console.log("Logout button clicked.");
-                const currentUser = getCurrentUser();
-                if (currentUser) {
-                    notifyAdminViaBot(`用户登出: ${currentUser.phone_number || currentUser.username}`);
-                }
-                logoutUser();
-            });
-            logoutButtonEl.dataset.listenerAttached = 'true';
-        }
+    if (!token) {
+        console.log("Portal_App.js: No token found, user is not logged in. Showing login link.");
+        loginLinkEl.style.display = 'block';
+        logoutButtonEl.style.display = 'none';
+        userInfoEl.innerHTML = '<p>请先<a href="login.html">登录</a>查看内容。</p>';
+        scoresEl.innerHTML = ''; // 清空积分区
+        gameLinksEl.style.display = 'none';
+        return;
+    }
+
+    console.log("Portal_App.js: Token found. User logged in. Proceeding to fetch profile.");
+    loginLinkEl.style.display = 'none';
+    logoutButtonEl.style.display = 'block';
+    if (!logoutButtonEl.dataset.listenerAttached) { // 防止重复添加监听器
+        logoutButtonEl.addEventListener('click', () => {
+            console.log("Portal_App.js: Logout button clicked.");
+            // const currentUser = getCurrentUser(); // getCurrentUser 依赖 localStorage
+            // if (currentUser) {
+            //     notifyAdminViaBot(`用户登出: ${currentUser.phone_number || currentUser.username}`);
+            // }
+            logoutUser(); // logoutUser 内部应处理 localStorage 清理和页面跳转
+        });
+        logoutButtonEl.dataset.listenerAttached = 'true';
     }
 
     try {
-        console.log("Attempting to fetch user profile with token:", token);
-        const profileData = await getUserProfile(); // getUserProfile 内部会处理 401 并可能重定向
-        console.log("User profile API response:", profileData);
+        userInfoEl.innerHTML = '<p>正在加载用户信息...</p>'; // 初始提示
+        scoresEl.innerHTML = '';
+        gameLinksEl.style.display = 'none'; // 先隐藏游戏链接
 
-        if (profileData && profileData.success) { // 确保profileData不是undefined/null
+        const profileData = await getUserProfile(); // getUserProfile 内部应使用 token
+        console.log("Portal_App.js: User profile API response:", profileData);
+
+        if (profileData && profileData.success && profileData.user) {
             const user = profileData.user;
-            const scores = profileData.scores;
+            const scores = profileData.scores || {}; //确保scores是对象
 
-            if (userInfoEl) {
-                console.log("Updating userInfoEl with user data:", user);
-                userInfoEl.innerHTML = `
-                    <p>欢迎, <strong>${user.username || user.phone_number}</strong>!</p>
-                    <p>手机号: ${user.phone_number}</p>
-                    <p>注册时间: ${new Date(user.created_at).toLocaleDateString()}</p>
-                `;
-            } else {
-                console.warn("userInfoEl not found on index page.");
-            }
+            userInfoEl.innerHTML = `
+                <p>欢迎, <strong>${user.username || user.phone_number}</strong>!</p>
+                <p>手机号: ${user.phone_number}</p>
+                <p>注册时间: ${new Date(user.created_at).toLocaleDateString()}</p>
+            `;
 
-            if (scoresEl) {
-                console.log("Updating scoresEl with scores data:", scores);
-                let scoresHTML = '<h3>你的游戏积分:</h3><ul>';
-                const gameNames = {
-                    'doudizhu': '斗地主',
-                    'chudadi': '锄大地',
-                    'shisanshui': '十三水'
-                };
-                if (scores && Object.keys(scores).length > 0) {
-                    for (const gameType in scores) {
-                        const gameData = scores[gameType];
-                        scoresHTML += `<li>${gameNames[gameType] || gameType}: ${gameData.score}分 (局数: ${gameData.matches_played}, 胜场: ${gameData.wins})</li>`;
-                    }
+            let scoresHTML = '<h3>你的游戏积分:</h3><ul>';
+            const gameNames = { 'doudizhu': '斗地主', 'chudadi': '锄大地', 'shisanshui': '十三水' };
+            const gameTypes = ['doudizhu', 'chudadi', 'shisanshui']; // 定义一个顺序
+
+            let hasScores = false;
+            gameTypes.forEach(gameType => {
+                if (scores[gameType]) {
+                    const gameData = scores[gameType];
+                    scoresHTML += `<li>${gameNames[gameType] || gameType}: ${gameData.score || 0}分 (局数: ${gameData.matches_played || 0}, 胜场: ${gameData.wins || 0})</li>`;
+                    hasScores = true;
                 } else {
-                    scoresHTML += '<li>暂无游戏记录</li>';
+                    // 如果某个游戏没有积分记录，也可以显示为0
+                    scoresHTML += `<li>${gameNames[gameType] || gameType}: 0分 (局数: 0, 胜场: 0)</li>`;
                 }
-                scoresHTML += '</ul>';
-                scoresEl.innerHTML = scoresHTML;
-            } else {
-                console.warn("scoresEl not found on index page.");
+            });
+            if (!hasScores && Object.keys(scores).length === 0 ) { // 如果scores对象为空
+                 scoresHTML += '<li>暂无任何游戏积分记录。</li>';
             }
+            scoresHTML += '</ul>';
+            scoresEl.innerHTML = scoresHTML;
 
-            if (gameLinksEl) {
-                console.log("gameLinksEl found. Preparing to show game links."); // 调试6
-                gameLinksEl.style.display = 'block';
-                const doudizhuGameUrl = 'https://dzz.9526.ip-ddns.com'; // 请务必再次确认这里是你替换后的URL
-                // const chudadiGameUrl = 'https://your-chudadi-game.pages.dev';
-                // const shisanshuiGameUrl = 'https://your-shisanshui-game.pages.dev';
-                console.log("Using doudizhuGameUrl:", doudizhuGameUrl); // 调试7
-                console.log("Token being used for link construction:", token); // 调试8
+            // ==============================================================
+            // 关键修改：更新斗地主游戏的URL并确保token正确传递
+            // ==============================================================
+            console.log("Portal_App.js: Preparing to show game links.");
+            gameLinksEl.style.display = 'block'; // 显示游戏链接区域
 
+            const doudizhuGameUrl = 'https://dzz.9526.ip-ddns.com'; // 你的新的斗地主前端URL
+            // const chudadiGameUrl = 'YOUR_CHUDADI_GAME_URL_HERE';
+            // const shisanshuiGameUrl = 'YOUR_SHISANSHUI_GAME_URL_HERE';
+
+            console.log("Portal_App.js: Using doudizhuGameUrl:", doudizhuGameUrl);
+            const currentTokenForLink = getToken(); // 再次获取最新的token，以防万一
+            console.log("Portal_App.js: Token being used for link construction:", currentTokenForLink ? currentTokenForLink.substring(0,10)+'...' : null);
+
+            if (currentTokenForLink) { // 只有当token存在时才生成带token的链接
                 gameLinksEl.innerHTML = `
                     <h3>开始游戏:</h3>
                     <ul>
-                        <li><a href="${doudizhuGameUrl}?token=${token}" target="_blank">斗地主</a></li>
+                        <li><a href="${doudizhuGameUrl}/?token=${currentTokenForLink}" target="_blank">斗地主</a></li>
                         <li><a href="#" onclick="alert('锄大地游戏待开发'); return false;">锄大地 (待开发)</a></li>
                         <li><a href="#" onclick="alert('十三水游戏待开发'); return false;">十三水 (待开发)</a></li>
                     </ul>
+                    <p><small>游戏将在新标签页打开。</small></p>
                 `;
-                console.log("Game links HTML has been set into gameLinksEl."); // 调试9
             } else {
-                // 这个情况理论上不应该发生，因为如果 gameLinksEl 为 null，上面的 console.log(调试3)就会显示
-                console.error("Critical: gameLinksEl is null or undefined at the point of setting HTML, even though it was checked before. This should not happen."); // 调试10
+                // 理论上不应该到这里，因为函数开头已经检查过token了
+                gameLinksEl.innerHTML = `<p>无法生成游戏链接，请尝试重新登录。</p>`;
+                console.error("Portal_App.js: Token was present at start of function but is now null before link generation. This is unexpected.");
             }
+            console.log("Portal_App.js: Game links HTML has been set.");
 
         } else {
-            // profileData.success is false OR profileData is null/undefined
-            console.warn("Failed to get user profile or profile data indicates failure. Message:", profileData ? profileData.message : "No profile data returned");
-            if (userInfoEl) userInfoEl.innerHTML = `<p>获取用户信息失败: ${profileData ? profileData.message : "请检查网络连接。"} 请尝试<a href="login.html">重新登录</a>。</p>`;
-            // 注意: getUserProfile 内部的 request 函数在遇到 401 时会自动调用 logoutUser 并重定向
-            // 所以如果这里执行，通常是token有效但后端返回了 success: false 的情况
+            const errMsg = (profileData && profileData.message) ? profileData.message : "无法连接到服务器或凭证无效";
+            console.warn("Portal_App.js: Failed to get user profile or profile data invalid. Message:", errMsg);
+            userInfoEl.innerHTML = `<p>获取用户信息失败: ${errMsg}。请尝试<a href="login.html">重新登录</a>。</p>`;
+            scoresEl.innerHTML = '';
+            gameLinksEl.style.display = 'none';
+            // 可选：如果 getUserProfile 明确因为 token 无效而失败 (例如API返回401)，则登出用户
+            // if (profileData && profileData.message && profileData.message.toLowerCase().includes('未授权')) {
+            //     logoutUser();
+            // }
         }
     } catch (error) {
-        console.error("Error during initIndexPage while fetching profile or updating UI:", error);
-        if (userInfoEl) userInfoEl.innerHTML = `<p>加载用户信息时出错: ${error.message}。请<a href="login.html">尝试重新登录</a>。</p>`;
+        console.error("Portal_App.js: Exception during initIndexPage while fetching profile or updating UI:", error);
+        if (userInfoEl) userInfoEl.innerHTML = `<p>加载用户信息时发生错误: ${error.message}。请<a href="login.html">尝试重新登录</a>。</p>`;
+        scoresEl.innerHTML = '';
+        gameLinksEl.style.display = 'none';
     }
 }
 
-// 辅助函数：通过Telegram Bot发送通知 (前端 -> 后端 -> Telegram)
-async function notifyAdminViaBot(message) {
-    console.log("Simulating BOT NOTIFICATION:", message);
-}
+// 你的 api.js 导出的其他函数（registerUser, loginUser, etc.）应保持不变
+// 以及可能的 notifyAdminViaBot 函数
