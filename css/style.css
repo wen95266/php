@@ -18,20 +18,19 @@ header.main-header { background-color: #fff; color: #343a40; padding: 1.25rem 0;
 header.main-header .container { display: flex; justify-content: space-between; align-items: center; background-color: transparent; box-shadow: none; padding: 0; margin: 0 auto; }
 header.main-header h1 { margin: 0; font-size: 1.625rem; color: #212529; }
 header.main-header h1 a { color: inherit; text-decoration: none; }
-nav.main-nav ul { list-style: none; display: flex; align-items: center; }
+nav.main-nav ul { list-style: none; display: flex; align-items: center; padding-left: 0; /* 移除ul默认的padding */ }
 nav.main-nav ul li { margin-left: 15px; }
-nav.main-nav ul li a, nav.main-nav ul li button, a.nav-button {
+nav.main-nav ul li:first-child { margin-left: 0; } /* 第一个导航项无左边距 */
+nav.main-nav ul li a, nav.main-nav ul li button, button.nav-button { /* button#scoreManagementBtn 应用 .nav-button 类 */
     color: #495057; text-decoration: none; font-weight: 500; font-size: 1rem;
     padding: 8px 14px; border-radius: 6px; transition: background-color 0.2s ease, color 0.2s ease;
-    background: none; border: none; cursor: pointer; display: inline-block;
+    background: none; border: none; cursor: pointer; display: inline-block; line-height: normal; /* 确保按钮文字垂直居中 */
 }
-nav.main-nav ul li a:hover, nav.main-nav ul li button:hover, a.nav-button:hover { background-color: #e9ecef; color: #0077cc; text-decoration: none; }
+nav.main-nav ul li a:hover, nav.main-nav ul li button:hover, button.nav-button:hover { background-color: #e9ecef; color: #0077cc; text-decoration: none; }
 nav.main-nav ul li button#logoutButton { background-color: #e74c3c; color: white; padding: 8px 16px; }
 nav.main-nav ul li button#logoutButton:hover { background-color: #c0392b; }
-/* 积分管理按钮，如果使用button元素 */
-button#scoreManagementBtn.nav-button {
-    /* 可以与 a.nav-button 共享样式，或添加特定样式 */
-    /* background-color: #17a2b8; color: white; */ /* 示例：青色 */
+button#scoreManagementBtn.nav-button { /* 积分管理按钮特定样式，如果需要 */
+    /* background-color: #17a2b8; color: white; */
 }
 
 
@@ -39,7 +38,7 @@ button#scoreManagementBtn.nav-button {
 .main-content-area {}
 section { margin-bottom: 30px; padding: 0; border: none; border-radius: 0; }
 section:last-child { margin-bottom: 0; }
-section h2, #userProfileSection h3, #gameLinks h2 {
+section h2, #userProfileSection h3, #gameLinks h2 { /* #gameLinks内的h2也应用此样式 */
     color: #343a40; margin-top: 0; margin-bottom: 20px;
     padding-bottom: 10px; border-bottom: 2px solid #0077cc;
     font-size: 1.5rem;
@@ -47,17 +46,14 @@ section h2, #userProfileSection h3, #gameLinks h2 {
 
 /* ==== 表单样式 ==== */
 form { margin-top: 20px; }
-form div.form-group, form div { margin-bottom: 20px; } /* 确保模态框内的也应用 */
+form div.form-group, form div { margin-bottom: 20px; }
 form label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 1rem; color: #495057;}
 form input[type="text"], form input[type="tel"], form input[type="email"], form input[type="password"], form input[type="number"], form select {
     width: 100%; padding: 12px 15px; border: 1px solid #ced4da;
     border-radius: 6px; font-size: 1rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease; background-color: #f8f9fa;
 }
-form input:focus, form select:focus {
-    border-color: #0077cc; outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(0, 119, 204, 0.2); background-color: #fff;
-}
+form input:focus, form select:focus { border-color: #0077cc; outline: none; box-shadow: 0 0 0 0.2rem rgba(0, 119, 204, 0.2); background-color: #fff; }
 form button[type="submit"] {
     background-color: #0077cc; color: white; padding: 12px 25px; border: none;
     border-radius: 6px; cursor: pointer; font-size: 1.05rem;
@@ -67,17 +63,13 @@ form button[type="submit"]:hover { background-color: #005ea6; }
 .form-link { display: block; text-align: center; margin-top: 20px; font-size: 0.95rem; }
 
 /* ==== 消息提示 ==== */
-p.message, #message, #transferMessage { /* #transferMessage 应用通用消息样式 */
+p.message, #message, #transferMessage {
     margin: 20px 0; padding: 15px 20px; border-radius: 6px;
     font-weight: 500; font-size: 1rem;
     border-width: 1px; border-style: solid;
 }
-p.message.success, #message.success, #transferMessage.success {
-    background-color: #e6ffed; color: #006421; border-color: #a3e9b8;
-}
-p.message.error, #message.error, #transferMessage.error {
-    background-color: #ffebee; color: #c62828; border-color: #ffcdd2;
-}
+p.message.success, #message.success, #transferMessage.success { background-color: #e6ffed; color: #006421; border-color: #a3e9b8; }
+p.message.error, #message.error, #transferMessage.error { background-color: #ffebee; color: #c62828; border-color: #ffcdd2; }
 
 /* ==== 用户信息和积分卡片样式 ==== */
 #userProfileSection { display: flex; flex-wrap: wrap; gap: 30px; margin-bottom: 30px; }
@@ -85,7 +77,7 @@ p.message.error, #message.error, #transferMessage.error {
 .user-info-card p.welcome-message { font-size: 1.625rem; color: #212529; margin-bottom: 20px; font-weight: 600; }
 .user-info-card .user-details p { font-size: 1.05rem; color: #495057; margin-bottom: 10px; line-height: 1.6; }
 .user-info-card .user-details p strong { color: #343a40; margin-right: 8px; }
-.scores-card h3 {} /* 已被 section h3 覆盖 */
+.scores-card h3 {}
 .scores-card .scores-list { list-style: none; padding-left: 0; margin-top: 5px; }
 .scores-card .scores-list li { display: flex; justify-content: space-between; align-items: center; padding: 12px 5px; border-bottom: 1px solid #f1f3f5; font-size: 1.05rem; }
 .scores-card .scores-list li:last-child { border-bottom: none; }
@@ -106,76 +98,39 @@ ul.game-card-list li a p.game-description { font-size: 0.95rem; color: #5a6268; 
 
 /* ==== 模态框样式 ==== */
 .modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top */
+    display: none; /* JS会控制显示为 flex */
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.6); /* Darker overlay */
-    padding-top: 5vh; /* Adjust vertical position */
-    display: flex; /* Use flex to center content */
-    align-items: center;
-    justify-content: center;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    align-items: center; /* 垂直居中 */
+    justify-content: center; /* 水平居中 */
 }
-
 .modal-content {
     background-color: #fff;
-    /* margin: auto; */ /* Flex centering handles this */
     padding: 30px 40px;
-    border: none; /* Remove border, rely on shadow */
+    border: none;
     width: 90%;
-    max-width: 480px; /* Modal max width */
+    max-width: 480px;
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.15);
     position: relative;
-    text-align: left; /* Default text align */
+    text-align: left;
 }
-
-.modal-content h3 {
-    margin-top: 0;
-    margin-bottom: 25px;
-    color: #333;
-    text-align: center;
-    font-size: 1.625rem; /* Modal title */
-}
-
-.close-button {
-    color: #888; /* Lighter close button */
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 32px; /* Larger close button */
-    font-weight: bold;
-    line-height: 1; /* Ensure it's centered */
-}
-
-.close-button:hover,
-.close-button:focus {
-    color: #333; /* Darker on hover */
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.modal-content .form-group select { /* Copied from main form, specific to modal if needed */
+.modal-content h3 { margin-top: 0; margin-bottom: 25px; color: #333; text-align: center; font-size: 1.625rem; }
+.close-button { color: #888; position: absolute; top: 15px; right: 20px; font-size: 32px; font-weight: bold; line-height: 1; }
+.close-button:hover, .close-button:focus { color: #333; text-decoration: none; cursor: pointer; }
+.modal-content .form-group select {
     appearance: none;
     background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%230077cc%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.9z%22%2F%3E%3C%2Fsvg%3E');
-    background-repeat: no-repeat;
-    background-position: right .8em top 50%, 0 0;
-    background-size: .7em auto, 100%;
-    padding-right: 2.8em;
+    background-repeat: no-repeat; background-position: right .8em top 50%, 0 0; background-size: .7em auto, 100%; padding-right: 2.8em;
 }
-
-.modal-content button[type="submit"]#submitTransferBtn { /* ID specific for modal submit */
-    /* Inherits general form button styles, add specifics if needed */
-}
-.modal-content p#transferMessage {
-    margin-top: 20px;
-    text-align: center;
-}
-
+.modal-content button[type="submit"]#submitTransferBtn {}
+.modal-content p#transferMessage { margin-top: 20px; text-align: center; }
 
 /* ==== 页脚 ==== */
 footer.main-footer { text-align: center; margin-top: auto; padding: 25px 0; background: #e9ecef; color: #6c757d; font-size: 0.95rem; border-top: 1px solid #dee2e6; }
@@ -187,7 +142,7 @@ footer.main-footer { text-align: center; margin-top: auto; padding: 25px 0; back
     header.main-header .container { flex-direction: column; gap: 15px; }
     nav.main-nav ul { flex-direction: column; align-items: center; gap: 10px; width: 100%;}
     nav.main-nav ul li { margin-left: 0; width: 100%; text-align: center;}
-    nav.main-nav ul li a, nav.main-nav ul li button, a.nav-button { width: 80%; display: block; margin: 5px auto; }
+    nav.main-nav ul li a, nav.main-nav ul li button, a.nav-button, button.nav-button { width: 80%; display: block; margin: 5px auto; }
     #userProfileSection { flex-direction: column; }
     ul.game-card-list { grid-template-columns: 1fr; }
     h1 { font-size: 1.75rem; } h2 { font-size: 1.375rem; } h3 { font-size: 1.125rem; }
