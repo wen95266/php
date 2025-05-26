@@ -1,268 +1,315 @@
-/* portal-frontend/css/style.css */
+/* portal-frontend/css/style.css - 简约美观版 */
 
 /* ==== 全局重置和基础样式 ==== */
-* {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+html {
+    font-size: 100%; /* 基准字体大小，方便使用rem单位 */
+}
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.6;
-    background-color: #f4f7f6; /* 更柔和的背景色 */
-    color: #333;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Inter是一个很好的现代无衬线字体 */
+    line-height: 1.7; /* 增加行高，提高可读性 */
+    background-color: #f8f9fa; /* 非常浅的灰色背景 */
+    color: #212529; /* 深灰色文字，对比度好 */
     display: flex;
-    flex-direction: column; /* 使页脚能固定在底部（如果内容不足） */
+    flex-direction: column;
     min-height: 100vh;
+    font-size: 1rem; /* 等同于 16px (如果html font-size是100%) */
 }
 
 .container {
     width: 90%;
-    max-width: 1100px; /* 稍微加宽一些 */
-    margin: 30px auto; /* 上下边距 */
-    padding: 25px 30px;
+    max-width: 960px; /* 稍微窄一点，更专注内容 */
+    margin: 40px auto; /* 增加上下边距 */
+    padding: 30px 40px; /* 增加内边距 */
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    flex-grow: 1; /* 使容器在内容不足时也能撑满空间 */
+    border-radius: 12px; /* 更大的圆角 */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.07); /* 更柔和的阴影 */
+    flex-grow: 1;
 }
 
 a {
-    color: #007bff;
+    color: #0077cc; /* 现代蓝色 */
     text-decoration: none;
+    transition: color 0.2s ease;
 }
 
 a:hover {
-    text-decoration: underline;
-    color: #0056b3;
+    color: #005ea6; /* 悬停时颜色加深 */
+    text-decoration: none; /* 通常链接悬停时不需要下划线 */
 }
 
-img {
-    max-width: 100%;
-    height: auto;
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600; /* 字体稍粗一点 */
+    line-height: 1.3;
+    color: #343a40; /* 标题深灰色 */
 }
+
+h1 { font-size: 2.25rem; margin-bottom: 1.5rem; } /* 约36px */
+h2 { font-size: 1.75rem; margin-bottom: 1.25rem; } /* 约28px */
+h3 { font-size: 1.375rem; margin-bottom: 1rem; } /* 约22px */
+p { margin-bottom: 1.25rem; font-size: 1.125rem; color: #495057;} /* 段落字体也增大，约18px */
+
 
 /* ==== 头部和导航 ==== */
 header.main-header {
-    background-color: #343a40; /* 深色导航背景 */
-    color: #fff;
-    padding: 1rem 0;
-    margin-bottom: 30px; /* 与下方内容的间距 */
+    background-color: #fff; /* 白色背景 */
+    color: #343a40; /* 深色文字 */
+    padding: 1.5rem 0; /* 增加padding */
+    border-bottom: 1px solid #e9ecef; /* 浅分割线 */
+    margin-bottom: 40px;
 }
 
-header.main-header .container { /* 让头部内的容器也应用一些样式 */
+header.main-header .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: transparent; /* 头部容器背景透明 */
+    background-color: transparent;
     box-shadow: none;
-    padding-top: 0;
-    padding-bottom: 0;
-    margin-top: 0;
-    margin-bottom: 0;
+    padding: 0; margin: 0 auto; /* 确保容器在头部内居中 */
 }
 
 header.main-header h1 {
     margin: 0;
-    font-size: 1.8em;
-    color: #fff; /* 确保标题是白色 */
+    font-size: 1.75rem; /* 约28px */
+    color: #212529;
 }
-header.main-header h1 a { /* 如果标题是链接 */
-    color: #fff;
+header.main-header h1 a {
+    color: inherit; /* 继承父元素颜色 */
     text-decoration: none;
 }
 
-
 nav.main-nav ul {
     list-style: none;
-    padding: 0;
-    margin: 0;
     display: flex;
+    align-items: center; /* 垂直居中导航项 */
 }
 
 nav.main-nav ul li {
-    margin-left: 20px;
+    margin-left: 25px; /* 导航项间距 */
 }
 
 nav.main-nav ul li a,
 nav.main-nav ul li button {
-    color: #f8f9fa; /* 导航链接浅色 */
+    color: #495057; /* 导航链接颜色 */
     text-decoration: none;
-    font-weight: 500;
-    padding: 8px 12px;
-    border-radius: 4px;
+    font-weight: 500; /* 中等粗细 */
+    font-size: 1.05rem; /* 约17px */
+    padding: 10px 15px;
+    border-radius: 6px;
     transition: background-color 0.2s ease, color 0.2s ease;
-    background: none; /* 确保按钮背景透明 */
-    border: none;     /* 确保按钮无边框 */
-    cursor: pointer;  /* 确保按钮有手型指针 */
-    font-size: 1em;   /* 与链接字体大小一致 */
+    background: none; border: none; cursor: pointer;
 }
 
 nav.main-nav ul li a:hover,
 nav.main-nav ul li button:hover {
-    background-color: #495057; /* 悬停背景变深 */
-    color: #fff;
-    text-decoration: none;
+    background-color: #e9ecef; /* 浅灰色悬停背景 */
+    color: #0077cc; /* 链接悬停变蓝 */
 }
-nav.main-nav ul li button#logoutButton { /* 登出按钮特定样式 */
-    background-color: #dc3545; /* 红色 */
+nav.main-nav ul li button#logoutButton {
+    background-color: #e74c3c; /* 更柔和的红色 */
     color: white;
+    padding: 10px 18px;
 }
 nav.main-nav ul li button#logoutButton:hover {
-    background-color: #c82333;
+    background-color: #c0392b;
 }
 
 
 /* ==== 主要内容区域 ==== */
-main {
-    /* .container 已经处理了大部分布局 */
-}
-
 section {
-    margin-bottom: 30px;
-    padding: 20px;
-    background-color: #fdfdfd; /* section 背景稍有区分 */
-    border: 1px solid #e9e9e9;
-    border-radius: 6px;
+    margin-bottom: 40px; /* 增加section间距 */
+    padding: 25px 30px; /* 增加section内边距 */
+    background-color: #fff; /* section背景可以与主容器一致，或略有不同 */
+    border: none; /* 移除边框，依赖阴影和间距区分 */
+    border-radius: 8px;
+    /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); */ /* 如果需要，可以给section也加阴影 */
+}
+section:last-child {
+    margin-bottom: 0; /* 最后一个section没有下边距 */
 }
 
-section h2, section h3 {
-    color: #333;
-    margin-top: 0;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-}
 
 /* ==== 表单样式 (用于登录、注册页) ==== */
-form div {
-    margin-bottom: 15px;
+form {
+    margin-top: 20px;
 }
-
+form div {
+    margin-bottom: 20px; /* 增加表单项间距 */
+}
 form label {
     display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #555;
+    margin-bottom: 8px;
+    font-weight: 500; /* 中等粗细 */
+    font-size: 1.05rem; /* 约17px */
+    color: #495057;
 }
-
 form input[type="text"],
 form input[type="tel"],
 form input[type="email"],
 form input[type="password"] {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1em;
-    transition: border-color 0.2s ease;
+    padding: 14px 16px; /* 增大输入框padding */
+    border: 1px solid #ced4da; /* 浅边框 */
+    border-radius: 6px;
+    font-size: 1.05rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: #f8f9fa; /* 输入框浅背景 */
 }
-
 form input[type="text"]:focus,
 form input[type="tel"]:focus,
 form input[type="email"]:focus,
 form input[type="password"]:focus {
-    border-color: #007bff;
+    border-color: #0077cc;
     outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(0, 119, 204, 0.2);
+    background-color: #fff;
 }
-
 form button[type="submit"] {
-    background-color: #007bff; /* 主题蓝色 */
+    background-color: #0077cc;
     color: white;
-    padding: 12px 20px;
+    padding: 14px 25px; /* 增大按钮 */
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 1.1em;
-    transition: background-color 0.2s ease;
-}
-
-form button[type="submit"]:hover {
-    background-color: #0056b3;
-}
-
-p.message, #message { /* 用于显示API反馈消息 */
-    margin-top: 15px;
-    padding: 12px;
-    border-radius: 4px;
+    font-size: 1.125rem; /* 约18px */
     font-weight: 500;
+    transition: background-color 0.2s ease;
+    width: 100%; /* 按钮宽度100% */
+    margin-top: 10px; /* 与上方元素间距 */
 }
-p.message.success, #message.success { /* 假设你会用JS添加 success/error 类 */
-    background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+form button[type="submit"]:hover {
+    background-color: #005ea6;
+}
+.form-link { /* 用于 "已有账号？去登录" 等链接 */
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 1rem;
+}
+
+
+/* ==== 消息提示 ==== */
+p.message, #message {
+    margin: 20px 0; /* 上下边距 */
+    padding: 15px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 1.05rem;
+    border-width: 1px;
+    border-style: solid;
+}
+p.message.success, #message.success {
+    background-color: #e6ffed; color: #006421; border-color: #a3e9b8;
 }
 p.message.error, #message.error {
-    background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+    background-color: #ffebee; color: #c62828; border-color: #ffcdd2;
 }
 
 
 /* ==== 用户信息和积分展示 ==== */
-#userInfo p, #scoresDisplay ul li {
-    font-size: 1.1em;
-    margin-bottom: 8px;
+#userInfo p {
+    font-size: 1.125rem; /* 约18px */
+    margin-bottom: 10px;
+    color: #343a40;
 }
+#userInfo strong {
+    color: #0077cc;
+}
+
 #scoresDisplay ul {
     list-style: none;
     padding-left: 0;
 }
+#scoresDisplay ul li {
+    font-size: 1.125rem;
+    margin-bottom: 8px;
+    padding: 10px 0; /* 增加上下padding */
+    border-bottom: 1px solid #f1f3f5; /* 更浅的分割线 */
+}
+#scoresDisplay ul li:last-child {
+    border-bottom: none;
+}
 
 
-/* ==== 游戏链接/卡片式列表 (示例) ==== */
+/* ==== 游戏链接/卡片式列表 ==== */
 #gameLinks ul {
     list-style: none;
     padding: 0;
-    display: flex;
-    flex-wrap: wrap; /* 允许换行 */
-    gap: 20px; /* 卡片间距 */
+    display: grid; /* 使用Grid布局 */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* 响应式列 */
+    gap: 25px; /* 卡片间距 */
 }
-
 #gameLinks ul li {
     background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 0; /* 移除li的padding，让a标签撑满 */
-    /* flex: 1 1 300px; */ /* 弹性布局，每个卡片基础宽度300px */
-    /* min-width: 280px; */ /* 最小宽度 */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    overflow: hidden; /* 如果图片超出，则裁剪 */
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06); /* 更柔和的卡片阴影 */
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    overflow: hidden; /* 确保内容不出界 */
+    display: flex; /* 使链接能撑满li */
+    flex-direction: column; /* 使内容垂直排列 */
 }
 #gameLinks ul li:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    transform: translateY(-6px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
-
 #gameLinks ul li a {
-    display: block; /* 让a标签成为块级元素，可以设置宽高和padding */
-    padding: 20px;
+    display: flex;
+    flex-direction: column; /* a标签内部也垂直排列 */
+    flex-grow: 1; /* 让a标签填满li */
+    padding: 25px; /* 卡片内边距 */
     text-decoration: none;
-    color: #333;
-    text-align: center;
+    color: #343a40;
 }
-#gameLinks ul li a img.game-thumbnail { /* 假设你有游戏缩略图 */
-    max-width: 100%;
-    height: 150px; /* 固定缩略图高度 */
-    object-fit: cover; /* 图片裁剪以适应 */
-    border-radius: 4px;
-    margin-bottom: 10px;
+#gameLinks ul li a img.game-thumbnail {
+    width: 100%; /* 图片宽度占满 */
+    height: 160px; /* 固定高度 */
+    object-fit: cover;
+    border-radius: 6px; /* 图片圆角 */
+    margin-bottom: 15px;
 }
 #gameLinks ul li a h4 { /* 游戏名称 */
-    margin: 10px 0 5px 0;
-    color: #007bff;
+    font-size: 1.375rem; /* 约22px */
+    margin-top: 0; /* 移除图片和标题间的默认margin */
+    margin-bottom: 10px;
+    color: #0077cc;
 }
 #gameLinks ul li a p.game-description { /* 游戏描述 */
-    font-size: 0.9em;
-    color: #666;
+    font-size: 1rem; /* 约16px */
+    color: #5a6268; /* 稍浅的描述文字 */
+    flex-grow: 1; /* 使描述文字填满剩余空间 */
+    margin-bottom: 0; /* 移除段落默认下边距 */
 }
 
 
 /* ==== 页脚 ==== */
 footer.main-footer {
     text-align: center;
-    margin-top: auto; /* 将页脚推到底部 */
-    padding: 20px;
-    background: #343a40; /* 与头部一致的深色 */
-    color: #adb5bd; /* 页脚文字浅灰色 */
-    font-size: 0.9em;
+    margin-top: auto;
+    padding: 25px 0; /* 增加页脚padding */
+    background: #e9ecef; /* 页脚浅灰色背景 */
+    color: #6c757d; /* 页脚文字颜色 */
+    font-size: 0.95rem; /* 约15px */
+    border-top: 1px solid #dee2e6; /* 页脚顶部细线 */
+}
+
+/* ==== 响应式调整 (简单示例) ==== */
+@media (max-width: 768px) {
+    html { font-size: 93.75%; } /* 手机上字体稍小一点 (15px基准) */
+    .container { width: 95%; padding: 20px; margin: 20px auto; }
+    header.main-header .container { flex-direction: column; gap: 15px; }
+    nav.main-nav ul { flex-direction: column; align-items: center; gap: 10px; }
+    nav.main-nav ul li { margin-left: 0; }
+    #gameLinks ul { grid-template-columns: 1fr; } /* 手机上卡片单列 */
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+    p { font-size: 1rem; }
 }
