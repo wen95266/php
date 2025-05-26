@@ -196,7 +196,7 @@ async function initIndexPage() {
             if (gameLinksEl) {
                 console.log("gameLinksEl found. Preparing to show game links."); // 调试6
                 gameLinksEl.style.display = 'block';
-                const doudizhuGameUrl = 'https://dzz-9fo.pages.dev'; // 请务必再次确认这里是你替换后的URL
+                const doudizhuGameUrl = 'https://dzz.9526.ip-ddns.com'; // 请务必再次确认这里是你替换后的URL
                 // const chudadiGameUrl = 'https://your-chudadi-game.pages.dev';
                 // const shisanshuiGameUrl = 'https://your-shisanshui-game.pages.dev';
                 console.log("Using doudizhuGameUrl:", doudizhuGameUrl); // 调试7
