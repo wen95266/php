@@ -270,7 +270,7 @@ async function initIndexPage() {
             gameLinksEl.style.display = 'block';
             const doudizhuGameUrl = 'https://dzz.9526.ip-ddns.com'; // 斗地主前端URL
             // !!! 将 YOUR_DEPLOYED_SHISANSHUI_FRONTEND_URL 替换为你新部署的十三水前端的实际URL !!!
-            const shisanshuiGameUrl = 'YOUR_DEPLOYED_SHISANSHUI_FRONTEND_URL_HERE';
+            const shisanshuiGameUrl = 'https://sd.9525.ip-ddns.com';
             // const chudadiGameUrl = 'YOUR_CHUDADI_GAME_URL_HERE'; // 锄大地URL
 
             const currentTokenForLink = getToken();
