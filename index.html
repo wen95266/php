@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>游戏门户 - 欢迎</title>
-    <!-- 引入 Inter 字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- 引入你的CSS -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -19,7 +17,8 @@
                 <ul>
                     <li><a href="login.html" id="loginLink" style="display:none;">登录</a></li>
                     <li><a href="register.html" id="registerLink" style="display:none;">注册</a></li>
-                    <li><a href="index.html" id="manageLink" class="nav-button" style="display:none;">管理中心</a></li>
+                    <!-- 修改按钮文字，并用 button 元素，因为我们会用JS控制弹窗，而不是直接跳转 -->
+                    <li><button id="scoreManagementBtn" class="nav-button" style="display:none;">积分管理</button></li>
                     <li><button id="logoutButton" style="display:none;">登出</button></li>
                 </ul>
             </nav>
@@ -29,24 +28,42 @@
     <div class="container main-content-area">
         <main>
             <section id="userProfileSection">
-                <div id="userInfo" class="user-info-card">
-                    <p class="loading-text">正在加载用户信息...</p>
-                </div>
-                <div id="scoresDisplay" class="scores-card">
-                    <h3>你的游戏积分</h3>
-                    <ul class="scores-list"> <!-- 添加 class -->
-                        <li class="loading-text">正在加载积分...</li>
-                    </ul>
-                </div>
+                <!-- ... (用户信息和积分展示区，与上一版一致) ... -->
             </section>
 
             <section id="gameLinks" class="game-links-section" style="display:none;">
-                <h2>选择游戏</h2> <!-- 移到 ul 外面 -->
-                <ul class="game-card-list"> <!-- 添加 class -->
-                    <!-- 游戏链接将由JS动态生成 -->
-                </ul>
+                <!-- ... (游戏链接区，与上一版一致) ... -->
             </section>
         </main>
+    </div>
+
+    <!-- 新增：积分赠送模态框 -->
+    <div id="transferScoreModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-button" id="closeTransferModalBtn">×</span>
+            <h3>赠送游戏积分</h3>
+            <form id="transferScoreForm">
+                <div class="form-group">
+                    <label for="transferGameType">选择游戏类型:</label>
+                    <select id="transferGameType" name="gameType" required>
+                        <option value="doudizhu">斗地主</option>
+                        <option value="chudadi">锄大地</option>
+                        <option value="shisanshui">十三水</option>
+                        <!-- 如果有通用积分，可以加一个"通用积分"选项 -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="transferAmount">赠送数量:</label>
+                    <input type="number" id="transferAmount" name="amount" min="1" required placeholder="输入正整数">
+                </div>
+                <div class="form-group">
+                    <label for="recipientPhone">接收方手机号:</label>
+                    <input type="tel" id="recipientPhone" name="recipientPhone" required pattern="[0-9]{5,20}" placeholder="输入11位手机号">
+                </div>
+                <button type="submit" id="submitTransferBtn">确认赠送</button>
+            </form>
+            <p id="transferMessage" class="message" style="display:none;"></p>
+        </div>
     </div>
 
     <footer class="main-footer">
