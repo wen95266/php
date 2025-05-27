@@ -1,0 +1,154 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background-color: #f0f0f0;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#game-container {
+    width: 95%;
+    max-width: 1200px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+#game-header {
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+#landlord-cards-area {
+    min-height: 60px; /* Placeholder height for cards */
+    border: 1px dashed #ccc;
+    padding: 5px;
+    margin-top: 5px;
+    background-color: #f9f9f9;
+}
+
+#game-table {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex-grow: 1;
+}
+
+#common-played-area {
+    min-height: 80px; /* Placeholder height */
+    border: 2px solid #3498db;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #eaf5ff;
+    text-align: center;
+}
+
+.player-area {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #fafafa;
+}
+
+.player-info {
+    font-weight: bold;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.player-info .player-role {
+    font-style: italic;
+    color: #27ae60;
+}
+
+.player-info .card-count {
+    background-color: #3498db;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.card-area { /* General styling for areas that will contain cards */
+    display: flex;
+    flex-wrap: wrap; /* Allow cards to wrap */
+    gap: 5px; /* Spacing between cards */
+    align-items: center; /* Align items vertically */
+    min-height: 50px; /* Minimum height for visibility */
+}
+
+.area-label {
+    font-size: 0.9em;
+    color: #555;
+    margin-right: 10px;
+}
+
+/* Placeholder for individual cards - will be created by JS */
+.card-placeholder {
+    width: 40px;
+    height: 60px;
+    background-color: #ddd;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.7em;
+    color: #333;
+}
+
+#player-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+    margin-top: 15px;
+}
+
+#player-actions button {
+    padding: 10px 15px;
+    font-size: 1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #3498db;
+    color: white;
+    transition: background-color 0.3s ease;
+}
+
+#player-actions button:hover {
+    background-color: #2980b9;
+}
+
+#player-actions button#btn-pass,
+#player-actions button#btn-hint {
+    background-color: #95a5a6;
+}
+
+#player-actions button#btn-pass:hover,
+#player-actions button#btn-hint:hover {
+    background-color: #7f8c8d;
+}
+
+/* Example: Position player hands (could be more elaborate) */
+/* For simplicity, we'll use flex order or specific grid placement later if needed */
+/* For now, they will just stack vertically within the #game-table flex column */
+
+/* Specific styling for hand areas if needed */
+.hand-area {
+    background-color: #e8f6e8; /* Light green background for hand areas */
+    padding: 8px;
+    border-radius: 4px;
+    min-height: 70px; /* Ensure visibility for card placeholders */
+}

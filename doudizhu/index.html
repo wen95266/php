@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>斗地主 (Dou Dizhu)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <header id="game-header">
+            <h1>斗地主</h1>
+            <div id="landlord-cards-area" class="card-area">
+                <span class="area-label">底牌 (Landlord's Cards):</span>
+                <!-- Landlord's 3 extra cards will appear here -->
+            </div>
+        </header>
+
+        <main id="game-table">
+            <div id="common-played-area" class="card-area">
+                <span class="area-label">出牌区 (Played Cards):</span>
+                <!-- Cards played by players will appear here -->
+            </div>
+
+            <div id="player1-area" class="player-area">
+                <div class="player-info">
+                    <span>玩家1 (Player 1)</span>
+                    <span class="player-role"></span>
+                    <span class="card-count"></span>
+                </div>
+                <div id="player1-hand" class="hand-area card-area">
+                    <!-- Player 1's cards -->
+                </div>
+            </div>
+
+            <div id="player2-area" class="player-area">
+                <div class="player-info">
+                    <span>玩家2 (Player 2)</span>
+                    <span class="player-role"></span>
+                    <span class="card-count"></span>
+                </div>
+                <div id="player2-hand" class="hand-area card-area">
+                    <!-- Player 2's cards -->
+                </div>
+            </div>
+
+            <div id="player3-area" class="player-area">
+                <div class="player-info">
+                    <span>玩家3 (Player 3)</span>
+                    <span class="player-role"></span>
+                    <span class="card-count"></span>
+                </div>
+                <div id="player3-hand" class="hand-area card-area">
+                    <!-- Player 3's cards -->
+                </div>
+            </div>
+        </main>
+
+        <footer id="player-actions">
+            <button id="btn-bid">叫地主 (Bid)</button>
+            <button id="btn-play">出牌 (Play)</button>
+            <button id="btn-pass">不要 (Pass)</button>
+            <button id="btn-hint">提示 (Hint)</button>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
