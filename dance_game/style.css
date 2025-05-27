@@ -1,0 +1,13 @@
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0; /* Light grey background */
+}
+
+canvas#gameCanvas {
+    border: 1px solid black;
+    background-color: #ffffff; /* White background for the canvas */
+}
