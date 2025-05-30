@@ -1,143 +1,196 @@
-<!-- 注册/登录/显示积分模块 -->
-<div id="auth" style="margin:8px 0;">
-  <div id="loginForm">
-    <input id="phone" placeholder="手机号">
-    <input id="password" type="password" placeholder="密码">
-    <button onclick="login()">登录</button>
-    <button onclick="showRegister()">注册</button>
-  </div>
-  <div id="registerForm" style="display:none">
-    <input id="regPhone" placeholder="手机号">
-    <input id="regNickname" placeholder="昵称">
-    <input id="regPassword" type="password" placeholder="密码">
-    <button onclick="register()">注册</button>
-    <button onclick="showLogin()">返回登录</button>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>十三水注册/登录/积分演示</title>
+  <style>
+    body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 30px; }
+    input { margin: 4px; }
+    #auth, #userInfo { margin-bottom: 20px; }
+    #historyPanel, #adminAddPanel, #adminSubPanel {
+      position: fixed; top: 20%; left: 50%; transform: translate(-50%, 0);
+      background: #fff; border: 1px solid #ccc; padding: 20px; display: none; z-index: 99;
+    }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px;}
+    th, td { border: 1px solid #ccc; padding: 4px 8px;}
+    th { background: #f5f5f5;}
+    .btn { padding: 3px 12px; }
+  </style>
+</head>
+<body>
+  <h2>十三水注册/登录/积分演示</h2>
+  <div id="auth">
+    <div id="loginForm">
+      <input id="phone" placeholder="手机号">
+      <input id="password" type="password" placeholder="密码">
+      <button class="btn" onclick="login()">登录</button>
+      <button class="btn" onclick="showRegister()">注册</button>
+    </div>
+    <div id="registerForm" style="display:none">
+      <input id="regPhone" placeholder="手机号">
+      <input id="regNickname" placeholder="昵称">
+      <input id="regPassword" type="password" placeholder="密码">
+      <button class="btn" onclick="register()">注册</button>
+      <button class="btn" onclick="showLogin()">返回登录</button>
+    </div>
   </div>
   <div id="userInfo" style="display:none">
     <span id="nick"></span> <span id="myscore"></span>
-    <button onclick="logout()">退出</button>
-    <button onclick="showHistory()">积分流水</button>
+    <button class="btn" onclick="logout()">退出</button>
+    <button class="btn" onclick="showHistory()">积分流水</button>
     <span id="adminPanel" style="display:none">
-      <button onclick="showAdminAdd()">管理员加分</button>
-      <button onclick="showAdminSub()">管理员减分</button>
+      <button class="btn" onclick="showAdminAdd()">管理员加分</button>
+      <button class="btn" onclick="showAdminSub()">管理员减分</button>
     </span>
   </div>
-</div>
-<!-- 游戏主页面内容继续... -->
-<!-- 管理员加分弹窗 -->
-<div id="adminAddPanel" style="display:none">
-  <input id="addPhone" placeholder="手机号">
-  <input id="addValue" placeholder="加分数">
-  <button onclick="adminAdd()">加分</button>
-  <button onclick="hideAdminAdd()">关闭</button>
-</div>
-<!-- 管理员减分弹窗 -->
-<div id="adminSubPanel" style="display:none">
-  <input id="subPhone" placeholder="手机号">
-  <input id="subValue" placeholder="减分数">
-  <button onclick="adminSub()">减分</button>
-  <button onclick="hideAdminSub()">关闭</button>
-</div>
-<!-- 积分流水弹窗 -->
-<div id="historyPanel" style="display:none;">
-  <div id="historyList"></div>
-  <button onclick="hideHistory()">关闭</button>
-</div>
-<script>
-function showLogin() {
-  document.getElementById('loginForm').style.display = '';
-  document.getElementById('registerForm').style.display = 'none';
-}
-function showRegister() {
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('registerForm').style.display = '';
-}
-function login() {
-  fetch('login.php', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body:JSON.stringify({ phone: phone.value, password: password.value })
-  }).then(res=>res.json()).then(r=>{
-    if(r.ok) {
-      showUser();
-    } else alert(r.error);
-  });
-}
-function register() {
-  fetch('register.php', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ phone: regPhone.value, nickname: regNickname.value, password: regPassword.value })
-  }).then(res=>res.json()).then(r=>{
-    if(r.ok) { alert('注册成功'); showLogin(); }
-    else alert(r.error);
-  });
-}
-function showUser() {
-  fetch('userinfo.php', { credentials:'include' }).then(res=>res.json()).then(r=>{
-    if(r.phone) {
-      document.getElementById('loginForm').style.display = 'none';
-      document.getElementById('registerForm').style.display = 'none';
-      document.getElementById('userInfo').style.display = '';
-      document.getElementById('nick').innerText = r.nickname;
-      document.getElementById('myscore').innerText = ' 积分:'+r.score;
-      document.getElementById('adminPanel').style.display = r.is_admin ? '' : 'none';
-    } else { showLogin(); }
-  });
-}
-function logout() {
-  fetch('logout.php').then(()=>showLogin());
-}
-function showAdminAdd() {
-  document.getElementById('adminAddPanel').style.display = '';
-}
-function hideAdminAdd() {
-  document.getElementById('adminAddPanel').style.display = 'none';
-}
-function adminAdd() {
-  fetch('score_add.php', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body:JSON.stringify({ phone: addPhone.value, value: addValue.value })
-  }).then(res=>res.json()).then(r=>{
-    if(r.ok) alert('加分成功，新积分：'+r.newscore);
-    else alert(r.error);
-    hideAdminAdd();
-  });
-}
-function showAdminSub() {
-  document.getElementById('adminSubPanel').style.display = '';
-}
-function hideAdminSub() {
-  document.getElementById('adminSubPanel').style.display = 'none';
-}
-function adminSub() {
-  fetch('score_sub.php', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body:JSON.stringify({ phone: subPhone.value, value: subValue.value })
-  }).then(res=>res.json()).then(r=>{
-    if(r.ok) alert('减分成功，新积分：'+r.newscore);
-    else alert(r.error);
-    hideAdminSub();
-  });
-}
-function showHistory() {
-  fetch('score_history.php', { credentials:'include' }).then(res=>res.json()).then(list=>{
-    let html = '<table><tr><th>变化</th><th>后积分</th><th>类型</th><th>备注</th><th>时间</th></tr>';
-    list.forEach(r=>{
-      html += `<tr><td>${r.change_val}</td><td>${r.after_val}</td><td>${r.change_type}</td><td>${r.remark}</td><td>${r.create_time}</td></tr>`;
+  <!-- 管理员加分弹窗 -->
+  <div id="adminAddPanel">
+    <input id="addPhone" placeholder="手机号">
+    <input id="addValue" placeholder="加分数">
+    <button class="btn" onclick="adminAdd()">加分</button>
+    <button class="btn" onclick="hideAdminAdd()">关闭</button>
+  </div>
+  <!-- 管理员减分弹窗 -->
+  <div id="adminSubPanel">
+    <input id="subPhone" placeholder="手机号">
+    <input id="subValue" placeholder="减分数">
+    <button class="btn" onclick="adminSub()">减分</button>
+    <button class="btn" onclick="hideAdminSub()">关闭</button>
+  </div>
+  <!-- 积分流水弹窗 -->
+  <div id="historyPanel">
+    <div id="historyList"></div>
+    <button class="btn" onclick="hideHistory()">关闭</button>
+  </div>
+  <script>
+  // 后端域名
+  const API = 'https://mm.9525.ip-ddns.com';
+
+  // 显示登录/注册切换
+  function showLogin() {
+    document.getElementById('loginForm').style.display = '';
+    document.getElementById('registerForm').style.display = 'none';
+  }
+  function showRegister() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = '';
+  }
+
+  // 登录
+  function login() {
+    fetch(API + '/login.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ phone: phone.value, password: password.value })
+    })
+    .then(res => res.json())
+    .then(r => {
+      if(r.ok) {
+        showUser();
+      } else alert(r.error);
     });
-    html += '</table>';
-    document.getElementById('historyList').innerHTML = html;
-    document.getElementById('historyPanel').style.display = '';
-  });
-}
-function hideHistory() {
-  document.getElementById('historyPanel').style.display = 'none';
-}
-showUser();
-</script>
+  }
+  // 注册
+  function register() {
+    fetch(API + '/register.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ phone: regPhone.value, nickname: regNickname.value, password: regPassword.value })
+    })
+    .then(res => res.json())
+    .then(r => {
+      if(r.ok) { alert('注册成功'); showLogin(); }
+      else alert(r.error);
+    });
+  }
+  // 登出
+  function logout() {
+    fetch(API + '/logout.php', {
+      credentials: 'include'
+    }).then(()=> {
+      document.getElementById('userInfo').style.display = 'none';
+      document.getElementById('auth').style.display = '';
+      showLogin();
+    });
+  }
+  // 显示用户信息
+  function showUser() {
+    fetch(API + '/userinfo.php', {
+      credentials: 'include'
+    }).then(res=>res.json()).then(r=>{
+      if(r.phone) {
+        document.getElementById('auth').style.display = 'none';
+        document.getElementById('userInfo').style.display = '';
+        document.getElementById('nick').innerText = r.nickname;
+        document.getElementById('myscore').innerText = ' 积分:' + r.score;
+        document.getElementById('adminPanel').style.display = r.is_admin ? '' : 'none';
+      } else {
+        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('auth').style.display = '';
+        showLogin();
+      }
+    });
+  }
+  // 管理员加分面板
+  function showAdminAdd() {
+    document.getElementById('adminAddPanel').style.display = '';
+  }
+  function hideAdminAdd() {
+    document.getElementById('adminAddPanel').style.display = 'none';
+  }
+  function adminAdd() {
+    fetch(API + '/score_add.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ phone: addPhone.value, value: addValue.value })
+    }).then(res=>res.json()).then(r=>{
+      if(r.ok) alert('加分成功，新积分：'+r.newscore);
+      else alert(r.error);
+      hideAdminAdd();
+    });
+  }
+  // 管理员减分面板
+  function showAdminSub() {
+    document.getElementById('adminSubPanel').style.display = '';
+  }
+  function hideAdminSub() {
+    document.getElementById('adminSubPanel').style.display = 'none';
+  }
+  function adminSub() {
+    fetch(API + '/score_sub.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ phone: subPhone.value, value: subValue.value })
+    }).then(res=>res.json()).then(r=>{
+      if(r.ok) alert('减分成功，新积分：'+r.newscore);
+      else alert(r.error);
+      hideAdminSub();
+    });
+  }
+  // 显示积分流水
+  function showHistory() {
+    fetch(API + '/score_history.php', { credentials:'include' }).then(res=>res.json()).then(list=>{
+      let html = '<table><tr><th>变化</th><th>后积分</th><th>类型</th><th>备注</th><th>时间</th></tr>';
+      list.forEach(r=>{
+        html += `<tr><td>${r.change_val}</td><td>${r.after_val}</td><td>${r.change_type}</td><td>${r.remark}</td><td>${r.create_time}</td></tr>`;
+      });
+      html += '</table>';
+      document.getElementById('historyList').innerHTML = html;
+      document.getElementById('historyPanel').style.display = '';
+    });
+  }
+  function hideHistory() {
+    document.getElementById('historyPanel').style.display = 'none';
+  }
+
+  // 弹窗初始化
+  hideAdminAdd();
+  hideAdminSub();
+  hideHistory();
+  showUser();
+  </script>
+</body>
+</html>
