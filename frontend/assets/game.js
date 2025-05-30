@@ -1,3 +1,25 @@
+// 牌名转图片文件名
+function cardShortToFilename(shortCode) {
+  const suitMap = {
+    S: "spades",
+    H: "hearts",
+    C: "clubs",
+    D: "diamonds"
+  };
+  const rankMap = {
+    A: "ace",
+    J: "jack",
+    Q: "queen",
+    K: "king"
+  };
+  let match = shortCode.match(/^([2-9]|10|A|J|Q|K)([SHCD])$/i);
+  if (!match) return null;
+  let [, rank, suit] = match;
+  rank = rankMap[rank.toUpperCase()] || rank;
+  let suitStr = suitMap[suit.toUpperCase()];
+  return `${rank}_of_${suitStr}.svg`;
+}
+
 // 用户管理弹窗逻辑
 function showUserModal() {
   document.getElementById('userModalMask').classList.remove('hidden');
@@ -121,21 +143,3 @@ document.addEventListener('keydown', function(e){
   if(e.key === "Escape") closeUserModal();
 });
 document.getElementById('userModalMask').onclick = closeUserModal;
-
-// --------- 牌桌渲染示例（可根据实际需求完善） ---------
-window.onload = function() {
-  // 示例：渲染五张手牌
-  const hand = ['AS', '10H', 'KC', 'JD', '7S']; // 扑克牌文件名去掉.svg
-  const suits = {S:'♠',H:'♥',C:'♣',D:'♦'};
-  const handDiv = document.getElementById('myHand');
-  handDiv.innerHTML = '';
-  hand.forEach(card=>{
-    let num = card.slice(0,-1);
-    let s = card.slice(-1);
-    let img = document.createElement('img');
-    img.className = "poker";
-    img.src = "assets/cards/" + card + ".svg";
-    img.alt = num + suits[s];
-    handDiv.appendChild(img);
-  });
-}
