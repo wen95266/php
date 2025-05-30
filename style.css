@@ -112,6 +112,7 @@ body {
 .arranged-hand.drag-over { background: #fff2; }
 #row-buttons .action-buttons {
     width: 100vw; display: flex; flex-direction: row; justify-content: center; gap: 2vw; margin-top: 2vh;
+    flex-wrap: wrap;
 }
 .game-button {
     padding: 1.2vh 4vw; font-size: 1.05em; background: var(--button-green);
@@ -157,7 +158,7 @@ body {
     font-size: 1.2em;
     color: #285a0d;
 }
-#compareResult {
+#compareResult, #explainResult {
     color: #2a6b39;
     margin-bottom: 24px;
     word-break: break-all;
