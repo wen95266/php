@@ -79,7 +79,6 @@ function adjustCardFillFlex(zone) {
 function adjustCardFillGrid(zone, count) {
     // 13格均分，每格1fr，高度取父容器高度
     const cards = zone.querySelectorAll('.card-container');
-    const gridCols = count;
     let height = zone.clientHeight;
     cards.forEach(card => {
         card.style.width = "100%";
@@ -139,21 +138,8 @@ function renderRow(parent, arr) {
 
 function renderRowMiddle(parent, arr) {
     parent.innerHTML = '';
-    // 13格，没牌的放空div
-    for(let i=0; i<13; ++i) {
-        if(arr[i]) {
-            parent.appendChild(createCardElem(arr[i]));
-        } else {
-            const empty = document.createElement("div");
-            empty.className = "card-container";
-            empty.style.background = "none";
-            empty.style.boxShadow = "none";
-            empty.style.cursor = "default";
-            empty.style.pointerEvents = "none";
-            empty.style.borderRadius = "0";
-            parent.appendChild(empty);
-        }
-    }
+    arr.forEach(card => parent.appendChild(createCardElem(card)));
+    // 只渲染有牌的格子，不补空格子，实现自动左对齐
 }
 
 function setupDragAndDrop() {
