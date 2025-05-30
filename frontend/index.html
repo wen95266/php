@@ -8,17 +8,14 @@
 <body>
   <div class="table-container">
     <div class="table-title">十三水牌桌</div>
-    <!-- 牌桌座位示意 -->
     <div>
       <span class="seat dealer">庄家</span>
       <span class="seat">玩家2</span>
       <span class="seat">玩家3</span>
       <span class="seat">玩家4</span>
     </div>
-    <!-- 手牌示意（可以用game.js动态渲染） -->
-    <div class="pokers" id="myHand">
-      <!-- 这里的牌由JS动态插入 -->
-    </div>
+    <!-- 手牌展示 -->
+    <div class="pokers" id="myHand"></div>
     <div style="margin-top: 36px; font-size:1.1em;">
       <b>欢迎来到十三水牌桌！</b><br>
       <button class="user-btn" onclick="showUserModal()">用户管理</button>
@@ -60,5 +57,19 @@
   </div>
 
   <script src="assets/game.js"></script>
+  <script>
+    // 示例手牌（你可以用后端接口或JS逻辑动态生成）
+    const hand = ['AS', '10C', 'KD', 'QH', 'JS'];
+    const handDiv = document.getElementById('myHand');
+    handDiv.innerHTML = '';
+    hand.forEach(card => {
+      let file = cardShortToFilename(card);
+      let img = document.createElement('img');
+      img.className = "poker";
+      img.src = "assets/cards/" + file;
+      img.alt = card;
+      handDiv.appendChild(img);
+    });
+  </script>
 </body>
 </html>
