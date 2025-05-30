@@ -112,14 +112,15 @@ function getCardImageHtml(card) {
     return `<img src="${getCardImage(card)}" alt="${card}" style="height:36px;margin:0 2px;vertical-align:middle;">`;
 }
 
-document.getElementById("login-btn").onclick = async () => {
+document.getElementById("register-btn").onclick = async () => {
     let phone = document.getElementById("user-phone").value.trim();
     let nick = document.getElementById("user-nick").value.trim();
-    if (!phone || !nick) return alert("手机号和昵称必填");
+    let pwd = document.getElementById("user-password").value.trim();
+    if (!phone || !nick || !pwd) return alert("手机号、昵称、密码均必填");
     let res = await fetch(`${backend}?action=register`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({phone, nick})
+        body: JSON.stringify({phone, nick, password: pwd})
     });
     let data = await res.json();
     if (data.result === "ok") {
@@ -129,7 +130,28 @@ document.getElementById("login-btn").onclick = async () => {
         document.getElementById("game-area").style.display = "";
         showUserInfo();
     } else {
-        alert("注册/登录失败："+(data.error||"未知错误"));
+        alert("注册失败："+(data.error||"未知错误"));
+    }
+};
+
+document.getElementById("login-btn").onclick = async () => {
+    let phone = document.getElementById("user-phone").value.trim();
+    let pwd = document.getElementById("user-password").value.trim();
+    if (!phone || !pwd) return alert("手机号和密码必填");
+    let res = await fetch(`${backend}?action=login`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({phone, password: pwd})
+    });
+    let data = await res.json();
+    if (data.result === "ok") {
+        user = data.user;
+        token = data.token;
+        document.getElementById("user-area").style.display = "none";
+        document.getElementById("game-area").style.display = "";
+        showUserInfo();
+    } else {
+        alert("登录失败："+(data.error||"未知错误"));
     }
 };
 
