@@ -33,8 +33,8 @@ function cardToFilename(card) {
 function renderAll() {
     // 牌归属
     const left = hand.filter(c => !front.includes(c) && !back.includes(c));
-    renderRow(frontHand, front, 3);
-    renderRow(backHand, back, 5);
+    renderRow(frontHand, front, 3, false);
+    renderRow(backHand, back, 5, false);
     renderMiddleHand(middleHand, left);
 
     frontCount.textContent = `(${front.length}/3)`;
@@ -88,7 +88,7 @@ function createCardElem(card) {
     return div;
 }
 
-function renderRow(parent, arr, max) {
+function renderRow(parent, arr, max, isMiddle) {
     parent.innerHTML = '';
     arr.forEach(card => parent.appendChild(createCardElem(card)));
     for (let i = arr.length; i < max; ++i) {
@@ -96,16 +96,7 @@ function renderRow(parent, arr, max) {
         ph.className = 'drop-placeholder';
         parent.appendChild(ph);
     }
-    // 自适应牌宽度（flex:1）
-    const all = parent.querySelectorAll('.card-container, .drop-placeholder');
-    all.forEach(el => {
-        el.style.flex = `1 1 0`;
-        el.style.minWidth = 0;
-        el.style.maxWidth = "52px";
-        el.style.width = "100%";
-    });
 }
-
 
 function renderMiddleHand(parent, cards) {
     parent.innerHTML = '';
@@ -116,14 +107,6 @@ function renderMiddleHand(parent, cards) {
         ph.className = 'drop-placeholder';
         parent.appendChild(ph);
     }
-    // 等宽分布
-    const all = parent.querySelectorAll('.card-container, .drop-placeholder');
-    all.forEach(el => {
-        el.style.flex = `0 1 6.8%`;
-        el.style.minWidth = "46px";
-        el.style.maxWidth = "52px";
-        el.style.width = "6.8%";
-    });
 }
 
 function setupDragAndDrop() {
