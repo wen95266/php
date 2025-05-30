@@ -1,7 +1,6 @@
 :root {
     --table-bg: #1c5d18;
     --felt-bg: #0b5604;
-    --card-gap: 2vw;
     --zone-border: 2px dashed #fff4;
     --zone-radius: 12px;
     --button-green: #249c48;
@@ -9,8 +8,10 @@
     --button-disabled: #c3c3c399;
     --button-text: #fff;
     --zone-label: #fff9;
-    --card-width: 8vw;
-    --card-height: 100%; /* 横幅高度 */
+    --card-aspect: 1.45;
+    --card-gap: 0.7vw;
+    --card-max-height: 100%;
+    --card-min-height: 3.2vh;
 }
 
 html, body {
@@ -77,17 +78,20 @@ body {
     padding: 0;
 }
 
+/* 卡片紧凑平铺，自动缩放高度保证全显示 */
 .card-container {
-    flex: 0 0 auto;
-    width: var(--card-width);
-    height: var(--card-height);
+    flex: 1 1 0;
+    aspect-ratio: var(--card-aspect);
+    height: 100%;
+    max-height: var(--card-max-height);
+    min-height: var(--card-min-height);
     background: #fff;
     border-radius: 6px;
     box-shadow: 0 2px 8px #0002;
     display: flex; align-items: center; justify-content: center;
     cursor: grab;
     position: relative;
-    transition: box-shadow 0.12s, border 0.12s;
+    transition: box-shadow 0.12s, border 0.12s, height 0.2s;
     user-select: none;
     overflow: hidden;
 }
@@ -125,10 +129,9 @@ body {
     margin-top: 2vh; min-height: 3.2vh; font-size: 1.08em; color: #ffda00; text-align: center; font-weight: bold;
 }
 @media (max-width: 900px), (max-height: 700px) {
-    .card-container { width: 12vw; }
+    .card-container { min-height: 2.2vh; }
 }
 @media (max-width: 600px) {
     .poker-table { width:100vw; height:100vh; }
     .arranged-hand, .arranged-hand.as-hand-area { width: 100vw; }
-    .card-container { width: 16vw; }
 }
