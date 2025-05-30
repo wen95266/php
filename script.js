@@ -16,20 +16,27 @@ const resetBtn = document.getElementById('resetArrangementBtn');
 const submitBtn = document.getElementById('submitHandsBtn');
 const msgBar = document.getElementById('game-message');
 
-function cardToFilename(card) {
-    const suitMap = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
-    const valueMap = { 'A': 'ace', 'J': 'jack', 'Q': 'queen', 'K': 'king' };
-    const match = card.match(/^([♠♥♦♣])([A2-9]|10|J|Q|K)$/);
-    if (!match) return '';
-    const [, suit, value] = match;
-    const valueStr = valueMap[value] || value;
-    const suitStr = suitMap[suit];
-    return `${valueStr}_of_${suitStr}.svg`;
+const cardOrder = (() => {
+    // 牌型排序: ♠ > ♥ > ♣ > ♦ , A > K > ... > 2
+    const suitOrder = { '♠': 4, '♥': 3, '♣': 2, '♦': 1 };
+    const valueOrder = { 'A': 14, 'K': 13, 'Q': 12, 'J': 11 };
+    for (let i = 2; i <= 10; ++i) valueOrder[i + ''] = i;
+    return function(card) {
+        const suit = card[0];
+        const v = card.slice(1);
+        return (valueOrder[v] || 0) * 10 + (suitOrder[suit] || 0);
+    };
+})();
+
+function sortCards(arr) {
+    return arr.slice().sort((a, b) => cardOrder(b) - cardOrder(a));
 }
 
 function renderAll() {
     // 牌归属
-    const left = hand.filter(c => !front.includes(c) && !back.includes(c));
+    front = sortCards(front);
+    back = sortCards(back);
+    const left = sortCards(hand.filter(c => !front.includes(c) && !back.includes(c)));
     renderRow(frontHand, front, 3);
     renderRow(middleHand, left, 13);
     renderRow(backHand, back, 5);
@@ -115,9 +122,7 @@ function moveCardToZone(card, targetId) {
     // 只允许任意手牌拖到头道或尾道，拖回middle
     if (targetId === 'front-hand' && front.length < 3) front.push(card);
     else if (targetId === 'back-hand' && back.length < 5) back.push(card);
-    else if (targetId === 'middle-hand') {
-        // 拖回手牌区
-    }
+    // 拖到middle-hand自动整理
     renderAll();
     msgBar.textContent = '';
 }
@@ -125,19 +130,21 @@ function moveCardToZone(card, targetId) {
 // 智能分牌：大到小排序后头道3/尾道5
 function autoGroup() {
     if (!hand.length) return;
-    let sorted = [...hand].sort((a, b) => cardValue(b) - cardValue(a));
+    let sorted = sortCards(hand);
     front = sorted.slice(0, 3);
     back = sorted.slice(3, 8);
     renderAll();
     msgBar.textContent = '已智能分牌，可手动微调！';
 }
-function cardValue(card) {
-    const v = card.slice(1);
-    if (v === 'A') return 14;
-    if (v === 'K') return 13;
-    if (v === 'Q') return 12;
-    if (v === 'J') return 11;
-    return parseInt(v, 10);
+function cardToFilename(card) {
+    const suitMap = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
+    const valueMap = { 'A': 'ace', 'J': 'jack', 'Q': 'queen', 'K': 'king' };
+    const match = card.match(/^([♠♥♦♣])([A2-9]|10|J|Q|K)$/);
+    if (!match) return '';
+    const [, suit, value] = match;
+    const valueStr = valueMap[value] || value;
+    const suitStr = suitMap[suit];
+    return `${valueStr}_of_${suitStr}.svg`;
 }
 
 dealBtn.onclick = async function() {
@@ -146,7 +153,7 @@ dealBtn.onclick = async function() {
     try {
         const res = await fetch(API_DEAL);
         const data = await res.json();
-        hand = data.cards;
+        hand = sortCards(data.cards);
         front = [], back = [];
         renderAll();
         msgBar.textContent = '';
