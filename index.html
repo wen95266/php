@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>十三水注册/登录/积分演示</title>
+  <title>十三水游戏</title>
   <style>
     body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 30px; }
     input { margin: 4px; }
@@ -18,7 +18,9 @@
   </style>
 </head>
 <body>
-  <h2>十三水注册/登录/积分演示</h2>
+  <!-- 游戏界面内容在这里，比如牌桌、玩家、操作按钮等 -->
+
+  <!-- 注册/登录/显示积分模块（插入到顶部或合适处） -->
   <div id="auth">
     <div id="loginForm">
       <input id="phone" placeholder="手机号">
@@ -62,9 +64,11 @@
     <div id="historyList"></div>
     <button class="btn" onclick="hideHistory()">关闭</button>
   </div>
+
+  <!-- 你的游戏 JS/牌桌UI脚本可放在此处，也可放到独立js文件中 -->
   <script>
-  // 后端域名
-  const API = 'https://mm.9525.ip-ddns.com';
+  // 后端 API 域名
+  const API = 'https://wenge.cloudns.ch';
 
   // 显示登录/注册切换
   function showLogin() {
@@ -192,5 +196,8 @@
   hideHistory();
   showUser();
   </script>
+
+  <!-- 你原有的游戏逻辑/UI脚本可继续放在此处 -->
+
 </body>
 </html>
