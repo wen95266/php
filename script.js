@@ -4,13 +4,12 @@ const CARD_IMG_DIR = 'cards/';
 
 let hand = [];
 let front = [];
-let middle = [];
 let back = [];
-let history = [];
+let draggingCard = null;
 
 const frontHand = document.getElementById('front-hand');
-const middleHand = document.getElementById('middle-hand');
 const backHand = document.getElementById('back-hand');
+const middleHand = document.getElementById('middle-hand');
 const frontCount = document.getElementById('front-count');
 const middleCount = document.getElementById('middle-count');
 const backCount = document.getElementById('back-count');
@@ -19,7 +18,6 @@ const autoBtn = document.getElementById('autoGroupBtn');
 const resetBtn = document.getElementById('resetArrangementBtn');
 const submitBtn = document.getElementById('submitHandsBtn');
 const msgBar = document.getElementById('game-message');
-const historyBar = document.getElementById('game-history');
 
 function cardToFilename(card) {
     const suitMap = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
@@ -32,33 +30,84 @@ function cardToFilename(card) {
     return `${valueStr}_of_${suitStr}.svg`;
 }
 
+// Middle hand按4-5-4自适应
 function renderAll() {
-    const left = hand.filter(c => !front.includes(c) && !middle.includes(c) && !back.includes(c));
+    // 牌归属
+    const left = hand.filter(c => !front.includes(c) && !back.includes(c));
+    renderRow(frontHand, front, 3, true);
+    renderRow(backHand, back, 5, true);
     renderHandRows(middleHand, left);
-    renderRow(frontHand, front, 3);
-    renderRow(backHand, back, 5);
 
     frontCount.textContent = `(${front.length}/3)`;
     middleCount.textContent = `(${left.length}/13)`;
     backCount.textContent = `(${back.length}/5)`;
 
     resetBtn.disabled = hand.length === 0;
-    submitBtn.disabled = !(front.length === 3 && middle.length === 5 && back.length === 5);
+    submitBtn.disabled = !(front.length === 3 && back.length === 5 && (front.length + back.length === 8) && hand.length === 13);
     autoBtn.disabled = hand.length === 0;
-    renderHistory();
 }
 
-function createCardElem(card, draggable = true) {
+function createCardElem(card) {
     const div = document.createElement('div');
     div.className = 'card-container';
     div.setAttribute('data-card', card);
-    if (draggable) div.draggable = true;
+    div.draggable = true;
     const img = document.createElement('img');
     img.className = 'card-image';
     img.src = CARD_IMG_DIR + cardToFilename(card);
     img.alt = card;
     div.appendChild(img);
+
+    // 拖拽
+    div.addEventListener('dragstart', e => {
+        draggingCard = card;
+        div.classList.add('dragging');
+        setTimeout(() => div.classList.add('dragging'), 0);
+    });
+    div.addEventListener('dragend', e => {
+        draggingCard = null;
+        div.classList.remove('dragging');
+    });
+
+    // 点击（移动到目标区/回到手牌）
+    div.addEventListener('click', () => {
+        if (hand.includes(card)) {
+            if (!front.includes(card) && front.length < 3) {
+                front.push(card);
+            } else if (!back.includes(card) && back.length < 5) {
+                back.push(card);
+            }
+        } else if (front.includes(card)) {
+            front = front.filter(c => c !== card);
+        } else if (back.includes(card)) {
+            back = back.filter(c => c !== card);
+        }
+        renderAll();
+        msgBar.textContent = '';
+    });
+
     return div;
+}
+
+function renderRow(parent, arr, max, adaptive) {
+    parent.innerHTML = '';
+    arr.forEach(card => parent.appendChild(createCardElem(card)));
+    // 自适应空位
+    for (let i = arr.length; i < max; ++i) {
+        const ph = document.createElement('div');
+        ph.className = 'drop-placeholder';
+        parent.appendChild(ph);
+    }
+    // 自适应牌宽度
+    if (adaptive) {
+        const all = parent.querySelectorAll('.card-container,.drop-placeholder');
+        all.forEach(el => {
+            el.style.flex = `1 1 0`;
+            el.style.minWidth = 0;
+            el.style.maxWidth = (100/max - 2) + "%";
+            el.style.width = (100/max - 2) + "%";
+        });
+    }
 }
 
 function renderHandRows(parent, cards) {
@@ -71,36 +120,22 @@ function renderHandRows(parent, cards) {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'hand-area-sub-row';
         row.forEach(card => {
-            rowDiv.appendChild(createCardElem(card, true));
+            rowDiv.appendChild(createCardElem(card));
+        });
+        // 自适应宽度
+        let n = Math.max(row.length, 1);
+        Array.from(rowDiv.children).forEach(el => {
+            el.style.flex = `1 1 0`;
+            el.style.minWidth = 0;
+            el.style.maxWidth = (100/n - 2) + "%";
+            el.style.width = (100/n - 2) + "%";
         });
         parent.appendChild(rowDiv);
     });
 }
 
-function renderRow(parent, arr, max) {
-    parent.innerHTML = '';
-    arr.forEach(card => {
-        parent.appendChild(createCardElem(card, true));
-    });
-    for (let i = arr.length; i < max; ++i) {
-        const ph = document.createElement('div');
-        ph.className = 'drop-placeholder';
-        parent.appendChild(ph);
-    }
-}
-
-function renderHistory() {
-    if (!history.length) {
-        historyBar.innerHTML = '';
-        return;
-    }
-    historyBar.innerHTML = `<b>历史:</b><br>` + history.map(h =>
-        `[${h.time}] 头道:<span style="color:#ffda00">${h.headType}</span> 中道:<span style="color:#ffda00">${h.middleType}</span> 尾道:<span style="color:#ffda00">${h.tailType}</span> ${(h.valid ? '' : '<span style="color:#f44;">(倒水)</span>')}`
-    ).join('<br>');
-}
-
 function setupDragAndDrop() {
-    document.querySelectorAll('.arranged-hand').forEach(zone => {
+    [frontHand, backHand, middleHand].forEach(zone => {
         zone.addEventListener('dragover', e => {
             e.preventDefault();
             zone.classList.add('drag-over');
@@ -111,60 +146,29 @@ function setupDragAndDrop() {
         zone.addEventListener('drop', e => {
             e.preventDefault();
             zone.classList.remove('drag-over');
-            const card = e.dataTransfer.getData('text/plain');
-            onCardDrop(card, zone.id);
+            if (!draggingCard) return;
+            moveCardToZone(draggingCard, zone.id);
+            draggingCard = null;
         });
     });
-    document.addEventListener('dragstart', function(e) {
-        if (e.target.classList.contains('card-container')) {
-            e.dataTransfer.setData('text/plain', e.target.getAttribute('data-card'));
-            setTimeout(() => e.target.classList.add('dragging'), 0);
-        }
-    });
-    document.addEventListener('dragend', function(e) {
-        if (e.target.classList.contains('card-container')) {
-            e.target.classList.remove('dragging');
-        }
-    });
-    document.addEventListener('click', function(e) {
-        const el = e.target.closest('.card-container');
-        if (!el) return;
-        const card = el.getAttribute('data-card');
-        if (hand.includes(card)) {
-            if (front.length < 3) { front.push(card); }
-            else if (middle.length < 5) { middle.push(card); }
-            else if (back.length < 5) { back.push(card); }
-            else msgBar.textContent = '三道已满！';
-        } else if (front.includes(card)) {
-            front = front.filter(c => c !== card);
-        } else if (middle.includes(card)) {
-            middle = middle.filter(c => c !== card);
-        } else if (back.includes(card)) {
-            back = back.filter(c => c !== card);
-        }
-        renderAll();
-        msgBar.textContent = '';
-    });
 }
-
-function onCardDrop(card, targetId) {
+function moveCardToZone(card, targetId) {
+    // 移出
     front = front.filter(c => c !== card);
-    middle = middle.filter(c => c !== card);
     back = back.filter(c => c !== card);
+    // 只允许任意手牌拖到头道或尾道
     if (targetId === 'front-hand' && front.length < 3) front.push(card);
-    else if (targetId === 'middle-hand') middle.push(card);
     else if (targetId === 'back-hand' && back.length < 5) back.push(card);
     renderAll();
     msgBar.textContent = '';
 }
 
-// 智能分牌：大到小排序后 头道3/中道5/尾道5
+// 智能分牌：大到小排序后头道3/尾道5
 function autoGroup() {
     if (!hand.length) return;
     let sorted = [...hand].sort((a, b) => cardValue(b) - cardValue(a));
     front = sorted.slice(0, 3);
-    middle = sorted.slice(3, 8);
-    back = sorted.slice(8, 13);
+    back = sorted.slice(3, 8);
     renderAll();
     msgBar.textContent = '已智能分牌，可手动微调！';
 }
@@ -184,7 +188,7 @@ dealBtn.onclick = async function() {
         const res = await fetch(API_DEAL);
         const data = await res.json();
         hand = data.cards;
-        front = [], middle = [], back = [];
+        front = [], back = [];
         renderAll();
         msgBar.textContent = '';
     } catch (e) {
@@ -194,13 +198,19 @@ dealBtn.onclick = async function() {
 };
 autoBtn.onclick = autoGroup;
 resetBtn.onclick = function() {
-    front = [], middle = [], back = [];
+    front = [], back = [];
     renderAll();
     msgBar.textContent = '';
 };
 submitBtn.onclick = async function() {
-    if (front.length !== 3 || middle.length !== 5 || back.length !== 5) {
-        msgBar.textContent = '头道3张，中道5张，尾道5张';
+    if (front.length !== 3 || back.length !== 5 || hand.length !== 13) {
+        msgBar.textContent = '请将3张牌放到头道、5张牌放到尾道，其余留在手牌区';
+        return;
+    }
+    // middle区就是剩下的5张
+    let middle = hand.filter(c => !front.includes(c) && !back.includes(c));
+    if (middle.length !== 5) {
+        msgBar.textContent = '请将3张牌放到头道、5张牌放到尾道，其余留在手牌区';
         return;
     }
     msgBar.textContent = '正在判定...';
@@ -219,16 +229,6 @@ submitBtn.onclick = async function() {
         } else {
             msgBar.textContent = `牌型: 头道${data.headType} 中道${data.middleType} 尾道${data.tailType}`;
         }
-        // 存历史
-        history.unshift({
-            time: (new Date()).toLocaleTimeString(),
-            headType: data.headType,
-            middleType: data.middleType,
-            tailType: data.tailType,
-            valid: data.valid
-        });
-        if (history.length > 6) history = history.slice(0, 6);
-        renderHistory();
     } catch (e) {
         msgBar.textContent = '判定失败，请重试';
     }
