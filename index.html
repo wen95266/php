@@ -6,9 +6,30 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>十三水 · 扑克牌发牌</h1>
-  <button id="draw">发13张牌</button>
+  <h1>十三水 · 扑克牌发牌与分牌</h1>
+  <div class="controls">
+    <button id="draw">发13张牌</button>
+    <button id="reset" disabled>重置分牌</button>
+  </div>
+  <h2>你的牌</h2>
   <div id="cards" class="card-container"></div>
+  <div class="groups">
+    <div class="group" data-group="head">
+      <h3>头墩(5张)</h3>
+      <div class="group-cards" id="head"></div>
+      <button class="group-btn" id="to-head" disabled>放入头墩</button>
+    </div>
+    <div class="group" data-group="middle">
+      <h3>中墩(5张)</h3>
+      <div class="group-cards" id="middle"></div>
+      <button class="group-btn" id="to-middle" disabled>放入中墩</button>
+    </div>
+    <div class="group" data-group="tail">
+      <h3>尾墩(3张)</h3>
+      <div class="group-cards" id="tail"></div>
+      <button class="group-btn" id="to-tail" disabled>放入尾墩</button>
+    </div>
+  </div>
   <script src="main.js"></script>
 </body>
 </html>
