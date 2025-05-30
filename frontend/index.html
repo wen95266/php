@@ -56,10 +56,31 @@
       background: #fbc02d;
       color: #222;
     }
+    /* 用户管理样式 */
+    .hidden { display:none; }
+    .modal-mask {
+      position: fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.55); z-index: 1000;
+    }
+    .modal-box {
+      background: #fff; color: #333; border-radius: 12px; padding: 30px 20px 20px 20px; width: 330px;
+      position: fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+      box-shadow: 0 0 24px #111; z-index: 1010;
+      text-align:left;
+    }
+    .modal-box input { width: 95%; margin: 8px 0; line-height: 2; }
+    .modal-box button { margin: 6px 8px 0 0; }
+    .profile-box { margin-bottom: 18px; line-height: 1.7; }
+    #friendInfo { margin-top:10px; }
+    .modal-close {
+      position:absolute; right:12px; top:10px; color: #222; background:none; border:none; font-size: 20px; cursor:pointer;
+    }
+    @media (max-width: 750px) {
+      .table-container { width:98vw; padding: 8vw 2vw 12vw 2vw; }
+      .modal-box { width:94vw; min-width:210px; }
+    }
   </style>
 </head>
 <body>
-  <button class="user-btn" onclick="window.location.href='user.html'">用户管理</button>
   <div class="table-container">
     <div class="table-title">十三水牌桌</div>
     <!-- 牌桌座位示意 -->
@@ -79,8 +100,168 @@
     </div>
     <div style="margin-top: 36px; font-size:1.1em;">
       <b>欢迎来到十三水牌桌！</b><br>
-      请点击右上角“用户管理”进行注册/登录和积分管理。
+      <button class="user-btn" onclick="showUserModal()">用户管理</button>
     </div>
   </div>
+
+  <!-- 用户管理弹窗（整合user.html全部功能） -->
+  <div id="userModalMask" class="modal-mask hidden"></div>
+  <div id="userModal" class="modal-box hidden">
+    <button class="modal-close" onclick="closeUserModal()" title="关闭">×</button>
+    <!-- 登录视图 -->
+    <div id="loginBox" class="hidden">
+      <h2 style="text-align:center;">登录</h2>
+      <input id="login_username" placeholder="用户名或手机号"><br>
+      <input id="login_password" type="password" placeholder="密码"><br>
+      <button onclick="login()">登录</button>
+      <button onclick="showRegister()">没有账号？注册</button>
+    </div>
+    <!-- 注册视图 -->
+    <div id="registerBox" class="hidden">
+      <h2 style="text-align:center;">注册</h2>
+      <input id="reg_username" placeholder="用户名"><br>
+      <input id="reg_phone" placeholder="手机号"><br>
+      <input id="reg_password" type="password" placeholder="密码"><br>
+      <input id="reg_password2" type="password" placeholder="重复密码"><br>
+      <button onclick="register()">注册</button>
+      <button onclick="showLogin()">已有账号？登录</button>
+    </div>
+    <!-- 已登录视图 -->
+    <div id="userPanel" class="hidden">
+      <div class="profile-box" id="profile"></div>
+      <button onclick="logout()">退出登录</button>
+      <hr>
+      <h3 style="margin:8px 0 6px 0;">查找朋友/赠送积分</h3>
+      <input id="searchKey" placeholder="朋友ID或手机号">
+      <button onclick="searchFriend()">查找</button>
+      <div id="friendInfo"></div>
+    </div>
+  </div>
+
+  <script>
+    // 弹窗控制
+    function showUserModal() {
+      document.getElementById('userModalMask').classList.remove('hidden');
+      document.getElementById('userModal').classList.remove('hidden');
+      checkLogin();
+    }
+    function closeUserModal() {
+      document.getElementById('userModalMask').classList.add('hidden');
+      document.getElementById('userModal').classList.add('hidden');
+    }
+    // 登录状态检测
+    function checkLogin() {
+      fetch('/api/game.php?action=profile')
+        .then(r=>r.json()).then(data=>{
+          if(data.result === 'ok') {
+            showProfile(data.user);
+          } else {
+            showLogin();
+          }
+        });
+    }
+    // 显示登录、注册、用户面板
+    function showProfile(user) {
+      document.getElementById('userPanel').classList.remove('hidden');
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('registerBox').classList.add('hidden');
+      document.getElementById('profile').innerHTML = 
+        `用户名: <b>${user.username}</b><br>手机号: ${user.phone}<br>积分: <b>${user.score}</b><br>胜场: ${user.win||0} 负场: ${user.lose||0} <br>注册时间: ${user.created_at}`;
+      document.getElementById('friendInfo').innerHTML = "";
+      document.getElementById('searchKey').value = "";
+    }
+    function showLogin() {
+      document.getElementById('loginBox').classList.remove('hidden');
+      document.getElementById('registerBox').classList.add('hidden');
+      document.getElementById('userPanel').classList.add('hidden');
+    }
+    function showRegister() {
+      document.getElementById('registerBox').classList.remove('hidden');
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('userPanel').classList.add('hidden');
+    }
+    // 登录
+    function login() {
+      const username = document.getElementById('login_username').value.trim();
+      const password = document.getElementById('login_password').value.trim();
+      if(!username || !password) { alert("请输入账号和密码"); return; }
+      fetch('/api/game.php?action=login', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({username, password})
+      })
+      .then(r=>r.json()).then(data=>{
+        if(data.result==='ok'){
+          checkLogin();
+        } else {
+          alert(data.msg||'登录失败');
+        }
+      });
+    }
+    // 注册
+    function register() {
+      const username = document.getElementById('reg_username').value.trim();
+      const phone = document.getElementById('reg_phone').value.trim();
+      const password = document.getElementById('reg_password').value.trim();
+      const password2 = document.getElementById('reg_password2').value.trim();
+      if(!username || !phone || !password || !password2) {
+        alert("请填写完整信息"); return;
+      }
+      if(password !== password2) { alert("两次密码不一致"); return; }
+      fetch('/api/game.php?action=register', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({username, phone, password})
+      })
+      .then(r=>r.json()).then(data=>{
+        if(data.result==='ok'){
+          alert('注册成功，请登录');
+          showLogin();
+        } else {
+          alert(data.msg||'注册失败');
+        }
+      });
+    }
+    // 登出
+    function logout() {
+      fetch('/api/game.php?action=logout')
+      .then(()=>checkLogin());
+    }
+    // 查找朋友
+    function searchFriend() {
+      const key = document.getElementById('searchKey').value.trim();
+      if(!key) return;
+      fetch(`/api/game.php?action=search_user&key=${encodeURIComponent(key)}`)
+      .then(r=>r.json()).then(data=>{
+        if(data.result==='ok'){
+          document.getElementById('friendInfo').innerHTML = 
+            `用户名:${data.user.username} 积分:${data.user.score}
+            <input id="giftAmt" type="number" min="1" placeholder="赠送积分数">
+            <button onclick="giftScore(${data.user.id})">赠送积分</button>`;
+        }else{
+          document.getElementById('friendInfo').innerHTML = "未找到该用户";
+        }
+      });
+    }
+    // 赠送积分
+    function giftScore(friendId) {
+      const amt = parseInt(document.getElementById('giftAmt').value);
+      if(!amt || amt<=0) { alert("请输入正确的积分数"); return; }
+      fetch('/api/game.php?action=gift_score', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({to: friendId, amt})
+      })
+      .then(r=>r.json()).then(data=>{
+        alert(data.msg||'操作失败');
+        if(data.result==='ok') checkLogin();
+      });
+    }
+    // 支持ESC关闭弹窗
+    document.addEventListener('keydown', function(e){
+      if(e.key === "Escape") closeUserModal();
+    });
+    document.getElementById('userModalMask').onclick = closeUserModal;
+  </script>
 </body>
 </html>
