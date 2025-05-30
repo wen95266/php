@@ -9,6 +9,7 @@
     --button-text: #fff;
     --card-gap: 0.8vw;
     --card-aspect: 1.45;
+    --modal-bg: rgba(0,0,0,0.52);
 }
 html, body {
     width: 100vw; height: 100vh; margin: 0; padding: 0;
@@ -55,8 +56,6 @@ body {
     background: none;
     border: none;
 }
-
-/* 统一所有区的牌为flex左对齐，每张牌最大宽度为13等分 */
 .arranged-hand {
     background: none;
     display: flex;
@@ -73,7 +72,6 @@ body {
     overflow: hidden;
     padding: 0;
 }
-
 .arranged-hand .card-container {
     flex: 0 1 calc((100% - 12 * var(--card-gap)) / 13);
     max-width: calc((100% - 12 * var(--card-gap)) / 13);
@@ -81,7 +79,6 @@ body {
     width: calc((100% - 12 * var(--card-gap)) / 13);
     height: 100%;
 }
-
 .card-container {
     aspect-ratio: var(--card-aspect);
     background: transparent !important;
@@ -113,7 +110,6 @@ body {
 }
 .drop-placeholder { display: none; }
 .arranged-hand.drag-over { background: #fff2; }
-
 #row-buttons .action-buttons {
     width: 100vw; display: flex; flex-direction: row; justify-content: center; gap: 2vw; margin-top: 2vh;
 }
@@ -129,4 +125,42 @@ body {
 .game-button[disabled] { opacity: 0.5; cursor: not-allowed; background: var(--button-disabled);}
 .game-message-bar {
     margin-top: 2vh; min-height: 3.2vh; font-size: 1.08em; color: #ffda00; text-align: center; font-weight: bold;
+}
+
+/* modal弹窗 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100vw; height: 100vh;
+    background: var(--modal-bg);
+    align-items: center;
+    justify-content: center;
+}
+.modal.active {
+    display: flex;
+}
+.modal-content {
+    background: #fff;
+    color: #333;
+    border-radius: 12px;
+    padding: 32px 32px 24px 32px;
+    min-width: 300px;
+    min-height: 120px;
+    box-shadow: 0 2px 24px #0009;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.modal-content h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.2em;
+    color: #285a0d;
+}
+#compareResult {
+    color: #2a6b39;
+    margin-bottom: 24px;
+    word-break: break-all;
+    text-align: left;
 }
