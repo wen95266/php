@@ -36,7 +36,7 @@ function renderAll() {
     back = sortCards(back);
     const left = sortCards(hand.filter(c => !front.includes(c) && !back.includes(c)));
     renderRow(frontHand, front);
-    renderRowMiddle(middleHand, left);
+    renderRow(middleHand, left);
     renderRow(backHand, back);
 
     resetBtn.disabled = hand.length === 0;
@@ -49,14 +49,12 @@ function renderAll() {
     );
     autoBtn.disabled = hand.length === 0;
 
-    [frontHand, backHand].forEach(zone => adjustCardFillFlex(zone));
-    adjustCardFillFlex(middleHand, 13); // 也可用同一个flex适配
+    [frontHand, middleHand, backHand].forEach(zone => adjustCardFillFlex(zone));
 }
 
-function adjustCardFillFlex(zone, max) {
+function adjustCardFillFlex(zone) {
     const cards = zone.querySelectorAll('.card-container');
     if (!cards.length) return;
-    // 只需保证高度适配容器
     let height = zone.clientHeight;
     cards.forEach(card => {
         card.style.height = height + "px";
@@ -109,12 +107,6 @@ function createCardElem(card) {
 function renderRow(parent, arr) {
     parent.innerHTML = '';
     arr.forEach(card => parent.appendChild(createCardElem(card)));
-}
-
-function renderRowMiddle(parent, arr) {
-    parent.innerHTML = '';
-    arr.forEach(card => parent.appendChild(createCardElem(card)));
-    // 不补空格子，直接左对齐
 }
 
 function setupDragAndDrop() {
