@@ -7,14 +7,38 @@
 </head>
 <body>
     <h1>十三水游戏</h1>
-    <div id="game-area">
-        <button id="start-btn">开始新游戏</button>
-        <button id="submit-btn">提交比牌</button>
-        <div id="player-cards">
-            <!-- 动态插入分墩区和牌池 -->
-        </div>
+    <div id="user-area">
+        <input id="user-phone" placeholder="手机号" maxlength="20"/>
+        <input id="user-nick" placeholder="昵称" maxlength="10"/>
+        <button id="login-btn">注册/登录</button>
+        <span id="user-info"></span>
+    </div>
+    <div id="game-area" style="display:none">
+        <button id="quick-match-btn">快速匹配</button>
+        <input id="room-id" placeholder="房间号" />
+        <button id="join-room-btn">加入房间</button>
+        <button id="logout-btn">退出</button>
+        <span id="room-status"></span>
+        <br><br>
+        <button id="start-btn" disabled>房主开局</button>
+        <button id="auto-dun-btn" disabled>智能分墩</button>
+        <button id="ai-btn" disabled>AI托管</button>
+        <button id="submit-btn" disabled>提交比牌</button>
+        <button id="reset-btn" disabled>重置分墩</button>
+        <br>
+        <div id="player-cards"></div>
         <div id="result-area"></div>
+        <div id="room-players"></div>
         <div id="game-status"></div>
+        <div id="score-panel"></div>
+        <br>
+        <input id="friend-query" placeholder="手机号/ID查找朋友">
+        <button id="query-friend-btn">查找</button>
+        <span id="friend-info"></span>
+        <br>
+        <input id="gift-amount" type="number" min="1" placeholder="赠送积分数量">
+        <button id="gift-btn">赠送积分</button>
+        <span id="gift-status"></span>
     </div>
     <script src="assets/game.js"></script>
 </body>
