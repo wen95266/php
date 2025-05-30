@@ -7,12 +7,9 @@
     --button-yellow: #bda53a;
     --button-disabled: #c3c3c399;
     --button-text: #fff;
-    --zone-label: #fff9;
-    --card-gap: 1vw;
+    --card-gap: 0.8vw;
     --card-aspect: 1.45;
-    --row-padding: 1.2vw;
 }
-
 html, body {
     width: 100vw; height: 100vh; margin: 0; padding: 0;
     font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
@@ -32,7 +29,7 @@ body {
 }
 .table-row {
     flex: 1 1 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     width: 100vw; min-height: 0; min-width: 0;
     position: relative;
     box-sizing: border-box;
@@ -43,14 +40,13 @@ body {
     width: 96vw;
     margin: 0 auto 0 auto;
     box-sizing: border-box;
-    height: 100%;
     min-height: 0;
     background: none;
-    padding-left: var(--row-padding);
-    padding-right: var(--row-padding);
+    padding: 0 1vw;
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    height: 100%;
 }
 #row-buttons {
     flex: 1 1 0;
@@ -61,7 +57,6 @@ body {
 }
 .arranged-hand {
     background: none;
-    margin: 0 0;
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
@@ -73,26 +68,23 @@ body {
     box-sizing: border-box;
     gap: var(--card-gap);
     transition: background 0.2s;
-    overflow-x: hidden;
-    overflow-y: hidden;
+    overflow: hidden;
     padding: 0;
 }
 
-/* 关键：卡片紧凑平铺，宽度自适应、最多13张占满横幅 */
 .card-container {
-    flex: 1 1 0;
     aspect-ratio: var(--card-aspect);
-    height: 100%;
     background: #fff;
     border-radius: 6px;
     box-shadow: 0 2px 8px #0002;
     display: flex; align-items: center; justify-content: center;
     cursor: grab;
     position: relative;
-    transition: box-shadow 0.12s, border 0.12s, height 0.2s, width 0.2s;
     user-select: none;
     overflow: hidden;
-    min-width: 0;
+    /* 宽度高度由JS动态设置 */
+    min-width: 0; min-height: 0;
+    transition: box-shadow 0.12s, border 0.12s, height 0.2s, width 0.2s;
 }
 .card-container.dragging {
     opacity: 0.6;
@@ -100,15 +92,13 @@ body {
     box-shadow: 0 0 16px #ffa800, 0 4px 16px #000a;
 }
 .card-image {
-    width: 96%; height: 96%;
+    width: 98%; height: 98%;
     display:block;
     pointer-events: none;
     user-select: none;
     object-fit: contain;
 }
-.drop-placeholder {
-    display: none;
-}
+.drop-placeholder { display: none; }
 .arranged-hand.drag-over { background: #fff2; }
 
 #row-buttons .action-buttons {
@@ -126,12 +116,4 @@ body {
 .game-button[disabled] { opacity: 0.5; cursor: not-allowed; background: var(--button-disabled);}
 .game-message-bar {
     margin-top: 2vh; min-height: 3.2vh; font-size: 1.08em; color: #ffda00; text-align: center; font-weight: bold;
-}
-@media (max-width: 900px), (max-height: 700px) {
-    #row-front, #row-middle, #row-back { padding-left: 0.2vw; padding-right: 0.2vw;}
-}
-@media (max-width: 600px) {
-    .poker-table { width:100vw; height:100vh; }
-    .arranged-hand, .arranged-hand.as-hand-area { width: 100vw; }
-    #row-front, #row-middle, #row-back { width: 100vw; }
 }
