@@ -2,31 +2,31 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>十三水摆牌</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="poker-table">
-        <div class="table-row" id="row-front">
-            <div id="front-hand" class="arranged-hand drop-zone"></div>
-        </div>
-        <div class="table-row" id="row-middle">
-            <div id="middle-hand" class="arranged-hand drop-zone as-hand-area"></div>
-        </div>
-        <div class="table-row" id="row-back">
-            <div id="back-hand" class="arranged-hand drop-zone"></div>
-        </div>
-        <div class="table-row action-buttons-container" id="row-buttons">
-            <div class="action-buttons">
-                <button id="dealCardsBtn" class="game-button">发牌</button>
-                <button id="autoGroupBtn" class="game-button">智能分牌</button>
-                <button id="resetArrangementBtn" class="game-button" disabled>重置</button>
-                <button id="submitHandsBtn" class="game-button primary-button" disabled>确认</button>
-            </div>
-            <div id="game-message" class="game-message-bar"></div>
-        </div>
+<div class="poker-table">
+    <div class="table-row" id="row-front">
+        <div id="front-hand" class="arranged-hand drop-zone"></div>
     </div>
-    <script src="script.js"></script>
+    <div class="table-row" id="row-middle">
+        <div id="middle-hand" class="arranged-hand drop-zone"></div>
+    </div>
+    <div class="table-row" id="row-back">
+        <div id="back-hand" class="arranged-hand drop-zone"></div>
+    </div>
+    <div class="table-row action-buttons-container" id="row-buttons">
+        <div class="action-buttons">
+            <button id="dealCardsBtn" class="game-button">发牌</button>
+            <button id="autoGroupBtn" class="game-button">智能分牌</button>
+            <button id="resetArrangementBtn" class="game-button" disabled>重置</button>
+            <button id="submitHandsBtn" class="game-button primary-button" disabled>确认</button>
+        </div>
+        <div id="game-message" class="game-message-bar"></div>
+    </div>
+</div>
+<script src="script.js"></script>
 </body>
 </html>
