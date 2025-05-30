@@ -17,7 +17,6 @@ const submitBtn = document.getElementById('submitHandsBtn');
 const msgBar = document.getElementById('game-message');
 
 const cardOrder = (() => {
-    // 牌型排序: ♠ > ♥ > ♣ > ♦ , A > K > ... > 2
     const suitOrder = { '♠': 4, '♥': 3, '♣': 2, '♦': 1 };
     const valueOrder = { 'A': 14, 'K': 13, 'Q': 12, 'J': 11 };
     for (let i = 2; i <= 10; ++i) valueOrder[i + ''] = i;
@@ -33,7 +32,6 @@ function sortCards(arr) {
 }
 
 function renderAll() {
-    // 牌归属
     front = sortCards(front);
     back = sortCards(back);
     const left = sortCards(hand.filter(c => !front.includes(c) && !back.includes(c)));
@@ -91,11 +89,6 @@ function createCardElem(card) {
 function renderRow(parent, arr, max) {
     parent.innerHTML = '';
     arr.forEach(card => parent.appendChild(createCardElem(card)));
-    for (let i = arr.length; i < max; ++i) {
-        const ph = document.createElement('div');
-        ph.className = 'drop-placeholder';
-        parent.appendChild(ph);
-    }
 }
 
 function setupDragAndDrop() {
@@ -119,10 +112,8 @@ function setupDragAndDrop() {
 function moveCardToZone(card, targetId) {
     front = front.filter(c => c !== card);
     back = back.filter(c => c !== card);
-    // 只允许任意手牌拖到头道或尾道，拖回middle
     if (targetId === 'front-hand' && front.length < 3) front.push(card);
     else if (targetId === 'back-hand' && back.length < 5) back.push(card);
-    // 拖到middle-hand自动整理
     renderAll();
     msgBar.textContent = '';
 }
@@ -173,7 +164,6 @@ submitBtn.onclick = async function() {
         msgBar.textContent = '请将3张牌放到头道、5张牌放到尾道，其余留在手牌区';
         return;
     }
-    // middle区就是剩下的5张
     let middle = hand.filter(c => !front.includes(c) && !back.includes(c));
     if (middle.length !== 5) {
         msgBar.textContent = '请将3张牌放到头道、5张牌放到尾道，其余留在手牌区';
