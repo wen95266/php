@@ -36,7 +36,7 @@ function renderAll() {
     back = sortCards(back);
     const left = sortCards(hand.filter(c => !front.includes(c) && !back.includes(c)));
     renderRow(frontHand, front);
-    renderRow(middleHand, left, 13);
+    renderRowMiddle(middleHand, left);
     renderRow(backHand, back);
 
     resetBtn.disabled = hand.length === 0;
@@ -49,17 +49,17 @@ function renderAll() {
     );
     autoBtn.disabled = hand.length === 0;
 
-    [frontHand, middleHand, backHand].forEach(zone => adjustCardFill(zone));
+    [frontHand, backHand].forEach(zone => adjustCardFillFlex(zone));
+    adjustCardFillGrid(middleHand, 13);
 }
 
-function adjustCardFill(zone) {
+function adjustCardFillFlex(zone) {
     const cards = zone.querySelectorAll('.card-container');
     if (!cards.length) return;
     let available = zone.clientWidth - 2;
     let cardNum = cards.length;
-    let gapTotal = (cardNum - 1) * parseFloat(getComputedStyle(zone).gap || 0);
-    let width = (available - gapTotal) / cardNum;
-    // aspect: 1.45
+    let gapTotal = (cardNum - 1) * 0;
+    let width = cardNum > 0 ? (available - gapTotal) / cardNum : available;
     let height = width * (1/1.45);
     let maxHeight = zone.clientHeight || window.innerHeight / 4;
     if (height > maxHeight) {
@@ -71,6 +71,21 @@ function adjustCardFill(zone) {
         card.style.height = height + "px";
         card.style.minWidth = width + "px";
         card.style.maxWidth = width + "px";
+        card.style.minHeight = height + "px";
+        card.style.maxHeight = height + "px";
+    });
+}
+
+function adjustCardFillGrid(zone, count) {
+    // 13格均分，每格1fr，高度取父容器高度
+    const cards = zone.querySelectorAll('.card-container');
+    const gridCols = count;
+    let height = zone.clientHeight;
+    cards.forEach(card => {
+        card.style.width = "100%";
+        card.style.height = height + "px";
+        card.style.minWidth = "0";
+        card.style.maxWidth = "none";
         card.style.minHeight = height + "px";
         card.style.maxHeight = height + "px";
     });
@@ -120,6 +135,23 @@ function createCardElem(card) {
 function renderRow(parent, arr) {
     parent.innerHTML = '';
     arr.forEach(card => parent.appendChild(createCardElem(card)));
+}
+
+function renderRowMiddle(parent, arr) {
+    parent.innerHTML = '';
+    // 13格，没牌的放空div
+    for(let i=0; i<13; ++i) {
+        if(arr[i]) {
+            parent.appendChild(createCardElem(arr[i]));
+        } else {
+            const empty = document.createElement("div");
+            empty.className = "card-container";
+            empty.style.background = "none";
+            empty.style.boxShadow = "none";
+            empty.style.cursor = "default";
+            parent.appendChild(empty);
+        }
+    }
 }
 
 function setupDragAndDrop() {
