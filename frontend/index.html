@@ -1,75 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>十三水牌桌</title>
-  <link rel="stylesheet" href="assets/style.css">
+    <meta charset="UTF-8">
+    <title>用户积分管理系统</title>
+    <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <div class="table-container">
-    <div class="table-title">十三水牌桌</div>
-    <div>
-      <span class="seat dealer">庄家</span>
-      <span class="seat">玩家2</span>
-      <span class="seat">玩家3</span>
-      <span class="seat">玩家4</span>
+    <div id="user-bar">
+        <span id="user-info"></span>
+        <button id="login-btn">登录/注册</button>
+        <button id="logout-btn" style="display:none;">退出</button>
     </div>
-    <!-- 手牌展示 -->
-    <div class="pokers" id="myHand"></div>
-    <div style="margin-top: 36px; font-size:1.1em;">
-      <b>欢迎来到十三水牌桌！</b><br>
-      <button class="user-btn" onclick="showUserModal()">用户管理</button>
+    <div id="main">
+        <h2>用户操作</h2>
+        <div>
+            <button onclick="showGift()">积分赠送</button>
+            <button onclick="showSearchUser()">查找用户</button>
+        </div>
+        <div id="user-detail"></div>
     </div>
-  </div>
-
-  <!-- 用户管理弹窗 -->
-  <div id="userModalMask" class="modal-mask hidden"></div>
-  <div id="userModal" class="modal-box hidden">
-    <button class="modal-close" onclick="closeUserModal()" title="关闭">×</button>
-    <!-- 登录视图 -->
-    <div id="loginBox" class="hidden">
-      <h2 style="text-align:center;">登录</h2>
-      <input id="login_username" placeholder="用户名或手机号"><br>
-      <input id="login_password" type="password" placeholder="密码"><br>
-      <button onclick="login()">登录</button>
-      <button onclick="showRegister()">没有账号？注册</button>
+    <div id="modal" class="modal">
+        <div class="modal-content" id="modal-content"></div>
     </div>
-    <!-- 注册视图 -->
-    <div id="registerBox" class="hidden">
-      <h2 style="text-align:center;">注册</h2>
-      <input id="reg_username" placeholder="用户名"><br>
-      <input id="reg_phone" placeholder="手机号"><br>
-      <input id="reg_password" type="password" placeholder="密码"><br>
-      <input id="reg_password2" type="password" placeholder="重复密码"><br>
-      <button onclick="register()">注册</button>
-      <button onclick="showLogin()">已有账号？登录</button>
-    </div>
-    <!-- 已登录视图 -->
-    <div id="userPanel" class="hidden">
-      <div class="profile-box" id="profile"></div>
-      <button onclick="logout()">退出登录</button>
-      <hr>
-      <h3 style="margin:8px 0 6px 0;">查找朋友/赠送积分</h3>
-      <input id="searchKey" placeholder="朋友ID或手机号">
-      <button onclick="searchFriend()">查找</button>
-      <div id="friendInfo"></div>
-    </div>
-  </div>
-
-  <script src="assets/game.js"></script>
-  <script>
-    // 示例手牌（你可以用后端接口或JS逻辑动态生成）
-    const hand = ['AS', '10C', 'KD', 'QH', 'JS'];
-    const handDiv = document.getElementById('myHand');
-    handDiv.innerHTML = '';
-    hand.forEach(card => {
-      let file = cardShortToFilename(card);
-      let img = document.createElement('img');
-      img.className = "poker";
-      img.src = "assets/cards/" + file;
-      img.alt = card;
-      handDiv.appendChild(img);
-    });
-  </script>
+    <script src="assets/game.js"></script>
 </body>
 </html>
