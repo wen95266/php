@@ -1,6 +1,7 @@
 // 后端 API 域名
 const API = 'https://wenge.cloudns.ch';
 
+// ==== 注册/登录/积分功能 ====
 function showLogin() {
   document.getElementById('loginForm').style.display = '';
   document.getElementById('registerForm').style.display = 'none';
@@ -19,7 +20,7 @@ function login() {
   .then(res => res.json())
   .then(r => {
     if(r.ok) {
-      showUser();
+      onLoginSuccess();
     } else alert(r.error);
   });
 }
@@ -36,30 +37,32 @@ function register() {
   });
 }
 function logout() {
-  fetch(API + '/logout.php', {
-    credentials: 'include'
-  }).then(()=> {
-    document.getElementById('userInfo').style.display = 'none';
-    document.getElementById('auth').style.display = '';
-    showLogin();
-  });
-}
-function showUser() {
-  fetch(API + '/userinfo.php', {
-    credentials: 'include'
-  }).then(res=>res.json()).then(r=>{
-    if(r.phone) {
-      document.getElementById('auth').style.display = 'none';
-      document.getElementById('userInfo').style.display = '';
-      document.getElementById('nick').innerText = r.nickname;
-      document.getElementById('myscore').innerText = ' 积分:' + r.score;
-      document.getElementById('adminPanel').style.display = r.is_admin ? '' : 'none';
-    } else {
-      document.getElementById('userInfo').style.display = 'none';
-      document.getElementById('auth').style.display = '';
+  fetch(API + '/logout.php', { credentials: 'include' })
+    .then(()=> {
+      document.getElementById('userInfoArea').style.display = 'none';
+      document.getElementById('authArea').style.display = '';
+      document.getElementById('gameArea').style.display = 'none';
       showLogin();
-    }
-  });
+    });
+}
+function onLoginSuccess() {
+  fetch(API + '/userinfo.php', { credentials: 'include' })
+    .then(res=>res.json())
+    .then(r=>{
+      if(r.phone) {
+        document.getElementById('authArea').style.display = 'none';
+        document.getElementById('userInfoArea').style.display = '';
+        document.getElementById('nickname').innerText = r.nickname;
+        document.getElementById('score').innerText = ' 积分:' + r.score;
+        document.getElementById('adminPanel').style.display = r.is_admin ? '' : 'none';
+        document.getElementById('gameArea').style.display = '';
+      } else {
+        document.getElementById('userInfoArea').style.display = 'none';
+        document.getElementById('authArea').style.display = '';
+        document.getElementById('gameArea').style.display = 'none';
+        showLogin();
+      }
+    });
 }
 function showAdminAdd() {
   document.getElementById('adminAddPanel').style.display = '';
@@ -77,6 +80,7 @@ function adminAdd() {
     if(r.ok) alert('加分成功，新积分：'+r.newscore);
     else alert(r.error);
     hideAdminAdd();
+    onLoginSuccess();
   });
 }
 function showAdminSub() {
@@ -95,6 +99,7 @@ function adminSub() {
     if(r.ok) alert('减分成功，新积分：'+r.newscore);
     else alert(r.error);
     hideAdminSub();
+    onLoginSuccess();
   });
 }
 function showHistory() {
@@ -111,7 +116,36 @@ function showHistory() {
 function hideHistory() {
   document.getElementById('historyPanel').style.display = 'none';
 }
-hideAdminAdd();
-hideAdminSub();
-hideHistory();
-showUser();
+
+// ==== 游戏核心逻辑（恢复原有功能，示例为牌桌、发牌、提交牌型等） ====
+// 你原来的JS逻辑请放在这里，下面为示例
+function dealCards() {
+  // 发牌逻辑
+  document.getElementById('resultArea').innerText = '发牌啦！（请在这里实现你的发牌逻辑）';
+  // 例如：调用前端JS洗牌发牌，或渲染牌面到cardTable
+}
+function submitHand() {
+  // 提交牌型逻辑
+  document.getElementById('resultArea').innerText = '已提交牌型！（请在这里实现牌型判定和结果显示）';
+}
+
+// ==== 页面初始化 ====
+window.onload = function() {
+  hideAdminAdd();
+  hideAdminSub();
+  hideHistory();
+  document.getElementById('gameArea').style.display = 'none';
+  // 自动检查登录状态
+  fetch(API + '/userinfo.php', { credentials: 'include' })
+    .then(res=>res.json())
+    .then(r=>{
+      if(r.phone) {
+        onLoginSuccess();
+      } else {
+        document.getElementById('authArea').style.display = '';
+        document.getElementById('userInfoArea').style.display = 'none';
+        document.getElementById('gameArea').style.display = 'none';
+        showLogin();
+      }
+    });
+};
