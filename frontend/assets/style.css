@@ -1,35 +1,89 @@
-body { font-family: Arial,sans-serif; background: #f6f8fb; margin: 0; }
-#user-bar { background: #222; color: #fff; padding: 10px; }
-#user-bar button { margin-left: 10px; }
-#main { max-width: 1200px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; }
-#room-list-section { margin-bottom: 32px; }
-#room-list { width: 100%; border-collapse: collapse; font-size:1em; }
-#room-list th, #room-list td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-#room-list th { background: #eee; }
-#room-detail-section { }
-#room-title { color: #1a7; }
-#room-members { margin: 10px 0; }
-#chat { margin: 20px 0; }
-#chat-list { height: 120px; overflow-y: auto; border: 1px solid #ccc; background: #fafafa; padding: 8px; }
-#chat-msg { width: 70%; }
-button { padding: 5px 12px; margin: 2px; border-radius: 4px; border: none; background: #48a; color: #fff; cursor: pointer; }
-button:hover { background: #357; }
-.modal { display:none; position:fixed;z-index:10;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);}
-.modal-content { background:#fff;max-width:340px;margin:100px auto;padding:20px;border-radius:6px; }
-input { padding:6px; margin:5px 0; border-radius:4px;border:1px solid #bbb;}
-.card { display:inline-block; border:1px solid #888; border-radius:5px; margin:2px 2px; background:#ffe; padding:2px 10px; font-size:1.2em;}
-.table { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; background:#255; border-radius:18px; padding:30px 0; margin:20px auto; max-width:900px;}
-.seat { flex:1 1 200px; min-width:180px; margin:8px 0; text-align:center; background:rgba(255,255,255,0.9); border-radius:10px; padding:15px 8px; box-shadow:0 2px 12px #0002;}
-.seat.me { border: 2px solid #1a7; }
-.seat .trustee { color: #e80; font-weight:bold; }
-.seat .timeout { color: #f00; font-size: 0.95em; }
-.seat .result { font-size: 1.1em; margin-top:4px;}
-.seat .winner { color: #e21; font-weight:bold; }
-.seat .special { color: #06c; font-weight:bold;}
-#compare-btn { background: #e21; color: #fff; font-weight:bold;}
-@media (max-width: 900px) {
-    #main { max-width:98vw; }
-    .table { max-width:98vw; }
-    .seat { min-width:110px; font-size:0.9em;}
-    .card{font-size:1em;}
+body {
+    font-family: "微软雅黑", Arial, sans-serif;
+    background: #f2f2f2;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+h1 {
+    margin-top: 30px;
+    color: #4caf50;
+}
+#game-area {
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 10px;
+    padding: 30px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 95%;
+    max-width: 900px;
+}
+#player-cards {
+    margin: 20px 0;
+    display: block;
+}
+.dun {
+    display:flex; flex-wrap:wrap; margin:8px 0 12px 0; min-height:96px; justify-content:center;
+}
+.dun-label {
+    margin: 0 0 4px 0;
+    font-weight: bold;
+}
+.card {
+    width: 60px;
+    height: 90px;
+    margin: 4px;
+    background: #eee;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px #aaa;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.card.selected {
+    border: 3px solid #2196F3;
+}
+.card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+#actions button, #start-btn, #submit-btn, #auto-dun-btn, #ai-btn, #reset-btn, #logout-btn {
+    margin: 8px 10px;
+    padding: 9px 18px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    background: #4caf50;
+    color: #fff;
+    cursor: pointer;
+}
+#actions button:disabled, #submit-btn:disabled, #auto-dun-btn:disabled, #ai-btn:disabled, #reset-btn:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+}
+#game-status {
+    margin-top: 20px;
+    color: #d32f2f;
+    font-weight: bold;
+}
+.player-table { border-collapse:collapse;margin:10px auto;}
+.player-table th,.player-table td { border:1px solid #bbb; padding:4px 8px;}
+.player-table th { background:#f2f2f2;}
+#user-area, #game-area {
+    margin-bottom: 16px;
+}
+input[type="text"], input[type="number"], input[type="password"] {
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    margin: 0 5px 5px 0;
+}
+#user-info, #room-status, #friend-info, #gift-status {
+    margin-left: 8px;
+    color: #333;
+    font-size: 15px;
 }
