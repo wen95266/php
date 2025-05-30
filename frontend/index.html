@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>十三水棋牌游戏</title>
+    <title>十三水棋牌</title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -13,32 +13,50 @@
         <button id="login-btn">注册/登录</button>
         <span id="user-info"></span>
     </div>
+    <div id="menu-area" style="display:none">
+        <span id="menu-nick"></span>
+        <button id="menu-btn">&#9776;</button>
+        <div id="menu-dropdown" class="dropdown-content">
+            <span id="menu-score"></span>
+            <button id="menu-gift">赠送积分</button>
+            <button id="menu-find">查找玩家</button>
+            <button id="menu-logout">退出账号</button>
+        </div>
+    </div>
     <div id="game-area" style="display:none">
         <button id="quick-match-btn">快速匹配</button>
         <input id="room-id" placeholder="房间号" />
         <button id="join-room-btn">加入房间</button>
-        <button id="logout-btn">退出</button>
         <span id="room-status"></span>
-        <br><br>
         <button id="start-btn" disabled>房主开局</button>
         <button id="auto-dun-btn" disabled>智能分墩</button>
         <button id="ai-btn" disabled>AI托管</button>
         <button id="submit-btn" disabled>提交比牌</button>
         <button id="reset-btn" disabled>重置分墩</button>
-        <br>
         <div id="player-cards"></div>
         <div id="result-area"></div>
         <div id="room-players"></div>
         <div id="game-status"></div>
         <div id="score-panel"></div>
-        <br>
-        <input id="friend-query" placeholder="手机号/ID查找朋友">
-        <button id="query-friend-btn">查找</button>
-        <span id="friend-info"></span>
-        <br>
-        <input id="gift-amount" type="number" min="1" placeholder="赠送积分数量">
-        <button id="gift-btn">赠送积分</button>
-        <span id="gift-status"></span>
+    </div>
+    <div id="gift-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="gift-close">&times;</span>
+            <h3>赠送积分</h3>
+            <input id="gift-phone" placeholder="对方手机号或ID">
+            <input id="gift-amount" type="number" min="1" placeholder="赠送积分数量">
+            <button id="gift-confirm">确认赠送</button>
+            <span id="gift-status"></span>
+        </div>
+    </div>
+    <div id="find-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="find-close">&times;</span>
+            <h3>查找玩家</h3>
+            <input id="find-query" placeholder="手机号或ID">
+            <button id="find-confirm">查找</button>
+            <div id="find-info"></div>
+        </div>
     </div>
     <script src="assets/game.js"></script>
 </body>
