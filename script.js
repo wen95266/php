@@ -10,9 +10,6 @@ let draggingCard = null;
 const frontHand = document.getElementById('front-hand');
 const backHand = document.getElementById('back-hand');
 const middleHand = document.getElementById('middle-hand');
-const frontCount = document.getElementById('front-count');
-const middleCount = document.getElementById('middle-count');
-const backCount = document.getElementById('back-count');
 const dealBtn = document.getElementById('dealCardsBtn');
 const autoBtn = document.getElementById('autoGroupBtn');
 const resetBtn = document.getElementById('resetArrangementBtn');
@@ -33,13 +30,9 @@ function cardToFilename(card) {
 function renderAll() {
     // 牌归属
     const left = hand.filter(c => !front.includes(c) && !back.includes(c));
-    renderRow(frontHand, front, 3, false);
-    renderRow(backHand, back, 5, false);
-    renderMiddleHand(middleHand, left);
-
-    frontCount.textContent = `(${front.length}/3)`;
-    middleCount.textContent = `(${left.length}/13)`;
-    backCount.textContent = `(${back.length}/5)`;
+    renderRow(frontHand, front, 3);
+    renderRow(middleHand, left, 13);
+    renderRow(backHand, back, 5);
 
     resetBtn.disabled = hand.length === 0;
     submitBtn.disabled = !(front.length === 3 && back.length === 5 && (front.length + back.length === 8) && hand.length === 13);
@@ -88,21 +81,10 @@ function createCardElem(card) {
     return div;
 }
 
-function renderRow(parent, arr, max, isMiddle) {
+function renderRow(parent, arr, max) {
     parent.innerHTML = '';
     arr.forEach(card => parent.appendChild(createCardElem(card)));
     for (let i = arr.length; i < max; ++i) {
-        const ph = document.createElement('div');
-        ph.className = 'drop-placeholder';
-        parent.appendChild(ph);
-    }
-}
-
-function renderMiddleHand(parent, cards) {
-    parent.innerHTML = '';
-    // 13张牌横向一行显示，不堆叠，每张等宽
-    cards.forEach(card => parent.appendChild(createCardElem(card)));
-    for (let i = cards.length; i < 13; ++i) {
         const ph = document.createElement('div');
         ph.className = 'drop-placeholder';
         parent.appendChild(ph);
@@ -135,7 +117,6 @@ function moveCardToZone(card, targetId) {
     else if (targetId === 'back-hand' && back.length < 5) back.push(card);
     else if (targetId === 'middle-hand') {
         // 拖回手牌区
-        // nothing: just removed from front/back above
     }
     renderAll();
     msgBar.textContent = '';
