@@ -31,7 +31,7 @@ function cardToFilename(card) {
 
 document.getElementById('draw').addEventListener('click', async function() {
   // 替换为你的 serv00 PHP 后端实际地址
-  const apiUrl = 'https://你的serv00用户名.serv00.net/cards.php';
+  const apiUrl = 'https://wenge.cloudns.ch/cards.php';
 
   try {
     const response = await fetch(apiUrl);
