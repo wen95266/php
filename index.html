@@ -3,40 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>十三水摆牌游戏</title>
+    <title>十三水摆牌</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="poker-table">
     <div class="table-row" id="row-front">
-        <div class="row-title">头道</div>
         <div id="front-hand" class="arranged-hand drop-zone"></div>
-        <div class="row-count" id="front-count"></div>
     </div>
     <div class="table-row" id="row-middle">
-        <div class="row-title">中道</div>
         <div id="middle-hand" class="arranged-hand drop-zone"></div>
-        <div class="row-count" id="middle-count"></div>
     </div>
     <div class="table-row" id="row-back">
-        <div class="row-title">尾道</div>
         <div id="back-hand" class="arranged-hand drop-zone"></div>
-        <div class="row-count" id="back-count"></div>
     </div>
     <div class="table-row action-buttons-container" id="row-buttons">
         <div class="action-buttons">
             <button id="dealCardsBtn" class="game-button">发牌</button>
             <button id="autoGroupBtn" class="game-button">智能分牌</button>
             <button id="resetArrangementBtn" class="game-button" disabled>重置</button>
-            <button id="undoBtn" class="game-button">撤销</button>
-            <button id="redoBtn" class="game-button">重做</button>
             <button id="submitHandsBtn" class="game-button primary-button" disabled>确认</button>
         </div>
         <div id="game-message" class="game-message-bar"></div>
-    </div>
-    <div class="history-container">
-        <div id="history-title">本局历史</div>
-        <ul id="history-list"></ul>
     </div>
 </div>
 <script src="script.js"></script>
