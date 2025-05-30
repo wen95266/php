@@ -11,7 +11,6 @@ let gameStarted = false;
 let submitted = false;
 let roomPlayers = {};
 let trustAI = false;
-let lastFriend = null;
 
 function getCardImage(card) {
     const suitMap = { S: "spades", H: "hearts", D: "diamonds", C: "clubs" };
@@ -34,8 +33,10 @@ function showStatus(msg, color="#d32f2f") {
 
 function showUserInfo() {
     if (!user) return;
-    document.getElementById("user-info").textContent = `欢迎, ${user.nickname} (ID:${user.id}, 积分:${user.score})`;
-    document.getElementById("game-area").style.display = "";
+    document.getElementById("user-info").textContent = "";
+    document.getElementById("menu-area").style.display = "";
+    document.getElementById("menu-nick").textContent = `${user.nickname} (ID:${user.id})`;
+    document.getElementById("menu-score").textContent = `积分：${user.score}`;
 }
 
 function renderDuns() {
@@ -124,15 +125,79 @@ document.getElementById("login-btn").onclick = async () => {
     if (data.result === "ok") {
         user = data.user;
         token = data.token;
-        showUserInfo();
         document.getElementById("user-area").style.display = "none";
+        document.getElementById("game-area").style.display = "";
+        showUserInfo();
     } else {
         alert("注册/登录失败："+(data.error||"未知错误"));
     }
 };
 
-document.getElementById("logout-btn").onclick = function(){
+document.getElementById("menu-btn").onclick = function(){
+    document.getElementById("menu-area").classList.toggle("show");
+};
+window.onclick = function(e){
+    if (!e.target.matches('#menu-btn')) {
+        document.getElementById("menu-area").classList.remove("show");
+    }
+}
+document.getElementById("menu-logout").onclick = function(){
     location.reload();
+};
+document.getElementById("menu-gift").onclick = function(){
+    document.getElementById("gift-modal").style.display = "block";
+    document.getElementById("gift-status").textContent = "";
+    document.getElementById("gift-phone").value = "";
+    document.getElementById("gift-amount").value = "";
+};
+document.getElementById("menu-find").onclick = function(){
+    document.getElementById("find-modal").style.display = "block";
+    document.getElementById("find-info").textContent = "";
+    document.getElementById("find-query").value = "";
+};
+document.getElementById("gift-close").onclick = function(){
+    document.getElementById("gift-modal").style.display = "none";
+};
+document.getElementById("find-close").onclick = function(){
+    document.getElementById("find-modal").style.display = "none";
+};
+
+document.getElementById("gift-confirm").onclick = async () => {
+    let friend = document.getElementById("gift-phone").value.trim();
+    let amt = parseInt(document.getElementById("gift-amount").value);
+    if (!friend || !amt || amt<=0) {
+        document.getElementById("gift-status").textContent = "请填写对方手机号或ID和正整数积分";
+        return;
+    }
+    let res = await fetch(`${backend}?action=query_user&query=${encodeURIComponent(friend)}`);
+    let data = await res.json();
+    if (!(data.result==="ok" && data.user)) {
+        document.getElementById("gift-status").textContent = "未找到该玩家";
+        return;
+    }
+    let to = data.user.id;
+    let resp = await fetch(`${backend}?action=gift_score`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({from: user.id, token, to: to, amount: amt})
+    });
+    let d = await resp.json();
+    if (d.result === "ok") {
+        document.getElementById("gift-status").textContent = "赠送成功";
+    } else {
+        document.getElementById("gift-status").textContent = "赠送失败：" + (d.error||"未知错误");
+    }
+};
+document.getElementById("find-confirm").onclick = async () => {
+    let q = document.getElementById("find-query").value.trim();
+    if (!q) return;
+    let res = await fetch(`${backend}?action=query_user&query=${encodeURIComponent(q)}`);
+    let data = await res.json();
+    if (data.result === "ok" && data.user) {
+        document.getElementById("find-info").innerHTML = `ID: ${data.user.id}<br>昵称: ${data.user.nickname}<br>手机号: ${data.user.phone}<br>积分: ${data.user.score}`;
+    } else {
+        document.getElementById("find-info").textContent = "未找到该玩家";
+    }
 };
 
 document.getElementById("join-room-btn").onclick = async () => {
@@ -284,6 +349,8 @@ function pollRoom(fresh=false) {
                 currentCards = my.cards||[];
                 submitted = !!my.submitted;
                 trustAI = !!my.ai;
+                user.score = my.score;
+                document.getElementById("menu-score").textContent = `积分：${user.score}`;
                 if (fresh && currentCards.length === 13) {
                     duns = {head:[], mid:[], tail:[]};
                 }
@@ -322,34 +389,3 @@ document.addEventListener("DOMContentLoaded", ()=>{
     `;
     showStatus("请先注册/登录");
 });
-
-// 查找朋友
-document.getElementById("query-friend-btn").onclick = async () => {
-    let q = document.getElementById("friend-query").value.trim();
-    if (!q) return;
-    let res = await fetch(`${backend}?action=query_user&query=${encodeURIComponent(q)}`);
-    let data = await res.json();
-    if (data.result === "ok" && data.user) {
-        lastFriend = data.user;
-        document.getElementById("friend-info").textContent = `ID: ${data.user.id}, 昵称: ${data.user.nickname}, 积分: ${data.user.score}`;
-    } else {
-        document.getElementById("friend-info").textContent = "未找到该玩家";
-        lastFriend = null;
-    }
-};
-// 赠送积分
-document.getElementById("gift-btn").onclick = async () => {
-    let amt = parseInt(document.getElementById("gift-amount").value);
-    if (!lastFriend || !amt || amt<=0) return alert("请先查找朋友并输入正整数积分");
-    let res = await fetch(`${backend}?action=gift_score`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({from: user.id, token, to: lastFriend.id, amount: amt})
-    });
-    let data = await res.json();
-    if (data.result === "ok") {
-        document.getElementById("gift-status").textContent = "赠送成功";
-    } else {
-        document.getElementById("gift-status").textContent = "赠送失败：" + (data.error||"未知错误");
-    }
-};
