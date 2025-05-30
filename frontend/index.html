@@ -3,82 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>十三水牌桌</title>
-  <style>
-    body { font-family: sans-serif; background: #357a38; color: #fff;}
-    .user-btn { position: absolute; top: 10px; right: 10px; }
-    .table-container {
-      width: 700px;
-      margin: 60px auto 0 auto;
-      background: #216032;
-      border-radius: 18px;
-      padding: 40px 20px 60px 20px;
-      box-shadow: 0 0 20px #222;
-      text-align: center;
-      position: relative;
-    }
-    .pokers {
-      margin: 30px auto 0 auto;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-    }
-    .poker {
-      width: 60px; height: 90px;
-      background: #fff;
-      color: #222;
-      border-radius: 8px;
-      box-shadow: 2px 2px 8px #111;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      font-weight: bold;
-      font-size: 22px;
-    }
-    .table-title {
-      font-size: 2.2em;
-      letter-spacing: 2px;
-      margin-bottom: 16px;
-      font-weight: bold;
-    }
-    .seat {
-      display: inline-block;
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      background: #5aa469;
-      margin: 15px;
-      line-height: 90px;
-      text-align: center;
-      font-size: 1.1em;
-      font-weight: bold;
-      box-shadow: 0 0 8px #333;
-      color: #fff;
-    }
-    .dealer {
-      background: #fbc02d;
-      color: #222;
-    }
-    /* 用户管理样式 */
-    .hidden { display:none; }
-    .modal-mask {
-      position: fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.55); z-index: 1000;
-    }
-    .modal-box {
-      background: #fff; color: #333; border-radius: 12px; padding: 30px 20px 20px 20px; width: 330px;
-      position: fixed; left:50%; top:50%; transform:translate(-50%,-50%);
-      box-shadow: 0 0 24px #111; z-index: 1010;
-      text-align:left;
-    }
-    .modal-box input { width: 95%; margin: 8px 0; line-height: 2; }
-    .modal-box button { margin: 6px 8px 0 0; }
-    .profile-box { margin-bottom: 18px; line-height: 1.7; }
-    #friendInfo { margin-top:10px; }
-    .modal-close {
-      position:absolute; right:12px; top:10px; color: #222; background:none; border:none; font-size: 20px; cursor:pointer;
-    }
-    @media (max-width: 750px) {
-      .table-container { width:98vw; padding: 8vw 2vw 12vw 2vw; }
-      .modal-box { width:94vw; min-width:210px; }
-    }
-  </style>
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
   <div class="table-container">
@@ -90,13 +15,9 @@
       <span class="seat">玩家3</span>
       <span class="seat">玩家4</span>
     </div>
-    <!-- 手牌示意 -->
-    <div class="pokers">
-      <div class="poker">A♠</div>
-      <div class="poker">10♥</div>
-      <div class="poker">K♣</div>
-      <div class="poker">J♦</div>
-      <div class="poker">7♠</div>
+    <!-- 手牌示意（可以用game.js动态渲染） -->
+    <div class="pokers" id="myHand">
+      <!-- 这里的牌由JS动态插入 -->
     </div>
     <div style="margin-top: 36px; font-size:1.1em;">
       <b>欢迎来到十三水牌桌！</b><br>
@@ -138,130 +59,6 @@
     </div>
   </div>
 
-  <script>
-    // 弹窗控制
-    function showUserModal() {
-      document.getElementById('userModalMask').classList.remove('hidden');
-      document.getElementById('userModal').classList.remove('hidden');
-      checkLogin();
-    }
-    function closeUserModal() {
-      document.getElementById('userModalMask').classList.add('hidden');
-      document.getElementById('userModal').classList.add('hidden');
-    }
-    // 登录状态检测
-    function checkLogin() {
-      fetch('/api/game.php?action=profile')
-        .then(r=>r.json()).then(data=>{
-          if(data.result === 'ok') {
-            showProfile(data.user);
-          } else {
-            showLogin();
-          }
-        });
-    }
-    // 显示登录、注册、用户面板
-    function showProfile(user) {
-      document.getElementById('userPanel').classList.remove('hidden');
-      document.getElementById('loginBox').classList.add('hidden');
-      document.getElementById('registerBox').classList.add('hidden');
-      document.getElementById('profile').innerHTML = 
-        `用户名: <b>${user.username}</b><br>手机号: ${user.phone}<br>积分: <b>${user.score}</b><br>胜场: ${user.win||0} 负场: ${user.lose||0} <br>注册时间: ${user.created_at}`;
-      document.getElementById('friendInfo').innerHTML = "";
-      document.getElementById('searchKey').value = "";
-    }
-    function showLogin() {
-      document.getElementById('loginBox').classList.remove('hidden');
-      document.getElementById('registerBox').classList.add('hidden');
-      document.getElementById('userPanel').classList.add('hidden');
-    }
-    function showRegister() {
-      document.getElementById('registerBox').classList.remove('hidden');
-      document.getElementById('loginBox').classList.add('hidden');
-      document.getElementById('userPanel').classList.add('hidden');
-    }
-    // 登录
-    function login() {
-      const username = document.getElementById('login_username').value.trim();
-      const password = document.getElementById('login_password').value.trim();
-      if(!username || !password) { alert("请输入账号和密码"); return; }
-      fetch('/api/game.php?action=login', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({username, password})
-      })
-      .then(r=>r.json()).then(data=>{
-        if(data.result==='ok'){
-          checkLogin();
-        } else {
-          alert(data.msg||'登录失败');
-        }
-      });
-    }
-    // 注册
-    function register() {
-      const username = document.getElementById('reg_username').value.trim();
-      const phone = document.getElementById('reg_phone').value.trim();
-      const password = document.getElementById('reg_password').value.trim();
-      const password2 = document.getElementById('reg_password2').value.trim();
-      if(!username || !phone || !password || !password2) {
-        alert("请填写完整信息"); return;
-      }
-      if(password !== password2) { alert("两次密码不一致"); return; }
-      fetch('/api/game.php?action=register', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({username, phone, password})
-      })
-      .then(r=>r.json()).then(data=>{
-        if(data.result==='ok'){
-          alert('注册成功，请登录');
-          showLogin();
-        } else {
-          alert(data.msg||'注册失败');
-        }
-      });
-    }
-    // 登出
-    function logout() {
-      fetch('/api/game.php?action=logout')
-      .then(()=>checkLogin());
-    }
-    // 查找朋友
-    function searchFriend() {
-      const key = document.getElementById('searchKey').value.trim();
-      if(!key) return;
-      fetch(`/api/game.php?action=search_user&key=${encodeURIComponent(key)}`)
-      .then(r=>r.json()).then(data=>{
-        if(data.result==='ok'){
-          document.getElementById('friendInfo').innerHTML = 
-            `用户名:${data.user.username} 积分:${data.user.score}
-            <input id="giftAmt" type="number" min="1" placeholder="赠送积分数">
-            <button onclick="giftScore(${data.user.id})">赠送积分</button>`;
-        }else{
-          document.getElementById('friendInfo').innerHTML = "未找到该用户";
-        }
-      });
-    }
-    // 赠送积分
-    function giftScore(friendId) {
-      const amt = parseInt(document.getElementById('giftAmt').value);
-      if(!amt || amt<=0) { alert("请输入正确的积分数"); return; }
-      fetch('/api/game.php?action=gift_score', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({to: friendId, amt})
-      })
-      .then(r=>r.json()).then(data=>{
-        alert(data.msg||'操作失败');
-        if(data.result==='ok') checkLogin();
-      });
-    }
-    // 支持ESC关闭弹窗
-    document.addEventListener('keydown', function(e){
-      if(e.key === "Escape") closeUserModal();
-    });
-    document.getElementById('userModalMask').onclick = closeUserModal;
-  </script>
+  <script src="assets/game.js"></script>
 </body>
 </html>
