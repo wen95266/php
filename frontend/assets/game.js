@@ -1,3 +1,10 @@
+// 后端PHP接口根地址
+const API_BASE = "https://wenge.cloudns.ch/backend/api/game.php";
+
+function apiUrl(action, params = "") {
+  return `${API_BASE}?action=${action}${params}`;
+}
+
 // 牌名转图片文件名
 function cardShortToFilename(shortCode) {
   const suitMap = {
@@ -32,7 +39,9 @@ function closeUserModal() {
 }
 // 登录状态检测
 function checkLogin() {
-  fetch('/api/game.php?action=profile')
+  fetch(apiUrl('profile'), {
+    credentials: 'include'
+  })
     .then(r=>r.json()).then(data=>{
       if(data.result === 'ok') {
         showProfile(data.user);
@@ -66,9 +75,10 @@ function login() {
   const username = document.getElementById('login_username').value.trim();
   const password = document.getElementById('login_password').value.trim();
   if(!username || !password) { alert("请输入账号和密码"); return; }
-  fetch('/api/game.php?action=login', {
+  fetch(apiUrl('login'), {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
+    credentials: 'include',
     body: JSON.stringify({username, password})
   })
   .then(r=>r.json()).then(data=>{
@@ -89,9 +99,10 @@ function register() {
     alert("请填写完整信息"); return;
   }
   if(password !== password2) { alert("两次密码不一致"); return; }
-  fetch('/api/game.php?action=register', {
+  fetch(apiUrl('register'), {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
+    credentials: 'include',
     body: JSON.stringify({username, phone, password})
   })
   .then(r=>r.json()).then(data=>{
@@ -105,14 +116,18 @@ function register() {
 }
 // 登出
 function logout() {
-  fetch('/api/game.php?action=logout')
+  fetch(apiUrl('logout'), {
+    credentials: 'include'
+  })
   .then(()=>checkLogin());
 }
 // 查找朋友
 function searchFriend() {
   const key = document.getElementById('searchKey').value.trim();
   if(!key) return;
-  fetch(`/api/game.php?action=search_user&key=${encodeURIComponent(key)}`)
+  fetch(apiUrl('search_user', `&key=${encodeURIComponent(key)}`), {
+    credentials: 'include'
+  })
   .then(r=>r.json()).then(data=>{
     if(data.result==='ok'){
       document.getElementById('friendInfo').innerHTML = 
@@ -128,9 +143,10 @@ function searchFriend() {
 function giftScore(friendId) {
   const amt = parseInt(document.getElementById('giftAmt').value);
   if(!amt || amt<=0) { alert("请输入正确的积分数"); return; }
-  fetch('/api/game.php?action=gift_score', {
+  fetch(apiUrl('gift_score'), {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
+    credentials: 'include',
     body: JSON.stringify({to: friendId, amt})
   })
   .then(r=>r.json()).then(data=>{
@@ -143,3 +159,19 @@ document.addEventListener('keydown', function(e){
   if(e.key === "Escape") closeUserModal();
 });
 document.getElementById('userModalMask').onclick = closeUserModal;
+
+// --------- 牌桌渲染示例（可根据实际需求完善） ---------
+window.onload = function() {
+  // 示例：渲染五张手牌
+  const hand = ['AS', '10C', 'KD', 'QH', 'JS']; // 扑克牌文件名去掉.svg
+  const handDiv = document.getElementById('myHand');
+  handDiv.innerHTML = '';
+  hand.forEach(card=>{
+    let file = cardShortToFilename(card);
+    let img = document.createElement('img');
+    img.className = "poker";
+    img.src = "assets/cards/" + file;
+    img.alt = card;
+    handDiv.appendChild(img);
+  });
+}
