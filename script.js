@@ -6,6 +6,7 @@ let hand = [];
 let front = [];
 let middle = [];
 let back = [];
+let history = [];
 
 const frontHand = document.getElementById('front-hand');
 const middleHand = document.getElementById('middle-hand');
@@ -14,9 +15,11 @@ const frontCount = document.getElementById('front-count');
 const middleCount = document.getElementById('middle-count');
 const backCount = document.getElementById('back-count');
 const dealBtn = document.getElementById('dealCardsBtn');
+const autoBtn = document.getElementById('autoGroupBtn');
 const resetBtn = document.getElementById('resetArrangementBtn');
 const submitBtn = document.getElementById('submitHandsBtn');
 const msgBar = document.getElementById('game-message');
+const historyBar = document.getElementById('game-history');
 
 function cardToFilename(card) {
     const suitMap = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
@@ -41,6 +44,8 @@ function renderAll() {
 
     resetBtn.disabled = hand.length === 0;
     submitBtn.disabled = !(front.length === 3 && middle.length === 5 && back.length === 5);
+    autoBtn.disabled = hand.length === 0;
+    renderHistory();
 }
 
 function createCardElem(card, draggable = true) {
@@ -82,6 +87,16 @@ function renderRow(parent, arr, max) {
         ph.className = 'drop-placeholder';
         parent.appendChild(ph);
     }
+}
+
+function renderHistory() {
+    if (!history.length) {
+        historyBar.innerHTML = '';
+        return;
+    }
+    historyBar.innerHTML = `<b>历史:</b><br>` + history.map(h =>
+        `[${h.time}] 头道:<span style="color:#ffda00">${h.headType}</span> 中道:<span style="color:#ffda00">${h.middleType}</span> 尾道:<span style="color:#ffda00">${h.tailType}</span> ${(h.valid ? '' : '<span style="color:#f44;">(倒水)</span>')}`
+    ).join('<br>');
 }
 
 function setupDragAndDrop() {
@@ -143,6 +158,25 @@ function onCardDrop(card, targetId) {
     msgBar.textContent = '';
 }
 
+// 智能分牌：大到小排序后 头道3/中道5/尾道5
+function autoGroup() {
+    if (!hand.length) return;
+    let sorted = [...hand].sort((a, b) => cardValue(b) - cardValue(a));
+    front = sorted.slice(0, 3);
+    middle = sorted.slice(3, 8);
+    back = sorted.slice(8, 13);
+    renderAll();
+    msgBar.textContent = '已智能分牌，可手动微调！';
+}
+function cardValue(card) {
+    const v = card.slice(1);
+    if (v === 'A') return 14;
+    if (v === 'K') return 13;
+    if (v === 'Q') return 12;
+    if (v === 'J') return 11;
+    return parseInt(v, 10);
+}
+
 dealBtn.onclick = async function() {
     dealBtn.disabled = true;
     msgBar.textContent = '正在发牌...';
@@ -158,6 +192,7 @@ dealBtn.onclick = async function() {
     }
     dealBtn.disabled = false;
 };
+autoBtn.onclick = autoGroup;
 resetBtn.onclick = function() {
     front = [], middle = [], back = [];
     renderAll();
@@ -184,6 +219,16 @@ submitBtn.onclick = async function() {
         } else {
             msgBar.textContent = `牌型: 头道${data.headType} 中道${data.middleType} 尾道${data.tailType}`;
         }
+        // 存历史
+        history.unshift({
+            time: (new Date()).toLocaleTimeString(),
+            headType: data.headType,
+            middleType: data.middleType,
+            tailType: data.tailType,
+            valid: data.valid
+        });
+        if (history.length > 6) history = history.slice(0, 6);
+        renderHistory();
     } catch (e) {
         msgBar.textContent = '判定失败，请重试';
     }
