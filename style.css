@@ -1,47 +1,63 @@
 body {
-  font-family: sans-serif;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
   background: #f5f5f5;
   text-align: center;
+  margin: 0;
+  padding: 0;
 }
-
 h1 {
   color: #333;
+  margin-top: 20px;
 }
-
+h2 {
+  margin-bottom: 10px;
+}
+h3 {
+  margin: 5px 0;
+  font-size: 1.1em;
+}
+.controls {
+  margin: 12px 0 6px 0;
+}
 button {
-  font-size: 1.2em;
+  font-size: 1em;
   padding: 0.5em 1.2em;
   cursor: pointer;
   border: none;
   background: #0070f3;
   color: white;
   border-radius: 6px;
-  margin-top: 10px;
+  margin: 0 5px;
   transition: background 0.2s;
 }
-button:hover {
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button:hover:enabled {
   background: #0056c1;
 }
-
 .card-container {
-  margin-top: 30px;
+  margin-top: 12px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  min-height: 135px;
 }
-
 .card {
   display: inline-block;
   width: 80px;
   height: 120px;
-  border: 1.5px solid #222;
+  border: 2px solid #222;
   border-radius: 8px;
   margin: 6px;
   background: white;
   text-align: center;
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.10);
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.07);
   user-select: none;
   vertical-align: top;
+  transition: border 0.2s, box-shadow 0.2s;
+  position: relative;
 }
 .card img {
   width: 70px;
@@ -53,4 +69,54 @@ button:hover {
   font-size: 0.95em;
   color: #333;
   margin-top: 2px;
+}
+.card.selected {
+  border: 2.5px solid #e91e63;
+  box-shadow: 0 0 8px #e91e63;
+  z-index: 2;
+}
+.groups {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+.group {
+  background: #fafbfc;
+  border-radius: 10px;
+  padding: 10px 10px 20px 10px;
+  min-width: 180px;
+  box-shadow: 1px 2px 8px rgba(0,0,0,0.06);
+}
+.group-cards {
+  min-height: 60px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.group .card {
+  margin: 3px;
+  width: 45px;
+  height: 70px;
+}
+.group .card img {
+  width: 37px;
+  height: 60px;
+}
+.group-btn {
+  font-size: 0.9em;
+  background: #e91e63;
+  margin-top: 3px;
+}
+.group-btn[disabled] {
+  background: #aaa;
+}
+@media (max-width: 800px) {
+  .groups {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
 }
