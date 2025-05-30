@@ -60,10 +60,11 @@ body {
     gap: var(--card-gap);
 }
 .arranged-hand.as-hand-area {
-    flex-direction: column;
-    gap: 14px;
-    padding: 14px 0 12px 0;
-    min-height: 168px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: var(--card-gap);
+    padding: 14px 8px 12px 8px;
+    min-height: 112px;
 }
 .zone-label {
     position: absolute;
@@ -87,7 +88,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 0.7; /* 高宽比 */
+    aspect-ratio: 0.7;
     box-sizing: border-box;
     background: #fff;
     border-radius: 6px;
@@ -97,18 +98,32 @@ body {
     transition: box-shadow 0.12s, border 0.12s;
     overflow: hidden;
     user-select: none;
+    height: 64px;
+    min-width: 46px;
+    max-width: 52px;
+    width: 6.8%;
+    flex: 0 1 auto;
+}
+.arranged-hand.as-hand-area .card-container {
+    height: 64px;
+    min-width: 46px;
+    max-width: 52px;
+    width: 6.8%;
+    flex: 0 1 auto;
+}
+.arranged-hand:not(.as-hand-area) .card-container {
+    height: 64px;
+    min-width: 46px;
+    max-width: 52px;
+    flex: 1 1 0;
 }
 .card-container.dragging {
     opacity: 0.6;
     z-index: 99;
     box-shadow: 0 0 16px #ffa800, 0 4px 16px #000a;
 }
-.card-container.selected {
-    outline: 3px solid #ecb007;
-    z-index: 5;
-}
 .card-image {
-    width: 100%; height: auto;
+    width: 95%; height: auto;
     display:block;
     pointer-events: none;
     user-select: none;
@@ -117,25 +132,15 @@ body {
     background: #fff2;
     border: 2px dashed #fff7;
     border-radius: 6px;
-    min-width: 0;
-    flex: 1 1 0;
+    min-width: 46px;
+    max-width: 52px;
+    height: 64px;
     aspect-ratio: 0.7;
-    min-height: 0;
-    height: 100%;
+    flex: 0 1 auto;
 }
 
 .arranged-hand.drag-over { background: #fff2; }
 .arranged-hand.selected-target-hand { background: #fff4; }
-
-.hand-area-sub-row {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: var(--card-gap);
-    width: 100%;
-    min-height: 56px;
-}
 
 #row-buttons .action-buttons {
     width: 100%; display: flex; flex-direction: row; justify-content: center; gap: 18px;
@@ -153,9 +158,10 @@ body {
 .game-message-bar {
     margin-top: 8px; min-height: 24px; font-size: 1.08em; color: #ffda00; text-align: center; font-weight: bold;
 }
-@media (max-width: 500px) {
+@media (max-width: 600px) {
     .poker-table { width:98vw; height:96vh; }
     .table-row { min-height:50px; }
     #row-front, #row-back { min-height:45px; }
-    #row-middle-visual { min-height:110px; }
+    #row-middle-visual { min-height:80px; }
+    .arranged-hand .card-container, .arranged-hand .drop-placeholder { height:44px; min-width:31px; max-width:38px; }
 }
