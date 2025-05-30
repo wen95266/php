@@ -30,13 +30,12 @@ function cardToFilename(card) {
     return `${valueStr}_of_${suitStr}.svg`;
 }
 
-// Middle hand按4-5-4自适应
 function renderAll() {
     // 牌归属
     const left = hand.filter(c => !front.includes(c) && !back.includes(c));
-    renderRow(frontHand, front, 3, true);
-    renderRow(backHand, back, 5, true);
-    renderHandRows(middleHand, left);
+    renderRow(frontHand, front, 3);
+    renderRow(backHand, back, 5);
+    renderMiddleHand(middleHand, left);
 
     frontCount.textContent = `(${front.length}/3)`;
     middleCount.textContent = `(${left.length}/13)`;
@@ -89,48 +88,41 @@ function createCardElem(card) {
     return div;
 }
 
-function renderRow(parent, arr, max, adaptive) {
+function renderRow(parent, arr, max) {
     parent.innerHTML = '';
     arr.forEach(card => parent.appendChild(createCardElem(card)));
-    // 自适应空位
     for (let i = arr.length; i < max; ++i) {
         const ph = document.createElement('div');
         ph.className = 'drop-placeholder';
         parent.appendChild(ph);
     }
-    // 自适应牌宽度
-    if (adaptive) {
-        const all = parent.querySelectorAll('.card-container,.drop-placeholder');
-        all.forEach(el => {
-            el.style.flex = `1 1 0`;
-            el.style.minWidth = 0;
-            el.style.maxWidth = (100/max - 2) + "%";
-            el.style.width = (100/max - 2) + "%";
-        });
-    }
+    // 自适应牌宽度（flex:1）
+    const all = parent.querySelectorAll('.card-container, .drop-placeholder');
+    all.forEach(el => {
+        el.style.flex = `1 1 0`;
+        el.style.minWidth = 0;
+        el.style.maxWidth = "52px";
+        el.style.width = "100%";
+    });
 }
 
-function renderHandRows(parent, cards) {
+
+function renderMiddleHand(parent, cards) {
     parent.innerHTML = '';
-    const rows = [[], [], []];
-    rows[0] = cards.slice(0, 4);
-    rows[1] = cards.slice(4, 9);
-    rows[2] = cards.slice(9, 13);
-    rows.forEach((row, i) => {
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'hand-area-sub-row';
-        row.forEach(card => {
-            rowDiv.appendChild(createCardElem(card));
-        });
-        // 自适应宽度
-        let n = Math.max(row.length, 1);
-        Array.from(rowDiv.children).forEach(el => {
-            el.style.flex = `1 1 0`;
-            el.style.minWidth = 0;
-            el.style.maxWidth = (100/n - 2) + "%";
-            el.style.width = (100/n - 2) + "%";
-        });
-        parent.appendChild(rowDiv);
+    // 13张牌横向一行显示，不堆叠，每张等宽
+    cards.forEach(card => parent.appendChild(createCardElem(card)));
+    for (let i = cards.length; i < 13; ++i) {
+        const ph = document.createElement('div');
+        ph.className = 'drop-placeholder';
+        parent.appendChild(ph);
+    }
+    // 等宽分布
+    const all = parent.querySelectorAll('.card-container, .drop-placeholder');
+    all.forEach(el => {
+        el.style.flex = `0 1 6.8%`;
+        el.style.minWidth = "46px";
+        el.style.maxWidth = "52px";
+        el.style.width = "6.8%";
     });
 }
 
@@ -153,12 +145,15 @@ function setupDragAndDrop() {
     });
 }
 function moveCardToZone(card, targetId) {
-    // 移出
     front = front.filter(c => c !== card);
     back = back.filter(c => c !== card);
-    // 只允许任意手牌拖到头道或尾道
+    // 只允许任意手牌拖到头道或尾道，拖回middle
     if (targetId === 'front-hand' && front.length < 3) front.push(card);
     else if (targetId === 'back-hand' && back.length < 5) back.push(card);
+    else if (targetId === 'middle-hand') {
+        // 拖回手牌区
+        // nothing: just removed from front/back above
+    }
     renderAll();
     msgBar.textContent = '';
 }
