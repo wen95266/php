@@ -1,38 +1,43 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <title>十三水扑克牌小游戏</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>十三水摆牌</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
-  <h1>十三水 · 扑克牌发牌与分牌</h1>
-  <div class="controls">
-    <button id="draw">发13张牌</button>
-    <button id="reset" disabled>重置分牌</button>
-    <button id="auto-group" disabled>自动分牌</button>
-    <button id="submit" disabled>提交分牌</button>
-  </div>
-  <h2>你的牌</h2>
-  <div id="cards" class="card-container"></div>
-  <div class="groups">
-    <div class="group" data-group="head">
-      <h3>头墩(3张)</h3>
-      <div class="group-cards" id="head"></div>
-      <button class="group-btn" id="to-head" disabled>放入头墩</button>
+    <div class="poker-table">
+        <!-- 头道 -->
+        <div class="table-row" id="row-front">
+            <div id="front-hand" class="arranged-hand drop-zone" data-hand-name="头道" data-max-cards="3">
+                <div class="zone-label">头道<span id="front-count" class="card-count">(0/3)</span></div>
+            </div>
+        </div>
+        <!-- 手牌区 -->
+        <div class="table-row hand-area-visual-container" id="row-middle-visual">
+            <div id="middle-hand" class="arranged-hand drop-zone as-hand-area" data-hand-name="手牌区" data-max-cards="13">
+                <div class="zone-label" id="middle-label-text-container">手牌区<span id="middle-count" class="card-count">(0/13)</span></div>
+            </div>
+        </div>
+        <!-- 尾道 -->
+        <div class="table-row" id="row-back">
+            <div id="back-hand" class="arranged-hand drop-zone" data-hand-name="尾道" data-max-cards="5">
+                <div class="zone-label">尾道<span id="back-count" class="card-count">(0/5)</span></div>
+            </div>
+        </div>
+        <!-- 操作按钮 -->
+        <div class="table-row action-buttons-container" id="row-buttons">
+            <div class="action-buttons">
+                <button id="dealCardsBtn" class="game-button">发牌</button>
+                <button id="resetArrangementBtn" class="game-button" disabled>重置</button>
+                <button id="submitHandsBtn" class="game-button primary-button" disabled>确认</button>
+            </div>
+        </div>
+        <div id="game-message" class="game-message-bar"></div>
     </div>
-    <div class="group" data-group="middle">
-      <h3>中墩(5张)</h3>
-      <div class="group-cards" id="middle"></div>
-      <button class="group-btn" id="to-middle" disabled>放入中墩</button>
-    </div>
-    <div class="group" data-group="tail">
-      <h3>尾墩(5张)</h3>
-      <div class="group-cards" id="tail"></div>
-      <button class="group-btn" id="to-tail" disabled>放入尾墩</button>
-    </div>
-  </div>
-  <div id="result"></div>
-  <script src="main.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
