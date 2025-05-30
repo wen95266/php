@@ -35,12 +35,19 @@ function renderAll() {
     front = sortCards(front);
     back = sortCards(back);
     const left = sortCards(hand.filter(c => !front.includes(c) && !back.includes(c)));
-    renderRow(frontHand, front, 3);
-    renderRow(middleHand, left, 13);
-    renderRow(backHand, back, 5);
+    renderRow(frontHand, front);
+    renderRow(middleHand, left);
+    renderRow(backHand, back);
 
     resetBtn.disabled = hand.length === 0;
-    submitBtn.disabled = !(front.length === 3 && back.length === 5 && (front.length + back.length === 8) && hand.length === 13);
+    // 只要3 5 5就可确认，不限制头/尾道数量
+    let middle = hand.filter(c => !front.includes(c) && !back.includes(c));
+    submitBtn.disabled = !(
+        front.length >= 3 &&
+        back.length >= 5 &&
+        middle.length === 5 &&
+        hand.length === 13
+    );
     autoBtn.disabled = hand.length === 0;
 }
 
@@ -69,11 +76,11 @@ function createCardElem(card) {
     // 点击（移动到目标区/回到手牌）
     div.addEventListener('click', () => {
         if (hand.includes(card)) {
-            if (!front.includes(card) && front.length < 3) {
-                front.push(card);
-            } else if (!back.includes(card) && back.length < 5) {
-                back.push(card);
-            }
+            front = front.filter(c => c !== card);
+            back = back.filter(c => c !== card);
+            // 头道优先
+            if (front.length < back.length) front.push(card);
+            else back.push(card);
         } else if (front.includes(card)) {
             front = front.filter(c => c !== card);
         } else if (back.includes(card)) {
@@ -86,7 +93,7 @@ function createCardElem(card) {
     return div;
 }
 
-function renderRow(parent, arr, max) {
+function renderRow(parent, arr) {
     parent.innerHTML = '';
     arr.forEach(card => parent.appendChild(createCardElem(card)));
 }
@@ -112,8 +119,8 @@ function setupDragAndDrop() {
 function moveCardToZone(card, targetId) {
     front = front.filter(c => c !== card);
     back = back.filter(c => c !== card);
-    if (targetId === 'front-hand' && front.length < 3) front.push(card);
-    else if (targetId === 'back-hand' && back.length < 5) back.push(card);
+    if (targetId === 'front-hand') front.push(card);
+    else if (targetId === 'back-hand') back.push(card);
     renderAll();
     msgBar.textContent = '';
 }
@@ -160,22 +167,22 @@ resetBtn.onclick = function() {
     msgBar.textContent = '';
 };
 submitBtn.onclick = async function() {
-    if (front.length !== 3 || back.length !== 5 || hand.length !== 13) {
-        msgBar.textContent = '请将3张牌放到头道、5张牌放到尾道，其余留在手牌区';
-        return;
-    }
     let middle = hand.filter(c => !front.includes(c) && !back.includes(c));
-    if (middle.length !== 5) {
-        msgBar.textContent = '请将3张牌放到头道、5张牌放到尾道，其余留在手牌区';
+    if (!(front.length >= 3 && back.length >= 5 && middle.length === 5 && hand.length === 13)) {
+        msgBar.textContent = '请将至少3张牌放到头道、5张牌放到尾道，其余5张在手牌区';
         return;
     }
+    // 判断头道取前3，尾道取前5
+    let head = front.slice(0, 3);
+    let tail = back.slice(0, 5);
+    let middle5 = middle;
     msgBar.textContent = '正在判定...';
     submitBtn.disabled = true;
     try {
         const res = await fetch(API_JUDGE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ head: front, middle, tail: back })
+            body: JSON.stringify({ head, middle: middle5, tail })
         });
         const data = await res.json();
         if (data.error) {
