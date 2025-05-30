@@ -43,17 +43,17 @@ body {
     height: 100%;
     object-fit: contain;
 }
-#actions button, #start-btn, #submit-btn {
-    margin: 8px 16px;
-    padding: 10px 28px;
-    font-size: 18px;
+#actions button, #start-btn, #submit-btn, #auto-dun-btn, #ai-btn, #reset-btn, #logout-btn {
+    margin: 8px 10px;
+    padding: 9px 18px;
+    font-size: 16px;
     border: none;
     border-radius: 6px;
     background: #4caf50;
     color: #fff;
     cursor: pointer;
 }
-#actions button:disabled, #submit-btn:disabled {
+#actions button:disabled, #submit-btn:disabled, #auto-dun-btn:disabled, #ai-btn:disabled, #reset-btn:disabled {
     background: #aaa;
     cursor: not-allowed;
 }
@@ -62,12 +62,6 @@ body {
     color: #d32f2f;
     font-weight: bold;
 }
-#result-area {
-    margin: 25px 0 0 0;
-    font-size: 18px;
-    color: #222;
-}
-.dun-label {
-    margin: 0 0 4px 0;
-    font-weight: bold;
-}
+.player-table { border-collapse:collapse;margin:10px auto;}
+.player-table th,.player-table td { border:1px solid #bbb; padding:4px 8px;}
+.player-table th { background:#f2f2f2;}
