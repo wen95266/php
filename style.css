@@ -1,20 +1,19 @@
 :root {
     --table-bg: #1c5d18;
     --felt-bg: #0b5604;
-    --card-gap: 7px;
+    --card-gap: 14px;
     --zone-border: 2px dashed #fff4;
     --zone-radius: 12px;
-    --table-radius: 22px;
     --button-green: #249c48;
-    --button-green-dark: #197c35;
     --button-yellow: #bda53a;
-    --button-yellow-dark: #c8a900;
     --button-disabled: #c3c3c399;
     --button-text: #fff;
     --zone-label: #fff9;
+    --card-min-width: 38px;
+    --card-max-width: 70px;
+    --card-height: 7.8vh;
 }
 
-/* 让牌桌占满整个屏幕，布局自适应 */
 html, body {
     width: 100vw; height: 100vh; margin: 0; padding: 0;
     font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
@@ -23,101 +22,63 @@ html, body {
     overflow: hidden;
 }
 body {
-    width: 100vw; height: 100vh;
-    display: flex; justify-content: center; align-items: center;
+    width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center;
 }
 .poker-table {
     background: var(--felt-bg);
-    border-radius: var(--table-radius);
     box-shadow: 0 0 40px #0008, 0 0 2px #2228 inset;
     width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh;
     display: flex; flex-direction: column;
-    padding: 2.5vh 1vw 1.2vh 1vw;
+    padding: 0; margin: 0;
+}
+.table-row {
+    flex: 1 1 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 100vw; min-height: 0; min-width: 0;
+    position: relative;
     box-sizing: border-box;
 }
-
-.table-row {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 100%; margin-bottom: 1vh; position: relative;
+#row-buttons {
+    flex: 1 1 0;
+    min-height: 0;
+    justify-content: flex-end;
 }
-#row-front, #row-back { flex: 1.1 0 0; min-height: 9vh; }
-#row-middle-visual { flex: 2.3 0 0; min-height: 21vh; }
-#row-buttons { flex: 0 1 7.5vh; min-height: 6vh; margin-bottom:0; }
-
 .arranged-hand {
     border: var(--zone-border);
     border-radius: var(--zone-radius);
     background: none;
-    padding: 1.3vh 0 1vh 0;
-    margin: 0 0 0 0;
+    margin: 0 2vw;
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    min-height: 8.5vh;
-    min-width: 40vw;
-    position: relative;
-    width: 98vw;
+    min-height: 0;
+    min-width: 0;
+    width: 96vw; height: 68%;
     box-sizing: border-box;
-    transition: background 0.2s;
     gap: var(--card-gap);
+    transition: background 0.2s;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 .arranged-hand.as-hand-area {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: var(--card-gap);
-    padding: 2vh 1vw 2vh 1vw;
-    min-height: 14vh;
+    width: 96vw;
+    height: 68%;
 }
-.zone-label {
-    position: absolute;
-    left: 1.5vw; top: 1.5vh;
-    color: var(--zone-label);
-    font-size: 1.05em;
-    font-weight: bold;
-    letter-spacing: 1px;
-    pointer-events: none;
-    z-index: 2;
-    text-shadow: 0 2px 7px #0008;
-}
-.card-count {
-    font-weight: 400;
-    font-size: .8em;
-    margin-left:6px;
-    color: #fff8;
-}
-
 .card-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 0.7;
-    box-sizing: border-box;
+    flex: 1 1 0;
+    min-width: var(--card-min-width);
+    max-width: var(--card-max-width);
+    height: var(--card-height);
     background: #fff;
     border-radius: 6px;
     box-shadow: 0 2px 8px #0002;
+    display: flex; align-items: center; justify-content: center;
     cursor: grab;
     position: relative;
     transition: box-shadow 0.12s, border 0.12s;
-    overflow: hidden;
     user-select: none;
-    min-width: 0;
-    min-height: 0;
-    flex: 1 1 0;
-    max-height: 100%;
-    max-width: 8vw;
-    height: 9vh;
-}
-.arranged-hand.as-hand-area .card-container {
-    max-width: 6vw;
-    min-width: 0;
-    flex: 1 1 0;
-    height: 8vh;
-}
-.arranged-hand:not(.as-hand-area) .card-container {
-    max-width: 8vw;
-    flex: 1 1 0;
-    height: 9vh;
+    overflow: hidden;
 }
 .card-container.dragging {
     opacity: 0.6;
@@ -125,69 +86,44 @@ body {
     box-shadow: 0 0 16px #ffa800, 0 4px 16px #000a;
 }
 .card-image {
-    width: 96%; height: auto;
+    width: 98%; height: auto;
     display:block;
     pointer-events: none;
     user-select: none;
 }
 .drop-placeholder {
-    background: #fff2;
+    background: #fff1;
     border: 2px dashed #fff7;
     border-radius: 6px;
-    min-width: 0;
-    min-height: 0;
     flex: 1 1 0;
-    max-width: 8vw;
-    height: 9vh;
+    min-width: var(--card-min-width);
+    max-width: var(--card-max-width);
+    height: var(--card-height);
     aspect-ratio: 0.7;
 }
-.arranged-hand.as-hand-area .drop-placeholder {
-    max-width: 6vw;
-    height: 8vh;
-}
 .arranged-hand.drag-over { background: #fff2; }
-.arranged-hand.selected-target-hand { background: #fff4; }
 
 #row-buttons .action-buttons {
-    width: 100%; display: flex; flex-direction: row; justify-content: center; gap: 2vw;
+    width: 100vw; display: flex; flex-direction: row; justify-content: center; gap: 2vw; margin-top: 2vh;
 }
 .game-button {
-    padding: 1vh 4vw; font-size: 1.05em; background: var(--button-green);
+    padding: 1.2vh 4vw; font-size: 1.05em; background: var(--button-green);
     border: none; border-radius: 8px; color: var(--button-text); font-weight: 600;
     box-shadow: 0 2px 8px #0001; cursor: pointer; margin: 0 3px;
     transition: background .18s, color .12s;
 }
 .game-button.primary-button { background: var(--button-yellow); color: #fff; }
-.game-button:active { background: var(--button-green-dark); }
-.game-button.primary-button:active { background: var(--button-yellow-dark); }
+.game-button:active { background: #197c35; }
+.game-button.primary-button:active { background: #c8a900; }
 .game-button[disabled] { opacity: 0.5; cursor: not-allowed; background: var(--button-disabled);}
 .game-message-bar {
-    margin-top: 1.2vh; min-height: 3.2vh; font-size: 1.08em; color: #ffda00; text-align: center; font-weight: bold;
+    margin-top: 2vh; min-height: 3.2vh; font-size: 1.08em; color: #ffda00; text-align: center; font-weight: bold;
 }
-
 @media (max-width: 900px), (max-height: 700px) {
-    .poker-table { padding: 0.5vh 0.5vw 0.5vh 0.5vw; }
-    .arranged-hand { min-height: 7vh; }
-    .arranged-hand.as-hand-area { min-height: 10vh; }
-    .card-container, .arranged-hand:not(.as-hand-area) .card-container, .drop-placeholder {
-        max-width: 11vw; height: 6.4vh;
-    }
-    .arranged-hand.as-hand-area .card-container, .arranged-hand.as-hand-area .drop-placeholder {
-        max-width: 8vw; height: 5.5vh;
-    }
+    .card-container, .drop-placeholder { min-width: 23px; max-width: 34px; height: 4.5vh; }
 }
 @media (max-width: 600px) {
-    .poker-table { width:100vw; height:100vh; border-radius: 0;}
-    .arranged-hand, .arranged-hand.as-hand-area {
-        width: 100vw;
-        min-width: 0;
-        padding-left: 0; padding-right: 0;
-    }
-    .card-container, .drop-placeholder {
-        max-width: 14vw;
-        min-width: 0;
-    }
-    .arranged-hand.as-hand-area .card-container, .arranged-hand.as-hand-area .drop-placeholder {
-        max-width: 11vw;
-    }
+    .poker-table { width:100vw; height:100vh; }
+    .arranged-hand, .arranged-hand.as-hand-area { width: 97vw; }
+    .card-container, .drop-placeholder { min-width: 20px; max-width: 28px; height: 3.2vh; }
 }
