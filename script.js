@@ -10,6 +10,8 @@ function showRegister() {
   document.getElementById('registerForm').style.display = '';
 }
 function login() {
+  // 调试输出，确保点击事件触发
+  console.log("login clicked");
   const phoneVal = document.getElementById('phone').value;
   const passwordVal = document.getElementById('password').value;
   if (!phoneVal || !passwordVal) {
@@ -25,7 +27,11 @@ function login() {
       password: passwordVal
     })
   })
-  .then(res => res.json())
+  .then(res => {
+    // 检查HTTP状态码
+    if (!res.ok) throw new Error("HTTP状态码: " + res.status);
+    return res.json();
+  })
   .then(r => {
     if(r.ok) {
       onLoginSuccess();
@@ -54,7 +60,10 @@ function register() {
       password: regPasswordVal
     })
   })
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("HTTP状态码: " + res.status);
+    return res.json();
+  })
   .then(r => {
     if(r.ok) { alert('注册成功'); showLogin(); }
     else alert(r.error);
@@ -153,7 +162,6 @@ function hideHistory() {
 
 // ==== 游戏桌面布局与基本逻辑 ====
 
-// 玩家数据，假设本地演示4位玩家，实际可联机或实时同步
 let players = [
   {name:'你', score:1000, cards:[]},
   {name:'玩家二', score:1000, cards:[]},
@@ -161,7 +169,6 @@ let players = [
   {name:'玩家四', score:1000, cards:[]}
 ];
 
-// 初始化牌桌UI
 function initTableUI(myName, myScore) {
   players[0].name = myName || "你";
   players[0].score = myScore || 1000;
@@ -174,7 +181,6 @@ function initTableUI(myName, myScore) {
   document.getElementById('resultArea').innerText = '';
 }
 
-// 扑克牌生成与洗牌
 const suits = ['♠','♥','♣','♦'];
 const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 function createDeck() {
@@ -192,8 +198,6 @@ function shuffle(deck) {
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
 }
-
-// 发牌
 function dealCards() {
   let deck = createDeck();
   shuffle(deck);
@@ -204,8 +208,6 @@ function dealCards() {
   renderMyCards(players[0].cards);
   document.getElementById('resultArea').innerText = '已发牌，请理牌并提交！';
 }
-
-// 渲染玩家手牌
 function renderPlayerCards(idx, cards) {
   let area = document.querySelector('#player'+idx+' .player-cards');
   area.innerHTML = '';
@@ -217,8 +219,6 @@ function renderPlayerCards(idx, cards) {
     area.appendChild(div);
   }
 }
-
-// 渲染“我的手牌”区
 function renderMyCards(cards) {
   let area = document.getElementById('myCards');
   area.innerHTML = '';
@@ -230,8 +230,6 @@ function renderMyCards(cards) {
     area.appendChild(div);
   }
 }
-
-// 提交牌型（这里只做演示，实际可集成判牌算法或后端接口）
 function submitHand() {
   if(players[0].cards.length<13) {
     document.getElementById('resultArea').innerText = '请先发牌！';
@@ -240,13 +238,11 @@ function submitHand() {
   document.getElementById('resultArea').innerText = '已提交牌型！（可在此集成判牌和结算）';
 }
 
-// ==== 页面初始化 ====
 window.onload = function() {
   hideAdminAdd();
   hideAdminSub();
   hideHistory();
   document.getElementById('gameArea').style.display = 'none';
-  // 自动检查登录状态
   fetch(API + '/userinfo.php', { credentials: 'include' })
     .then(res=>res.json())
     .then(r=>{
