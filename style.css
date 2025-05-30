@@ -1,13 +1,40 @@
 body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 30px; background: #f8f8f8; }
-input { margin: 4px; }
-.btn { padding: 4px 14px; margin: 2px 5px; cursor: pointer; }
+input { margin: 4px; padding: 4px; }
+.btn { padding: 4px 14px; margin: 2px 5px; cursor: pointer; background: #3886e4; color: #fff; border: none; border-radius: 6px;}
+.btn:hover { background: #2c6bb2; }
+h1 { text-align: center; margin-bottom: 18px; color: #333; }
 #authArea, #userInfoArea { margin-bottom: 20px; }
-#gameArea { margin-top: 40px; }
-#tableArea { margin-bottom: 30px; }
-#cardTable { min-height: 120px; background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 0 10px #ddd; margin-bottom: 18px; }
-#gameControls { margin: 10px 0; }
-#playersArea { margin-bottom: 12px; }
-#resultArea { min-height: 38px; color: #444; font-weight: bold; }
+#gameArea { margin-top: 30px; }
+
+#tableArea { margin: 0 auto; max-width: 720px; }
+#playersArea {
+  display: flex; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.player-seat {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 6px #ccc;
+  width: 23%; min-height: 90px;
+  padding: 9px 3px 6px 3px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.player-info { margin-bottom: 6px; color: #444; }
+.player-cards { min-height: 24px; }
+.card {
+  display: inline-block;
+  width: 32px; height: 45px; line-height: 45px;
+  background: #fff; border: 1px solid #bbb; border-radius: 5px;
+  margin: 0 2px; text-align: center; font-size: 18px;
+  box-shadow: 1px 2px 3px #eee;
+  font-family: 'Consolas', 'Arial', monospace;
+}
+#myCardsArea {
+  background: #fff; border-radius: 10px; padding: 18px;
+  box-shadow: 0 0 8px #ddd; margin-bottom: 14px;
+}
+#myCards { min-height: 50px; margin-bottom: 12px; }
+#resultArea { min-height: 38px; color: #3886e4; font-weight: bold;}
 #adminAddPanel, #adminSubPanel, #historyPanel {
   position: fixed; top: 25%; left: 50%; transform: translate(-50%, 0);
   background: #fff; border: 1px solid #ccc; padding: 20px; display: none; z-index: 99;
