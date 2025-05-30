@@ -2,15 +2,17 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>十三水棋牌</title>
+    <title>十三水棋牌游戏</title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
     <h1>十三水棋牌</h1>
     <div id="user-area">
-        <input id="user-phone" placeholder="手机号" maxlength="20"/>
-        <input id="user-nick" placeholder="昵称" maxlength="10"/>
-        <button id="login-btn">注册/登录</button>
+        <input id="user-phone" placeholder="手机号" maxlength="20" autocomplete="username"/>
+        <input id="user-nick" placeholder="昵称" maxlength="10" autocomplete="nickname"/>
+        <input id="user-password" type="password" placeholder="密码" maxlength="30" autocomplete="current-password"/>
+        <button id="register-btn">注册</button>
+        <button id="login-btn">登录</button>
         <span id="user-info"></span>
     </div>
     <div id="menu-area" style="display:none">
