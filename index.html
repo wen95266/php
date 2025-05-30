@@ -18,9 +18,9 @@
   </style>
 </head>
 <body>
-  <!-- 游戏界面内容在这里，比如牌桌、玩家、操作按钮等 -->
+  <!-- 游戏主界面内容可插入此处 -->
 
-  <!-- 注册/登录/显示积分模块（插入到顶部或合适处） -->
+  <!-- 注册/登录/显示积分模块 -->
   <div id="auth">
     <div id="loginForm">
       <input id="phone" placeholder="手机号">
@@ -65,12 +65,11 @@
     <button class="btn" onclick="hideHistory()">关闭</button>
   </div>
 
-  <!-- 你的游戏 JS/牌桌UI脚本可放在此处，也可放到独立js文件中 -->
+  <!-- JS逻辑 -->
   <script>
   // 后端 API 域名
   const API = 'https://wenge.cloudns.ch';
 
-  // 显示登录/注册切换
   function showLogin() {
     document.getElementById('loginForm').style.display = '';
     document.getElementById('registerForm').style.display = 'none';
@@ -79,8 +78,6 @@
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('registerForm').style.display = '';
   }
-
-  // 登录
   function login() {
     fetch(API + '/login.php', {
       method: 'POST',
@@ -95,7 +92,6 @@
       } else alert(r.error);
     });
   }
-  // 注册
   function register() {
     fetch(API + '/register.php', {
       method: 'POST',
@@ -108,7 +104,6 @@
       else alert(r.error);
     });
   }
-  // 登出
   function logout() {
     fetch(API + '/logout.php', {
       credentials: 'include'
@@ -118,7 +113,6 @@
       showLogin();
     });
   }
-  // 显示用户信息
   function showUser() {
     fetch(API + '/userinfo.php', {
       credentials: 'include'
@@ -136,7 +130,6 @@
       }
     });
   }
-  // 管理员加分面板
   function showAdminAdd() {
     document.getElementById('adminAddPanel').style.display = '';
   }
@@ -155,7 +148,6 @@
       hideAdminAdd();
     });
   }
-  // 管理员减分面板
   function showAdminSub() {
     document.getElementById('adminSubPanel').style.display = '';
   }
@@ -174,7 +166,6 @@
       hideAdminSub();
     });
   }
-  // 显示积分流水
   function showHistory() {
     fetch(API + '/score_history.php', { credentials:'include' }).then(res=>res.json()).then(list=>{
       let html = '<table><tr><th>变化</th><th>后积分</th><th>类型</th><th>备注</th><th>时间</th></tr>';
@@ -189,15 +180,12 @@
   function hideHistory() {
     document.getElementById('historyPanel').style.display = 'none';
   }
-
-  // 弹窗初始化
   hideAdminAdd();
   hideAdminSub();
   hideHistory();
   showUser();
   </script>
 
-  <!-- 你原有的游戏逻辑/UI脚本可继续放在此处 -->
-
+  <!-- 你的游戏JS、UI等可继续放在这里 -->
 </body>
 </html>
