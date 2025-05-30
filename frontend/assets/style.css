@@ -1,10 +1,36 @@
 body { font-family: Arial,sans-serif; background: #f6f8fb; margin: 0; }
 #user-bar { background: #222; color: #fff; padding: 10px; }
 #user-bar button { margin-left: 10px; }
-#main { max-width: 500px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; }
+#main { max-width: 1200px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; }
+#room-list-section { margin-bottom: 32px; }
+#room-list { width: 100%; border-collapse: collapse; font-size:1em; }
+#room-list th, #room-list td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+#room-list th { background: #eee; }
+#room-detail-section { }
+#room-title { color: #1a7; }
+#room-members { margin: 10px 0; }
+#chat { margin: 20px 0; }
+#chat-list { height: 120px; overflow-y: auto; border: 1px solid #ccc; background: #fafafa; padding: 8px; }
+#chat-msg { width: 70%; }
+#chat-send { }
 button { padding: 5px 12px; margin: 2px; border-radius: 4px; border: none; background: #48a; color: #fff; cursor: pointer; }
 button:hover { background: #357; }
 .modal { display:none; position:fixed;z-index:10;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);}
 .modal-content { background:#fff;max-width:340px;margin:100px auto;padding:20px;border-radius:6px; }
 input { padding:6px; margin:5px 0; border-radius:4px;border:1px solid #bbb;}
-ul { margin: 0 0 1em 1.3em; }
+.card { display:inline-block; border:1px solid #888; border-radius:5px; margin:2px 2px; background:#ffe; padding:2px 10px; font-size:1.2em;}
+.table { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; background:#255; border-radius:18px; padding:30px 0; margin:20px auto; max-width:900px;}
+.seat { flex:1 1 200px; min-width:180px; margin:8px 0; text-align:center; background:rgba(255,255,255,0.9); border-radius:10px; padding:15px 8px; box-shadow:0 2px 12px #0002;}
+.seat.me { border: 2px solid #1a7; }
+.seat .trustee { color: #e80; font-weight:bold; }
+.seat .timeout { color: #f00; font-size: 0.95em; }
+.seat .result { font-size: 1.1em; margin-top:4px;}
+.seat .winner { color: #e21; font-weight:bold; }
+.seat .special { color: #06c; font-weight:bold;}
+#compare-btn { background: #e21; color: #fff; font-weight:bold;}
+@media (max-width: 900px) {
+    #main { max-width:98vw; }
+    .table { max-width:98vw; }
+    .seat { min-width:110px; font-size:0.9em;}
+    .card{font-size:1em;}
+}
