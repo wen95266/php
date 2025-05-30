@@ -83,17 +83,18 @@ body {
 
 .card-container {
     aspect-ratio: var(--card-aspect);
-    background: #fff;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px #0002;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     display: flex; align-items: center; justify-content: center;
     cursor: grab;
     position: relative;
     user-select: none;
-    overflow: hidden;
+    overflow: visible;
     min-width: 0; min-height: 0;
     width: 100%; height: 100%;
     transition: box-shadow 0.12s, border 0.12s, height 0.2s, width 0.2s;
+    padding: 0;
 }
 #middle-hand .card-container:empty {
     background: none;
@@ -103,14 +104,16 @@ body {
 .card-container.dragging {
     opacity: 0.6;
     z-index: 99;
-    box-shadow: 0 0 16px #ffa800, 0 4px 16px #000a;
 }
 .card-image {
-    width: 96%; height: 96%;
+    width: 98%; height: 98%;
     display:block;
     pointer-events: none;
     user-select: none;
     object-fit: contain;
+    background: transparent;
+    box-shadow: none;
+    border: none;
 }
 .drop-placeholder { display: none; }
 .arranged-hand.drag-over, #middle-hand.drag-over { background: #fff2; }
