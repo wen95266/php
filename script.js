@@ -14,12 +14,17 @@ const middleHand = document.getElementById('middle-hand');
 const dealBtn = document.getElementById('dealCardsBtn');
 const aiBtn = document.getElementById('aiGroupBtn');
 const trusteeBtn = document.getElementById('aiTrusteeBtn');
+const aiBestBtn = document.getElementById('aiBestBtn');
+const aiExplainBtn = document.getElementById('aiExplainBtn');
+const aiSpecialBtn = document.getElementById('aiSpecialBtn');
 const resetBtn = document.getElementById('resetArrangementBtn');
 const compareBtn = document.getElementById('compareBtn');
 const msgBar = document.getElementById('game-message');
 const compareModal = document.getElementById('compareModal');
 const compareResult = document.getElementById('compareResult');
 const trusteeModal = document.getElementById('trusteeModal');
+const explainModal = document.getElementById('explainModal');
+const explainResult = document.getElementById('explainResult');
 
 const cardOrder = (() => {
     const suitOrder = { '♠': 4, '♥': 3, '♣': 2, '♦': 1 };
@@ -54,6 +59,9 @@ function renderAll() {
     );
     aiBtn.disabled = hand.length === 0;
     trusteeBtn.disabled = hand.length === 0;
+    aiBestBtn.disabled = hand.length === 0;
+    aiExplainBtn.disabled = hand.length === 0;
+    aiSpecialBtn.disabled = hand.length === 0;
 
     [frontHand, middleHand, backHand].forEach(zone => adjustCardFillFlex(zone));
 }
@@ -157,7 +165,7 @@ function aiGroup() {
             front = sorted.slice(-3);
             back = sorted.slice(0, 5);
         },
-        // 分法3：AI简单对“同花/顺子/对子”优先分组
+        // 分法3：AI优先组合同花/顺子/四条/三条等
         function() {
             let copy = [...hand];
             let flush = findFlush(copy, 5);
@@ -198,10 +206,83 @@ function aiGroup() {
             back = copy2.slice(0, 5);
         }
     ];
-    modes[aiGroupIndex % modes.length]();
-    aiGroupIndex++;
+    // 自动防止倒水（先试全部模式，选第一个不倒水的，没有则第一个）
+    let bestFront = [], bestBack = [];
+    for (let i = 0; i < modes.length; ++i) {
+        let tryFront = [], tryBack = [];
+        front = []; back = [];
+        modes[(aiGroupIndex+i)%modes.length]();
+        let mid = hand.filter(c => !front.includes(c) && !back.includes(c));
+        if (!isReverse(front, mid, back)) {
+            bestFront = [...front];
+            bestBack = [...back];
+            aiGroupIndex = (aiGroupIndex+i+1)%modes.length;
+            break;
+        }
+        if (i===0) { bestFront = [...front]; bestBack = [...back]; }
+    }
+    front = bestFront;
+    back = bestBack;
     renderAll();
-    msgBar.textContent = `AI分牌（第${((aiGroupIndex-1)%modes.length)+1}种），继续点击可切换分法！`;
+    msgBar.textContent = `AI分牌（防倒水），再点切换分法！`;
+}
+
+// AI最优分牌（枚举所有分法，选最大分数且不倒水的）
+function aiBestGroup() {
+    if (hand.length !== 13) return;
+    let all = getAllSplits(hand);
+    let best = null, bestScore = -Infinity;
+    for (let i = 0; i < all.length; ++i) {
+        let {front: f, middle: m, back: b} = all[i];
+        if (isReverse(f, m, b)) continue;
+        let score = evaluateSplit(f, m, b);
+        if (score > bestScore) {
+            best = all[i]; bestScore = score;
+        }
+    }
+    if (best) {
+        front = best.front;
+        back = best.back;
+        renderAll();
+        msgBar.textContent = `AI最优分牌已完成！（分数: ${bestScore}）`;
+    } else {
+        aiGroup(); // fallback
+        msgBar.textContent = `未找到合理分牌，已执行AI分牌`;
+    }
+}
+
+// AI讲解当前分牌理由
+function aiExplain() {
+    let middle = hand.filter(c => !front.includes(c) && !back.includes(c));
+    let text = '';
+    if (front.length === 3 && back.length === 5 && middle.length === 5) {
+        text += `头道：${front.join(' ')}\n中道：${middle.join(' ')}\n尾道：${back.join(' ')}\n`;
+        text += explainSplit(front, middle, back);
+    } else {
+        text = '请先AI分牌或手动分好13张牌后再点讲解。';
+    }
+    explainResult.innerHTML = text.replace(/\n/g,"<br>");
+    explainModal.classList.add("active");
+}
+window.closeExplainModal = function () {
+    explainModal.classList.remove("active");
+}
+
+// AI冲特殊（优先凑“全小”、“全大”、“六对半”、“三顺子”、“三同花”、“十二皇族”、“清龙”等特殊）
+function aiSpecialGroup() {
+    if (hand.length !== 13) return;
+    // 检查特殊型，优先级从高到低
+    let special = detectSpecial(hand);
+    if (special) {
+        // 特殊型直接全放头道
+        front = [...hand];
+        back = [];
+        renderAll();
+        msgBar.textContent = `AI已发现特殊牌型：【${special}】`;
+    } else {
+        aiBestGroup();
+        msgBar.textContent += '（未发现特殊型）';
+    }
 }
 
 // 查找同花
@@ -251,6 +332,193 @@ function findXOfAKind(cards, num) {
     return [];
 }
 
+// 检查倒水
+function isReverse(front, middle, back) {
+    const typeOrder = {
+        "散牌": 1, "对子": 2, "两对": 3, "三条": 4, "顺子": 5,
+        "同花": 6, "葫芦": 7, "四条": 8, "同花顺": 9, "皇家同花顺": 10
+    };
+    let ft = judgeType(front), mt = judgeType(middle), bt = judgeType(back);
+    return typeOrder[ft] > typeOrder[mt] || typeOrder[mt] > typeOrder[bt];
+}
+
+// 最优分牌：暴力枚举所有不倒水的分组（仅适用于13张手牌，性能可接受）
+function getAllSplits(cards) {
+    let all = [];
+    let n = cards.length;
+    let arr = [...cards];
+    function comb(arr, k, cb, prefix=[]) {
+        if (k === 0) { cb(prefix); return; }
+        for (let i = 0; i <= arr.length - k; ++i) {
+            comb(arr.slice(i+1), k-1, cb, prefix.concat(arr[i]));
+        }
+    }
+    let used = new Set();
+    comb(arr, 3, f => {
+        let remain1 = arr.filter(c=>!f.includes(c));
+        comb(remain1, 5, m => {
+            let b = remain1.filter(c=>!m.includes(c));
+            let key = [...f,...m,...b].sort().join(",");
+            if (used.has(key)) return;
+            used.add(key);
+            all.push({front: f, middle: m, back: b});
+        });
+    });
+    return all;
+}
+
+// 分数简单估算：额外加分给葫芦、顺子、同花、四条、同花顺等，头道对子加分
+function evaluateSplit(f, m, b) {
+    let order = {
+        "散牌": 0, "对子": 10, "两对": 15, "三条": 25, "顺子": 30,
+        "同花": 30, "葫芦": 45, "四条": 60, "同花顺": 100, "皇家同花顺": 120
+    };
+    let ft = judgeType(f), mt = judgeType(m), bt = judgeType(b);
+    let score = order[ft] + order[mt]*2 + order[bt]*2.5;
+    // 头道对子及以上加权
+    if (ft === "对子" || ft === "三条") score += 10;
+    // 顺子及以上再奖励
+    if (mt === "顺子" || mt === "同花" || mt === "同花顺" || mt === "皇家同花顺") score += 10;
+    if (bt === "顺子" || bt === "同花" || bt === "同花顺" || bt === "皇家同花顺") score += 12;
+    return score;
+}
+
+// 牌型判定
+function judgeType(cards) {
+    if (!cards || cards.length < 3) return "散牌";
+    let values = cards.map(c => {
+        let v = c.slice(1);
+        if (v === "A") return 14;
+        if (v === "K") return 13;
+        if (v === "Q") return 12;
+        if (v === "J") return 11;
+        return parseInt(v);
+    });
+    let suits = cards.map(c => c[0]);
+    let uniqVals = [...new Set(values)];
+    let uniqSuits = [...new Set(suits)];
+    let counts = {};
+    values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+    let countArr = Object.values(counts).sort((a, b) => b - a);
+    let isFlush = uniqSuits.length === 1;
+    let isStraight = uniqVals.length === cards.length &&
+        (Math.max(...uniqVals) - Math.min(...uniqVals) === cards.length - 1 ||
+            (uniqVals.includes(14) && uniqVals.includes(2) && uniqVals.includes(3) && uniqVals.includes(4) && uniqVals.includes(5)));
+    if (cards.length === 3) {
+        if (countArr[0] === 3) return "三条";
+        if (countArr[0] === 2) return "对子";
+        return "散牌";
+    }
+    if (cards.length === 5) {
+        if (isFlush && isStraight && Math.min(...uniqVals) === 10) return "皇家同花顺";
+        if (isFlush && isStraight) return "同花顺";
+        if (countArr[0] === 4) return "四条";
+        if (countArr[0] === 3 && countArr[1] === 2) return "葫芦";
+        if (isFlush) return "同花";
+        if (isStraight) return "顺子";
+        if (countArr[0] === 3) return "三条";
+        if (countArr[0] === 2 && countArr[1] === 2) return "两对";
+        if (countArr[0] === 2) return "对子";
+        return "散牌";
+    }
+    return "散牌";
+}
+
+// AI讲解
+function explainSplit(f, m, b) {
+    let ft = judgeType(f), mt = judgeType(m), bt = judgeType(b);
+    let txt = `头道为${ft}，中道为${mt}，尾道为${bt}。`;
+    if (isReverse(f, m, b)) {
+        txt += "（存在倒水，建议调整顺序以避免头道强于中道或中道强于尾道）";
+    } else {
+        txt += "（顺序合理，未出现倒水）";
+    }
+    if (bt === "葫芦" || bt === "四条" || bt === "同花顺" || bt === "皇家同花顺") {
+        txt += " 尾道较强，可冲击高分。";
+    }
+    if (ft === "三条") txt += " 头道三条，极为罕见！";
+    if (ft === "对子" && mt === "三条" && bt === "四条") txt += " 三道依次递增，极佳分法。";
+    return txt;
+}
+
+// 检查特殊型
+function detectSpecial(cards) {
+    // 全大(8-A), 全小(2-8), 十二皇族, 六对半, 三顺子, 三同花, 清龙
+    let vmap = cards.map(c=>c.slice(1));
+    let allBig = vmap.every(v=>["8","9","10","J","Q","K","A"].includes(v));
+    let allSmall = vmap.every(v=>["2","3","4","5","6","7","8"].includes(v));
+    let allFace = vmap.filter(v=>["J","Q","K"].includes(v)).length>=12;
+    let pairs = {};
+    for(let v of vmap) pairs[v] = (pairs[v]||0)+1;
+    let pairCnt = Object.values(pairs).filter(cnt=>cnt===2).length;
+    let threeStraight = countThreeStraight(cards);
+    let threeFlush = countThreeFlush(cards);
+    let straightFlush = findStraightFlush13(cards);
+    if (straightFlush) return "清龙";
+    if (allBig) return "全大";
+    if (allSmall) return "全小";
+    if (allFace) return "十二皇族";
+    if (pairCnt >= 6) return "六对半";
+    if (threeStraight) return "三顺子";
+    if (threeFlush) return "三同花";
+    return null;
+}
+function countThreeStraight(cards) {
+    // 暴力拆分所有三组顺子
+    let vals = cards.map(card => {
+        let v = card.slice(1);
+        let n = (v==='A')?14:((v==='K')?13:((v==='Q')?12:((v==='J')?11:parseInt(v))));
+        return {c:card, n};
+    }).sort((a,b)=>b.n-a.n);
+    // 这里只简单判断，不做完全穷举
+    let used = new Set();
+    let cnt = 0;
+    for (let i=0;i<3;i++) {
+        let arr = [];
+        let prev = null;
+        for (let j=0;j<vals.length;j++) {
+            if (used.has(vals[j].c)) continue;
+            if (arr.length === 0 || vals[j].n === prev-1) {
+                arr.push(vals[j].c); prev = vals[j].n;
+                if (arr.length === 5) break;
+            }
+        }
+        if (arr.length === 5) { cnt++; arr.forEach(c=>used.add(c)); }
+        else break;
+    }
+    return cnt===3;
+}
+function countThreeFlush(cards) {
+    let suitMap = {};
+    cards.forEach(c=>{
+        let suit = c[0];
+        if(!suitMap[suit]) suitMap[suit]=[];
+        suitMap[suit].push(c);
+    });
+    let cnt = 0;
+    for(let suit in suitMap) cnt += Math.floor(suitMap[suit].length/5);
+    return cnt>=3;
+}
+function findStraightFlush13(cards) {
+    // 判断清龙（同花色A-K连成顺子）
+    let suitMap = {};
+    cards.forEach(c=>{
+        let suit = c[0];
+        if(!suitMap[suit]) suitMap[suit]=[];
+        suitMap[suit].push(c);
+    });
+    for(let suit in suitMap) {
+        let vals = suitMap[suit].map(card => {
+            let v = card.slice(1);
+            let n = (v==='A')?14:((v==='K')?13:((v==='Q')?12:((v==='J')?11:parseInt(v)));
+            return n;
+        }).sort((a,b)=>b-a);
+        let all = [14,13,12,11,10,9,8,7,6,5,4,3,2];
+        if (all.every(v=>vals.includes(v))) return true;
+    }
+    return false;
+}
+
 // Fisher–Yates shuffle
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -266,20 +534,18 @@ trusteeBtn.onclick = function() {
 window.closeTrusteeModal = function () {
     trusteeModal.classList.remove("active");
 }
-// 托管指定局数，多种AI分法轮流用
 window.doTrustee = async function (count) {
     closeTrusteeModal();
     msgBar.textContent = `AI托管${count}局中...`;
     for(let i=1;i<=count;i++) {
         await dealCardsAndAIGroup();
-        await sleep(500); // 让用户看到变化
+        await sleep(500);
     }
     msgBar.textContent = `AI托管${count}局完成！`;
 }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 async function dealCardsAndAIGroup() {
     await dealCards();
-    // 切换多种AI分法
     aiGroupIndex = Math.floor(Math.random()*5);
     aiGroup();
 }
@@ -346,6 +612,9 @@ dealBtn.onclick = async function() {
     msgBar.textContent = '';
 };
 aiBtn.onclick = aiGroup;
+aiBestBtn.onclick = aiBestGroup;
+aiExplainBtn.onclick = aiExplain;
+aiSpecialBtn.onclick = aiSpecialGroup;
 resetBtn.onclick = function() {
     front = [], back = [];
     renderAll();
