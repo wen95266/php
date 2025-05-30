@@ -40,7 +40,6 @@ function renderAll() {
     renderRow(backHand, back);
 
     resetBtn.disabled = hand.length === 0;
-    // 只要3 5 5就可确认，不限制头/尾道数量
     let middle = hand.filter(c => !front.includes(c) && !back.includes(c));
     submitBtn.disabled = !(
         front.length >= 3 &&
@@ -49,6 +48,30 @@ function renderAll() {
         hand.length === 13
     );
     autoBtn.disabled = hand.length === 0;
+
+    // 动态紧凑调整卡片高度
+    [frontHand, middleHand, backHand].forEach(zone => adjustCardHeight(zone));
+}
+
+function adjustCardHeight(zone) {
+    const cards = zone.querySelectorAll('.card-container');
+    if (!cards.length) return;
+    // 父容器宽
+    let available = zone.clientWidth - 2; // padding
+    let cardNum = cards.length;
+    // aspect: 1.45
+    let gapTotal = (cardNum - 1) * parseFloat(getComputedStyle(zone).gap || 0);
+    let cardWidth = (available - gapTotal) / cardNum;
+    let cardHeight = cardWidth * (1/1.45);
+    // 限制最大不能超过父高
+    let maxHeight = zone.clientHeight || window.innerHeight / 4;
+    if (cardHeight > maxHeight) cardHeight = maxHeight;
+    if (cardHeight < 20) cardHeight = 20;
+    cards.forEach(card => {
+        card.style.height = cardHeight + "px";
+        card.style.minHeight = cardHeight + "px";
+        card.style.maxHeight = cardHeight + "px";
+    });
 }
 
 function createCardElem(card) {
@@ -78,7 +101,6 @@ function createCardElem(card) {
         if (hand.includes(card)) {
             front = front.filter(c => c !== card);
             back = back.filter(c => c !== card);
-            // 头道优先
             if (front.length < back.length) front.push(card);
             else back.push(card);
         } else if (front.includes(card)) {
@@ -125,7 +147,6 @@ function moveCardToZone(card, targetId) {
     msgBar.textContent = '';
 }
 
-// 智能分牌：大到小排序后头道3/尾道5
 function autoGroup() {
     if (!hand.length) return;
     let sorted = sortCards(hand);
@@ -172,7 +193,6 @@ submitBtn.onclick = async function() {
         msgBar.textContent = '请将至少3张牌放到头道、5张牌放到尾道，其余5张在手牌区';
         return;
     }
-    // 判断头道取前3，尾道取前5
     let head = front.slice(0, 3);
     let tail = back.slice(0, 5);
     let middle5 = middle;
@@ -197,6 +217,10 @@ submitBtn.onclick = async function() {
     }
     submitBtn.disabled = false;
 };
+
+window.addEventListener('resize', () => {
+    renderAll();
+});
 
 setupDragAndDrop();
 renderAll();
