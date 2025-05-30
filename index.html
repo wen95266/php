@@ -6,10 +6,8 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 游戏主界面内容可插入此处 -->
-
-  <!-- 注册/登录/显示积分模块 -->
-  <div id="auth">
+  <!-- 注册/登录/积分UI，默认显示，登录后隐藏 -->
+  <div id="authArea">
     <div id="loginForm">
       <input id="phone" placeholder="手机号">
       <input id="password" type="password" placeholder="密码">
@@ -24,8 +22,10 @@
       <button class="btn" onclick="showLogin()">返回登录</button>
     </div>
   </div>
-  <div id="userInfo" style="display:none">
-    <span id="nick"></span> <span id="myscore"></span>
+  <!-- 用户信息区，登录后显示 -->
+  <div id="userInfoArea" style="display:none">
+    <span id="nickname"></span>
+    <span id="score"></span>
     <button class="btn" onclick="logout()">退出</button>
     <button class="btn" onclick="showHistory()">积分流水</button>
     <span id="adminPanel" style="display:none">
@@ -51,6 +51,29 @@
   <div id="historyPanel">
     <div id="historyList"></div>
     <button class="btn" onclick="hideHistory()">关闭</button>
+  </div>
+
+  <!-- 游戏主界面区（恢复原来内容） -->
+  <div id="gameArea">
+    <h1>十三水游戏大厅</h1>
+    <!-- 你的原本游戏大厅、牌桌、发牌、按钮等内容如下举例： -->
+    <div id="tableArea">
+      <!-- 牌桌区域 -->
+      <div id="cardTable">
+        <!-- 牌面、玩家头像等 -->
+      </div>
+      <div id="gameControls">
+        <button class="btn" onclick="dealCards()">发牌</button>
+        <button class="btn" onclick="submitHand()">提交牌型</button>
+        <!-- 其他游戏操作按钮 -->
+      </div>
+    </div>
+    <!-- 玩家信息展示区 -->
+    <div id="playersArea">
+      <!-- 玩家列表和分数等 -->
+    </div>
+    <!-- 游戏结果展示区 -->
+    <div id="resultArea"></div>
   </div>
 
   <script src="script.js"></script>
