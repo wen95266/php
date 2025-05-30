@@ -149,6 +149,8 @@ function renderRowMiddle(parent, arr) {
             empty.style.background = "none";
             empty.style.boxShadow = "none";
             empty.style.cursor = "default";
+            empty.style.pointerEvents = "none";
+            empty.style.borderRadius = "0";
             parent.appendChild(empty);
         }
     }
