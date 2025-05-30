@@ -50,41 +50,16 @@ function renderAll() {
     autoBtn.disabled = hand.length === 0;
 
     [frontHand, backHand].forEach(zone => adjustCardFillFlex(zone));
-    adjustCardFillGrid(middleHand, 13);
+    adjustCardFillFlex(middleHand, 13); // 也可用同一个flex适配
 }
 
-function adjustCardFillFlex(zone) {
+function adjustCardFillFlex(zone, max) {
     const cards = zone.querySelectorAll('.card-container');
     if (!cards.length) return;
-    let available = zone.clientWidth - 2;
-    let cardNum = cards.length;
-    let gapTotal = (cardNum - 1) * 0;
-    let width = cardNum > 0 ? (available - gapTotal) / cardNum : available;
-    let height = width * (1/1.45);
-    let maxHeight = zone.clientHeight || window.innerHeight / 4;
-    if (height > maxHeight) {
-        height = maxHeight;
-        width = height * 1.45;
-    }
-    cards.forEach(card => {
-        card.style.width = width + "px";
-        card.style.height = height + "px";
-        card.style.minWidth = width + "px";
-        card.style.maxWidth = width + "px";
-        card.style.minHeight = height + "px";
-        card.style.maxHeight = height + "px";
-    });
-}
-
-function adjustCardFillGrid(zone, count) {
-    // 13格均分，每格1fr，高度取父容器高度
-    const cards = zone.querySelectorAll('.card-container');
+    // 只需保证高度适配容器
     let height = zone.clientHeight;
     cards.forEach(card => {
-        card.style.width = "100%";
         card.style.height = height + "px";
-        card.style.minWidth = "0";
-        card.style.maxWidth = "none";
         card.style.minHeight = height + "px";
         card.style.maxHeight = height + "px";
     });
@@ -139,7 +114,7 @@ function renderRow(parent, arr) {
 function renderRowMiddle(parent, arr) {
     parent.innerHTML = '';
     arr.forEach(card => parent.appendChild(createCardElem(card)));
-    // 只渲染有牌的格子，不补空格子，实现自动左对齐
+    // 不补空格子，直接左对齐
 }
 
 function setupDragAndDrop() {
