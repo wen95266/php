@@ -22,6 +22,9 @@
             <button id="dealCardsBtn" class="game-button">发牌</button>
             <button id="aiGroupBtn" class="game-button">AI分牌</button>
             <button id="aiTrusteeBtn" class="game-button">AI托管</button>
+            <button id="aiBestBtn" class="game-button">AI最优</button>
+            <button id="aiExplainBtn" class="game-button">AI讲解</button>
+            <button id="aiSpecialBtn" class="game-button">AI冲特殊</button>
             <button id="resetArrangementBtn" class="game-button" disabled>重置</button>
             <button id="compareBtn" class="game-button primary-button" disabled>比牌</button>
         </div>
@@ -47,6 +50,14 @@
             <button class="game-button" onclick="doTrustee(10)">托管10局</button>
         </div>
         <button class="game-button" onclick="closeTrusteeModal()">取消</button>
+    </div>
+</div>
+<!-- AI讲解弹窗 -->
+<div class="modal" id="explainModal">
+    <div class="modal-content">
+        <h3>AI分牌讲解</h3>
+        <div id="explainResult"></div>
+        <button class="game-button" onclick="closeExplainModal()">关闭</button>
     </div>
 </div>
 <script src="script.js"></script>
