@@ -1,4 +1,3 @@
-// 后端 API 域名
 const API = 'https://wenge.cloudns.ch';
 
 // ==== 注册/登录/积分功能 ====
@@ -15,20 +14,29 @@ function login() {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     credentials: 'include',
-    body: JSON.stringify({ phone: phone.value, password: password.value })
+    body: JSON.stringify({
+      phone: document.getElementById('phone').value,
+      password: document.getElementById('password').value
+    })
   })
   .then(res => res.json())
   .then(r => {
     if(r.ok) {
       onLoginSuccess();
-    } else alert(r.error);
+    } else {
+      alert(r.error);
+    }
   });
 }
 function register() {
   fetch(API + '/register.php', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ phone: regPhone.value, nickname: regNickname.value, password: regPassword.value })
+    body: JSON.stringify({
+      phone: document.getElementById('regPhone').value,
+      nickname: document.getElementById('regNickname').value,
+      password: document.getElementById('regPassword').value
+    })
   })
   .then(res => res.json())
   .then(r => {
@@ -75,7 +83,10 @@ function adminAdd() {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     credentials: 'include',
-    body: JSON.stringify({ phone: addPhone.value, value: addValue.value })
+    body: JSON.stringify({
+      phone: document.getElementById('addPhone').value,
+      value: document.getElementById('addValue').value
+    })
   }).then(res=>res.json()).then(r=>{
     if(r.ok) alert('加分成功，新积分：'+r.newscore);
     else alert(r.error);
@@ -94,7 +105,10 @@ function adminSub() {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     credentials: 'include',
-    body: JSON.stringify({ phone: subPhone.value, value: subValue.value })
+    body: JSON.stringify({
+      phone: document.getElementById('subPhone').value,
+      value: document.getElementById('subValue').value
+    })
   }).then(res=>res.json()).then(r=>{
     if(r.ok) alert('减分成功，新积分：'+r.newscore);
     else alert(r.error);
@@ -117,19 +131,9 @@ function hideHistory() {
   document.getElementById('historyPanel').style.display = 'none';
 }
 
-// ==== 游戏核心逻辑（恢复原有功能，示例为牌桌、发牌、提交牌型等） ====
-// 你原来的JS逻辑请放在这里，下面为示例
-function dealCards() {
-  // 发牌逻辑
-  document.getElementById('resultArea').innerText = '发牌啦！（请在这里实现你的发牌逻辑）';
-  // 例如：调用前端JS洗牌发牌，或渲染牌面到cardTable
-}
-function submitHand() {
-  // 提交牌型逻辑
-  document.getElementById('resultArea').innerText = '已提交牌型！（请在这里实现牌型判定和结果显示）';
-}
+// ==== 游戏核心逻辑 ====
+// ...（你的原有游戏JS逻辑放这里）
 
-// ==== 页面初始化 ====
 window.onload = function() {
   hideAdminAdd();
   hideAdminSub();
