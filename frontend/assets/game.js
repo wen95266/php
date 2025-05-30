@@ -1,177 +1,151 @@
-// 后端PHP接口根地址
-const API_BASE = "https://wenge.cloudns.ch/backend/api/game.php";
+const API = "https://wenge.cloudns.ch/backend/api/game.php";
+let currentUser = null;
 
-function apiUrl(action, params = "") {
-  return `${API_BASE}?action=${action}${params}`;
+function showModal(html) {
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('modal').style.display = 'block';
 }
-
-// 牌名转图片文件名
-function cardShortToFilename(shortCode) {
-  const suitMap = {
-    S: "spades",
-    H: "hearts",
-    C: "clubs",
-    D: "diamonds"
-  };
-  const rankMap = {
-    A: "ace",
-    J: "jack",
-    Q: "queen",
-    K: "king"
-  };
-  let match = shortCode.match(/^([2-9]|10|A|J|Q|K)([SHCD])$/i);
-  if (!match) return null;
-  let [, rank, suit] = match;
-  rank = rankMap[rank.toUpperCase()] || rank;
-  let suitStr = suitMap[suit.toUpperCase()];
-  return `${rank}_of_${suitStr}.svg`;
+function closeModal() {
+    document.getElementById('modal').style.display = 'none';
 }
 
-// 用户管理弹窗逻辑
-function showUserModal() {
-  document.getElementById('userModalMask').classList.remove('hidden');
-  document.getElementById('userModal').classList.remove('hidden');
-  checkLogin();
+function fetchAPI(action, data = {}, method = 'POST') {
+    let opts = {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+    };
+    if (method === 'POST') opts.body = JSON.stringify({ ...data, action });
+    return fetch(API + (method === 'GET' ? `?action=${action}&${new URLSearchParams(data)}` : ''), opts)
+        .then(r => r.json());
 }
-function closeUserModal() {
-  document.getElementById('userModalMask').classList.add('hidden');
-  document.getElementById('userModal').classList.add('hidden');
-}
-// 登录状态检测
-function checkLogin() {
-  fetch(apiUrl('profile'), {
-    credentials: 'include'
-  })
-    .then(r=>r.json()).then(data=>{
-      if(data.result === 'ok') {
-        showProfile(data.user);
-      } else {
-        showLogin();
-      }
+
+function updateUserBar() {
+    fetchAPI('profile', {}, 'GET').then(res => {
+        if (res.result === 'ok') {
+            currentUser = res.user;
+            document.getElementById('user-info').innerText = `欢迎，${currentUser.phone}（积分：${currentUser.score}）`;
+            document.getElementById('login-btn').style.display = 'none';
+            document.getElementById('logout-btn').style.display = '';
+            showUserDetail(currentUser);
+        } else {
+            currentUser = null;
+            document.getElementById('user-info').innerText = "未登录";
+            document.getElementById('login-btn').style.display = '';
+            document.getElementById('logout-btn').style.display = 'none';
+            document.getElementById('user-detail').innerHTML = '';
+        }
     });
 }
-// 显示登录、注册、用户面板
-function showProfile(user) {
-  document.getElementById('userPanel').classList.remove('hidden');
-  document.getElementById('loginBox').classList.add('hidden');
-  document.getElementById('registerBox').classList.add('hidden');
-  document.getElementById('profile').innerHTML = 
-    `用户名: <b>${user.username}</b><br>手机号: ${user.phone}<br>积分: <b>${user.score}</b><br>胜场: ${user.win||0} 负场: ${user.lose||0} <br>注册时间: ${user.created_at}`;
-  document.getElementById('friendInfo').innerHTML = "";
-  document.getElementById('searchKey').value = "";
-}
 function showLogin() {
-  document.getElementById('loginBox').classList.remove('hidden');
-  document.getElementById('registerBox').classList.add('hidden');
-  document.getElementById('userPanel').classList.add('hidden');
+    showModal(`
+        <h3>登录/注册</h3>
+        <input id="login-phone" placeholder="手机号"><br>
+        <input id="login-password" type="password" placeholder="密码"><br>
+        <button onclick="doLogin()">登录</button>
+        <button onclick="showRegister()">注册</button>
+        <button onclick="closeModal()">关闭</button>
+    `);
 }
 function showRegister() {
-  document.getElementById('registerBox').classList.remove('hidden');
-  document.getElementById('loginBox').classList.add('hidden');
-  document.getElementById('userPanel').classList.add('hidden');
+    showModal(`
+        <h3>注册</h3>
+        <input id="reg-phone" placeholder="手机号"><br>
+        <input id="reg-password" type="password" placeholder="密码"><br>
+        <button onclick="doRegister()">注册</button>
+        <button onclick="showLogin()">已有账号登录</button>
+        <button onclick="closeModal()">关闭</button>
+    `);
 }
-// 登录
-function login() {
-  const username = document.getElementById('login_username').value.trim();
-  const password = document.getElementById('login_password').value.trim();
-  if(!username || !password) { alert("请输入账号和密码"); return; }
-  fetch(apiUrl('login'), {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    credentials: 'include',
-    body: JSON.stringify({username, password})
-  })
-  .then(r=>r.json()).then(data=>{
-    if(data.result==='ok'){
-      checkLogin();
-    } else {
-      alert(data.msg||'登录失败');
-    }
-  });
+function doLogin() {
+    fetchAPI('login', {
+        phone: document.getElementById('login-phone').value,
+        password: document.getElementById('login-password').value
+    }).then(res => {
+        if (res.result === 'ok') {
+            closeModal();
+            updateUserBar();
+        } else alert(res.msg);
+    });
 }
-// 注册
-function register() {
-  const username = document.getElementById('reg_username').value.trim();
-  const phone = document.getElementById('reg_phone').value.trim();
-  const password = document.getElementById('reg_password').value.trim();
-  const password2 = document.getElementById('reg_password2').value.trim();
-  if(!username || !phone || !password || !password2) {
-    alert("请填写完整信息"); return;
-  }
-  if(password !== password2) { alert("两次密码不一致"); return; }
-  fetch(apiUrl('register'), {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    credentials: 'include',
-    body: JSON.stringify({username, phone, password})
-  })
-  .then(r=>r.json()).then(data=>{
-    if(data.result==='ok'){
-      alert('注册成功，请登录');
-      showLogin();
-    } else {
-      alert(data.msg||'注册失败');
-    }
-  });
+function doRegister() {
+    fetchAPI('register', {
+        phone: document.getElementById('reg-phone').value,
+        password: document.getElementById('reg-password').value
+    }).then(res => {
+        if (res.result === 'ok') {
+            alert('注册成功，请登录');
+            showLogin();
+        } else alert(res.msg);
+    });
 }
-// 登出
-function logout() {
-  fetch(apiUrl('logout'), {
-    credentials: 'include'
-  })
-  .then(()=>checkLogin());
+function doLogout() {
+    fetchAPI('logout', {}, 'POST').then(() => {
+        updateUserBar();
+    });
 }
-// 查找朋友
-function searchFriend() {
-  const key = document.getElementById('searchKey').value.trim();
-  if(!key) return;
-  fetch(apiUrl('search_user', `&key=${encodeURIComponent(key)}`), {
-    credentials: 'include'
-  })
-  .then(r=>r.json()).then(data=>{
-    if(data.result==='ok'){
-      document.getElementById('friendInfo').innerHTML = 
-        `用户名:${data.user.username} 积分:${data.user.score}
-        <input id="giftAmt" type="number" min="1" placeholder="赠送积分数">
-        <button onclick="giftScore(${data.user.id})">赠送积分</button>`;
-    }else{
-      document.getElementById('friendInfo').innerHTML = "未找到该用户";
-    }
-  });
-}
-// 赠送积分
-function giftScore(friendId) {
-  const amt = parseInt(document.getElementById('giftAmt').value);
-  if(!amt || amt<=0) { alert("请输入正确的积分数"); return; }
-  fetch(apiUrl('gift_score'), {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    credentials: 'include',
-    body: JSON.stringify({to: friendId, amt})
-  })
-  .then(r=>r.json()).then(data=>{
-    alert(data.msg||'操作失败');
-    if(data.result==='ok') checkLogin();
-  });
-}
-// 支持ESC关闭弹窗
-document.addEventListener('keydown', function(e){
-  if(e.key === "Escape") closeUserModal();
-});
-document.getElementById('userModalMask').onclick = closeUserModal;
 
-// --------- 牌桌渲染示例（可根据实际需求完善） ---------
-window.onload = function() {
-  // 示例：渲染五张手牌
-  const hand = ['AS', '10C', 'KD', 'QH', 'JS']; // 扑克牌文件名去掉.svg
-  const handDiv = document.getElementById('myHand');
-  handDiv.innerHTML = '';
-  hand.forEach(card=>{
-    let file = cardShortToFilename(card);
-    let img = document.createElement('img');
-    img.className = "poker";
-    img.src = "assets/cards/" + file;
-    img.alt = card;
-    handDiv.appendChild(img);
-  });
+function showGift() {
+    if (!currentUser) return showLogin();
+    showModal(`
+        <h3>积分赠送</h3>
+        <input id="gift-phone" placeholder="对方手机号"><br>
+        <input id="gift-amt" placeholder="赠送积分" type="number"><br>
+        <button onclick="doGift()">赠送</button>
+        <button onclick="closeModal()">取消</button>
+    `);
 }
+function doGift() {
+    let phone = document.getElementById('gift-phone').value;
+    let amt = Number(document.getElementById('gift-amt').value);
+    if (!phone || !amt) return alert('信息不完整');
+    fetchAPI('search_user', { phone }, 'GET').then(res => {
+        if (res.result !== 'ok') return alert(res.msg);
+        let to = res.user.id;
+        fetchAPI('gift_score', { to, amt }).then(res2 => {
+            alert(res2.msg);
+            closeModal();
+            updateUserBar();
+        });
+    });
+}
+
+function showSearchUser() {
+    showModal(`
+        <h3>查找用户</h3>
+        <input id="search-phone" placeholder="手机号"><br>
+        <button onclick="doSearchUser()">查找</button>
+        <button onclick="closeModal()">关闭</button>
+    `);
+}
+function doSearchUser() {
+    let phone = document.getElementById('search-phone').value;
+    if (!phone) return alert('请输入手机号');
+    fetchAPI('search_user', { phone }, 'GET').then(res => {
+        if (res.result !== 'ok') return alert(res.msg);
+        closeModal();
+        showUserDetail(res.user);
+    });
+}
+function showUserDetail(user) {
+    if (!user) return;
+    document.getElementById('user-detail').innerHTML = `
+        <h4>用户信息</h4>
+        <ul>
+            <li>手机号：${user.phone}</li>
+            <li>积分：${user.score}</li>
+            <li>胜：${user.win || 0}</li>
+            <li>负：${user.lose || 0}</li>
+            <li>注册时间：${user.created_at}</li>
+        </ul>
+    `;
+}
+
+// 事件绑定
+window.onload = () => {
+    updateUserBar();
+
+    document.getElementById('login-btn').onclick = showLogin;
+    document.getElementById('logout-btn').onclick = doLogout;
+    document.getElementById('modal').onclick = e => { if(e.target.id==='modal') closeModal(); };
+};
