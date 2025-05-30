@@ -55,6 +55,8 @@ body {
     background: none;
     border: none;
 }
+
+/* 统一所有区的牌为flex左对齐，每张牌最大宽度为13等分 */
 .arranged-hand {
     background: none;
     display: flex;
@@ -72,21 +74,7 @@ body {
     padding: 0;
 }
 
-/* 关键：手牌区直接flex，并且牌等宽分布不补空格 */
-#middle-hand {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: stretch;
-    gap: var(--card-gap);
-    height: 100%;
-    min-height: 0;
-    min-width: 0;
-}
-
-/* 使一行13张时刚好铺满，多于/少于13张时也自适应 */
-#middle-hand .card-container {
+.arranged-hand .card-container {
     flex: 0 1 calc((100% - 12 * var(--card-gap)) / 13);
     max-width: calc((100% - 12 * var(--card-gap)) / 13);
     min-width: 0;
@@ -124,7 +112,7 @@ body {
     border: none;
 }
 .drop-placeholder { display: none; }
-.arranged-hand.drag-over, #middle-hand.drag-over { background: #fff2; }
+.arranged-hand.drag-over { background: #fff2; }
 
 #row-buttons .action-buttons {
     width: 100vw; display: flex; flex-direction: row; justify-content: center; gap: 2vw; margin-top: 2vh;
