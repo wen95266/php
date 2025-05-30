@@ -220,9 +220,7 @@ submitBtn.onclick = async function() {
     submitBtn.disabled = false;
 };
 
-window.addEventListener('resize', () => {
-    renderAll();
-});
+window.addEventListener('resize', () => { renderAll(); });
 
 setupDragAndDrop();
 renderAll();
