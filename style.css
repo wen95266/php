@@ -126,7 +126,6 @@ body {
 .game-message-bar {
     margin-top: 2vh; min-height: 3.2vh; font-size: 1.08em; color: #ffda00; text-align: center; font-weight: bold;
 }
-
 /* modal弹窗 */
 .modal {
     display: none;
