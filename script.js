@@ -36,7 +36,7 @@ function renderAll() {
     back = sortCards(back);
     const left = sortCards(hand.filter(c => !front.includes(c) && !back.includes(c)));
     renderRow(frontHand, front);
-    renderRow(middleHand, left);
+    renderRow(middleHand, left, 13);
     renderRow(backHand, back);
 
     resetBtn.disabled = hand.length === 0;
@@ -49,28 +49,30 @@ function renderAll() {
     );
     autoBtn.disabled = hand.length === 0;
 
-    // 动态紧凑调整卡片高度
-    [frontHand, middleHand, backHand].forEach(zone => adjustCardHeight(zone));
+    [frontHand, middleHand, backHand].forEach(zone => adjustCardFill(zone));
 }
 
-function adjustCardHeight(zone) {
+function adjustCardFill(zone) {
     const cards = zone.querySelectorAll('.card-container');
     if (!cards.length) return;
-    // 父容器宽
-    let available = zone.clientWidth - 2; // padding
+    let available = zone.clientWidth - 2;
     let cardNum = cards.length;
-    // aspect: 1.45
     let gapTotal = (cardNum - 1) * parseFloat(getComputedStyle(zone).gap || 0);
-    let cardWidth = (available - gapTotal) / cardNum;
-    let cardHeight = cardWidth * (1/1.45);
-    // 限制最大不能超过父高
+    let width = (available - gapTotal) / cardNum;
+    // aspect: 1.45
+    let height = width * (1/1.45);
     let maxHeight = zone.clientHeight || window.innerHeight / 4;
-    if (cardHeight > maxHeight) cardHeight = maxHeight;
-    if (cardHeight < 20) cardHeight = 20;
+    if (height > maxHeight) {
+        height = maxHeight;
+        width = height * 1.45;
+    }
     cards.forEach(card => {
-        card.style.height = cardHeight + "px";
-        card.style.minHeight = cardHeight + "px";
-        card.style.maxHeight = cardHeight + "px";
+        card.style.width = width + "px";
+        card.style.height = height + "px";
+        card.style.minWidth = width + "px";
+        card.style.maxWidth = width + "px";
+        card.style.minHeight = height + "px";
+        card.style.maxHeight = height + "px";
     });
 }
 
