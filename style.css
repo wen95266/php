@@ -113,6 +113,13 @@ button:hover:enabled {
 .group-btn[disabled] {
   background: #aaa;
 }
+#result {
+  margin: 25px auto 0 auto;
+  min-height: 24px;
+  font-size: 1.12em;
+  color: #0070f3;
+  font-weight: bold;
+}
 @media (max-width: 800px) {
   .groups {
     flex-direction: column;
