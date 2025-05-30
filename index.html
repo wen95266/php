@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 注册/登录/积分UI，默认显示，登录后隐藏 -->
+  <!-- 登录/注册区 -->
   <div id="authArea">
     <div id="loginForm">
       <input id="phone" placeholder="手机号">
@@ -22,7 +22,8 @@
       <button class="btn" onclick="showLogin()">返回登录</button>
     </div>
   </div>
-  <!-- 用户信息区，登录后显示 -->
+
+  <!-- 用户信息与积分 -->
   <div id="userInfoArea" style="display:none">
     <span id="nickname"></span>
     <span id="score"></span>
@@ -53,27 +54,36 @@
     <button class="btn" onclick="hideHistory()">关闭</button>
   </div>
 
-  <!-- 游戏主界面区（恢复原来内容） -->
+  <!-- 游戏主界面 -->
   <div id="gameArea">
-    <h1>十三水游戏大厅</h1>
-    <!-- 你的原本游戏大厅、牌桌、发牌、按钮等内容如下举例： -->
+    <h1>十三水牌桌</h1>
     <div id="tableArea">
-      <!-- 牌桌区域 -->
-      <div id="cardTable">
-        <!-- 牌面、玩家头像等 -->
+      <div id="playersArea">
+        <div class="player-seat" id="player0">
+          <div class="player-info"><span class="player-name"></span> <span class="player-score"></span></div>
+          <div class="player-cards"></div>
+        </div>
+        <div class="player-seat" id="player1">
+          <div class="player-info"><span class="player-name"></span> <span class="player-score"></span></div>
+          <div class="player-cards"></div>
+        </div>
+        <div class="player-seat" id="player2">
+          <div class="player-info"><span class="player-name"></span> <span class="player-score"></span></div>
+          <div class="player-cards"></div>
+        </div>
+        <div class="player-seat" id="player3">
+          <div class="player-info"><span class="player-name"></span> <span class="player-score"></span></div>
+          <div class="player-cards"></div>
+        </div>
       </div>
-      <div id="gameControls">
+      <div id="myCardsArea">
+        <h3>我的手牌</h3>
+        <div id="myCards"></div>
         <button class="btn" onclick="dealCards()">发牌</button>
         <button class="btn" onclick="submitHand()">提交牌型</button>
-        <!-- 其他游戏操作按钮 -->
       </div>
+      <div id="resultArea"></div>
     </div>
-    <!-- 玩家信息展示区 -->
-    <div id="playersArea">
-      <!-- 玩家列表和分数等 -->
-    </div>
-    <!-- 游戏结果展示区 -->
-    <div id="resultArea"></div>
   </div>
 
   <script src="script.js"></script>
