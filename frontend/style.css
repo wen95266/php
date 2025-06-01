@@ -1,0 +1,98 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+}
+.container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 90%;
+    max-width: 1000px;
+}
+.game-controls, .player-area, .opponent-area {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.hand, .cards-in-zone, .cards-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* 卡牌间距 */
+    min-height: 80px; /* 避免空的时候塌陷 */
+    padding: 5px;
+    border: 1px dashed #ccc;
+    margin-top: 5px;
+}
+.card {
+    width: 60px; /* 根据SVG调整 */
+    height: 84px; /* 根据SVG调整 */
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none; /* 防止拖动时选中文本 */
+    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+}
+.card img {
+    max-width: 100%;
+    max-height: 100%;
+    pointer-events: none; /* 让点击事件作用在 .card 上 */
+}
+.card.selected {
+    border-color: #007bff;
+    box-shadow: 0 0 5px #007bff;
+    transform: translateY(-5px);
+}
+.arrangement-zones {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+.zone {
+    flex: 1;
+    border: 2px solid #eee;
+    padding: 10px;
+    border-radius: 4px;
+}
+.zone.active-drop {
+    background-color: #e9f5ff;
+    border-color: #90caf9;
+}
+#messages {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    background-color: #e3f2fd;
+    color: #0d47a1;
+}
+#messages.error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+button {
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+button:hover {
+    background-color: #0056b3;
+}
+.arranged-display p { margin: 5px 0; }
+.arranged-display .cards-display .card {
+    width: 50px; /* 显示已摆好的牌时小一点 */
+    height: 70px;
+    cursor: default;
+}
