@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>十三水在线</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>十三水游戏</h1>
+
+        <div class="game-controls">
+            <button id="startGameBtn">开始新游戏</button>
+            <button id="resetGameBtn">重置游戏(测试)</button>
+        </div>
+
+        <div id="messages"></div>
+
+        <div class="player-area" id="player1Area">
+            <h2>我的手牌 (玩家1)</h2>
+            <div class="hand" id="player1Hand">
+                <!-- 卡牌会通过JS动态插入 -->
+            </div>
+            <h3>摆牌区:</h3>
+            <div class="arrangement-zones">
+                <div class="zone" id="firstHead" data-zone="first" data-size="3">
+                    <h4>头道 (3张)</h4>
+                    <div class="cards-in-zone"></div>
+                </div>
+                <div class="zone" id="middleWay" data-zone="middle" data-size="5">
+                    <h4>中道 (5张)</h4>
+                    <div class="cards-in-zone"></div>
+                </div>
+                <div class="zone" id="lastWay" data-zone="last" data-size="5">
+                    <h4>尾道 (5张)</h4>
+                    <div class="cards-in-zone"></div>
+                </div>
+            </div>
+            <button id="submitArrangementBtn" style="display:none;">确认摆牌</button>
+            <div id="player1ArrangedDisplay" class="arranged-display" style="display:none;">
+                <h4>我的亮牌：</h4>
+                <p>头道: <span class="first-eval"></span></p><div class="cards-display first-cards"></div>
+                <p>中道: <span class="middle-eval"></span></p><div class="cards-display middle-cards"></div>
+                <p>尾道: <span class="last-eval"></span></p><div class="cards-display last-cards"></div>
+            </div>
+        </div>
+
+        <div class="opponent-area" id="player2Area">
+            <h2>对手 (玩家2)</h2>
+            <p>状态: <span id="player2Status">等待中...</span></p>
+            <div id="player2ArrangedDisplay" class="arranged-display" style="display:none;">
+                 <h4>对手亮牌：</h4>
+                 <p>头道: <span class="first-eval"></span></p><div class="cards-display first-cards"></div>
+                 <p>中道: <span class="middle-eval"></span></p><div class="cards-display middle-cards"></div>
+                 <p>尾道: <span class="last-eval"></span></p><div class="cards-display last-cards"></div>
+            </div>
+        </div>
+        
+        <div id="resultsArea" style="display:none;">
+            <h2>本局结果</h2>
+            <p id="roundResultText"></p>
+            <p>我的总分: <span id="player1TotalScore">0</span></p>
+            <p>对手总分: <span id="player2TotalScore">0</span></p>
+        </div>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
