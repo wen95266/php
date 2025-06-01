@@ -18,9 +18,8 @@
         <div id="messages" class="info"></div>
 
         <div class="player-area" id="player1Area">
-            <h2>我的手牌 (<span id="player1Name">玩家1</span>) <span id="player1ScoreDisplay">(总分: 0)</span></h2>
+            <h2><span id="player1Name">玩家1</span> <span id="player1ScoreDisplay">(总分: 0)</span> <span id="player1SpecialHandName" class="special-hand-name"></span></h2>
             <div class="hand droppable-area" id="player1Hand" data-zone-name="hand">
-                <!-- 卡牌会通过JS动态插入 -->
                 <span class="placeholder-text">将手牌拖拽至此</span>
             </div>
             <h3>摆牌区:</h3>
@@ -48,7 +47,7 @@
         </div>
 
         <div class="opponent-area" id="player2Area">
-            <h2>对手 (<span id="player2Name">电脑</span>) <span id="player2ScoreDisplay">(总分: 0)</span></h2>
+            <h2><span id="player2Name">电脑</span> <span id="player2ScoreDisplay">(总分: 0)</span> <span id="player2SpecialHandName" class="special-hand-name"></span></h2>
             <p>状态: <span id="player2Status">等待中...</span></p>
             <div id="player2ArrangedDisplay" class="arranged-display" style="display:none;">
                  <h4>对手亮牌：</h4>
@@ -61,7 +60,6 @@
         <div id="resultsArea" style="display:none;">
             <h2>本局结果</h2>
             <div id="roundResultTextContainer">
-                <!-- 详细结果会动态插入这里 -->
             </div>
             <button id="playAgainBtn">再来一局</button>
         </div>
