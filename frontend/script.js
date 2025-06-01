@@ -1,14 +1,9 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'https://wenge.cloudns.ch/backend/api/game.php';
+// frontend/script.js
+document.addEventListener('DOMContentLoaded', async () => {
+    const API_GAME_URL = 'backend/api/game.php';
     const CARD_IMG_PATH = './cards/';
 
     // --- DOM Elements ---
-    const startGameBtn = document.getElementById('startGameBtn');
-    const resetGameBtn = document.getElementById('resetGameBtn');
-    const submitArrangementBtn = document.getElementById('submitArrangementBtn');
-    const suggestArrangementBtn = document.getElementById('suggestArrangementBtn'); // 新增
-    const playAgainBtn = document.getElementById('playAgainBtn');
-    // ... (其他DOM元素获取与上一版本相同)
     const messagesDiv = document.getElementById('messages');
     const player1NameSpan = document.getElementById('player1Name');
     const player1ScoreSpan = document.getElementById('player1ScoreDisplay');
@@ -20,324 +15,178 @@ document.addEventListener('DOMContentLoaded', () => {
         last: document.getElementById('lastWayCards')
     };
     const player1ArrangedDisplay = document.getElementById('player1ArrangedDisplay');
-    const player2NameSpan = document.getElementById('player2Name');
-    const player2ScoreSpan = document.getElementById('player2ScoreDisplay');
-    const player2SpecialHandNameSpan = document.getElementById('player2SpecialHandName');
-    const player2StatusSpan = document.getElementById('player2Status');
-    const player2ArrangedDisplay = document.getElementById('player2ArrangedDisplay');
+    const submitArrangementBtn = document.getElementById('submitArrangementBtn');
+    const suggestArrangementBtn = document.getElementById('suggestArrangementBtn');
+    const opponentAreasContainer = document.getElementById('opponentAreasContainer');
     const resultsArea = document.getElementById('resultsArea');
     const roundResultTextContainer = document.getElementById('roundResultTextContainer');
-
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const resetGameBtn = document.getElementById('resetGameBtn');
 
     // --- Game State Variables ---
-    // ... (与上一版本相同)
-    let currentPlayerId = 'player1'; 
-    let playerHandData = []; 
-    let arrangedCardsData = { first: [], middle: [], last: [] }; 
+    let currentPlayerId = null;
+    let currentTableId = null;
+    let currentRoundId = null;
+    let playerHandData = [];
+    let arrangedCardsData = { first: [], middle: [], last: [] };
+    let fullDeckForCurrentHand = [];
+    let gameStatePollInterval = null;
+    let localGameData = null;
+
+    // --- Drag and Drop (与上一版本相同) ---
     let draggedCardElement = null; 
     let draggedCardImage = null;   
     let draggedCardOriginZone = null; 
-    let gameStatePollInterval = null;
-    let fullDeckForCurrentHand = []; 
-
+    function handleDragStart(event) { /* ... (同上) ... */ draggedCardElement = event.target.closest('.card'); if (!draggedCardElement) return; draggedCardImage = draggedCardElement.dataset.image; draggedCardElement.classList.add('dragging'); event.dataTransfer.setData('text/plain', draggedCardImage); event.dataTransfer.effectAllowed = 'move'; if (draggedCardElement.parentElement.id === 'player1Hand') { draggedCardOriginZone = 'hand';} else { draggedCardOriginZone = draggedCardElement.closest('.droppable-area').dataset.zoneName;}}
+    function handleDragEnd() { /* ... (同上) ... */ if (draggedCardElement) { draggedCardElement.classList.remove('dragging');} draggedCardElement = null; draggedCardImage = null; draggedCardOriginZone = null; document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));}
+    function handleDragOver(event) { /* ... (同上) ... */ event.preventDefault(); event.dataTransfer.dropEffect = 'move'; const targetZone = event.target.closest('.droppable-area'); if (targetZone && !targetZone.classList.contains('drag-over')) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); targetZone.classList.add('drag-over'); }}
+    function handleDragLeave(event) { /* ... (同上) ... */ const targetZone = event.target.closest('.droppable-area'); if (targetZone && !targetZone.contains(event.relatedTarget)) { targetZone.classList.remove('drag-over');} else if (!targetZone) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));}}
+    function handleDrop(event) { /* ... (同上) ... */ event.preventDefault(); const targetDropArea = event.target.closest('.droppable-area'); if (!targetDropArea || !draggedCardImage) { if(draggedCardElement) draggedCardElement.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); return; } targetDropArea.classList.remove('drag-over'); const targetZoneName = targetDropArea.dataset.zoneName; if (targetZoneName !== 'hand' && targetZoneName !== draggedCardOriginZone) { const zoneMaxSize = parseInt(targetDropArea.dataset.size); if (arrangedCardsData[targetZoneName].length >= zoneMaxSize) { showMessage(`${targetZoneName === 'first' ? '头' : targetZoneName === 'middle' ? '中' : '尾'}道已满`, 'error'); return; }} if (draggedCardOriginZone === 'hand') { playerHandData = playerHandData.filter(c => c.image !== draggedCardImage);} else if (arrangedCardsData[draggedCardOriginZone]) { arrangedCardsData[draggedCardOriginZone] = arrangedCardsData[draggedCardOriginZone].filter(img => img !== draggedCardImage);} if (targetZoneName === 'hand') { const cardToReturn = fullDeckForCurrentHand.find(c => c.image === draggedCardImage); if (cardToReturn && !playerHandData.find(c => c.image === cardToReturn.image)) { playerHandData.push(cardToReturn);}} else if (arrangementZoneDivs[targetZoneName]) { if (!arrangedCardsData[targetZoneName].includes(draggedCardImage)) { arrangedCardsData[targetZoneName].push(draggedCardImage);}} renderPlayerHand(); renderAllArrangementZones();}
+    document.querySelectorAll('.droppable-area').forEach(area => { area.addEventListener('dragover', handleDragOver); area.addEventListener('dragleave', handleDragLeave); area.addEventListener('drop', handleDrop);});
 
     // --- Helper Functions ---
-    // ... (showMessage, createCardElement, renderPlayerHand, renderArrangementZone, renderAllArrangementZones, displayArrangedHandsAfterCompare 与上一版本相同)
-    function showMessage(text, type = 'info') { /* ... */ messagesDiv.textContent = text; messagesDiv.className = type;}
-    function createCardElement(cardData, draggable = true) { /* ... */ 
-        const cardDiv = document.createElement('div'); cardDiv.classList.add('card'); cardDiv.dataset.image = cardData.image; cardDiv.draggable = draggable;
-        const img = document.createElement('img'); img.src = CARD_IMG_PATH + cardData.image; img.alt = cardData.image.replace(/_of_|\.svg/g, ' ').trim(); cardDiv.appendChild(img);
-        if (draggable) { cardDiv.addEventListener('dragstart', handleDragStart); cardDiv.addEventListener('dragend', handleDragEnd); }
-        return cardDiv;
-    }
-    function renderPlayerHand() { /* ... */ 
-        player1HandDiv.innerHTML = ''; 
-        if (playerHandData.length === 0 && player1HandDiv.querySelector('.placeholder-text')) { player1HandDiv.querySelector('.placeholder-text').style.display = 'block'; } 
-        else if (player1HandDiv.querySelector('.placeholder-text')) { player1HandDiv.querySelector('.placeholder-text').style.display = 'none';}
-        playerHandData.sort((a, b) => b.value - a.value || b.suitValue - a.suitValue); 
-        playerHandData.forEach(cardObj => { player1HandDiv.appendChild(createCardElement(cardObj));});
-    }
-    function renderArrangementZone(zoneName) { /* ... */ 
-        const zoneDiv = arrangementZoneDivs[zoneName]; zoneDiv.innerHTML = '';
-        arrangedCardsData[zoneName].forEach(cardImage => {
-            const cardObj = fullDeckForCurrentHand.find(c => c.image === cardImage) || { image: cardImage };
-            zoneDiv.appendChild(createCardElement(cardObj));
-        });
-    }
-    function renderAllArrangementZones() { /* ... */ renderArrangementZone('first'); renderArrangementZone('middle'); renderArrangementZone('last');}
-    function displayArrangedHandsAfterCompare(playerDisplayDiv, arrangedObjects, evalResult) { /* ... */ 
-        playerDisplayDiv.style.display = 'block';
+    function showMessage(text, type = 'info') { messagesDiv.textContent = text; messagesDiv.className = `messages-placeholder ${type}`; }
+    function createCardElement(cardData, draggable = true) { const cardDiv = document.createElement('div'); cardDiv.classList.add('card'); cardDiv.dataset.image = cardData.image; cardDiv.draggable = draggable; const img = document.createElement('img'); img.src = CARD_IMG_PATH + cardData.image; img.alt = cardData.image.replace(/_of_|\.svg/g, ' ').trim(); cardDiv.appendChild(img); if (draggable) { cardDiv.addEventListener('dragstart', handleDragStart); cardDiv.addEventListener('dragend', handleDragEnd); } return cardDiv; }
+    function renderPlayerHand() { player1HandDiv.innerHTML = ''; if (playerHandData.length === 0 && player1HandDiv.querySelector('.placeholder-text')) { player1HandDiv.querySelector('.placeholder-text').style.display = 'block'; } else if (player1HandDiv.querySelector('.placeholder-text')) { player1HandDiv.querySelector('.placeholder-text').style.display = 'none';} playerHandData.sort((a,b) => (b.value - a.value) || (b.suitValue - a.suitValue)); playerHandData.forEach(cardObj => { player1HandDiv.appendChild(createCardElement(cardObj));}); }
+    function renderArrangementZone(zoneName) { const zoneDiv = arrangementZoneDivs[zoneName]; zoneDiv.innerHTML = ''; arrangedCardsData[zoneName].forEach(cardImage => { const cardObj = fullDeckForCurrentHand.find(c => c.image === cardImage) || { image: cardImage }; zoneDiv.appendChild(createCardElement(cardObj)); }); }
+    function renderAllArrangementZones() { renderArrangementZone('first'); renderArrangementZone('middle'); renderArrangementZone('last');}
+    
+    function displayArrangedHandsForPlayer(playerDisplayContainer, arrangedObjects, evalResult, playerName = "对手") {
+        if (!playerDisplayContainer) return;
+        playerDisplayContainer.style.display = 'block';
+        let h4 = playerDisplayContainer.querySelector('h4');
+        if(!h4) { h4 = document.createElement('h4'); playerDisplayContainer.insertBefore(h4, playerDisplayContainer.firstChild); }
+        h4.textContent = `${playerName}的亮牌：`;
+
         ['first', 'middle', 'last'].forEach(segment => {
-            const cardsContainer = playerDisplayDiv.querySelector(`.${segment}-cards`);
-            const evalSpan = playerDisplayDiv.querySelector(`.${segment}-eval`);
+            const cardsContainer = playerDisplayContainer.querySelector(`.${segment}-cards`);
+            const evalSpan = playerDisplayContainer.querySelector(`.${segment}-eval`);
+            if (!cardsContainer || !evalSpan) return;
+            
+            // 确保应用横向显示类 (如果HTML中没有直接写死)
+            cardsContainer.classList.add('horizontal-cards-display'); 
             cardsContainer.innerHTML = '';
+            
             if (arrangedObjects && arrangedObjects[segment] && Array.isArray(arrangedObjects[segment])) {
                 arrangedObjects[segment].forEach(cardObj => { cardsContainer.appendChild(createCardElement(cardObj, false)); });
             }
             if (evalResult && evalResult[segment]) {
-                evalSpan.textContent = `${evalResult[segment].name} (主值: ${evalResult[segment].primary_value})`;
+                evalSpan.textContent = `${evalResult[segment].name || 'N/A'}`;
+                if(typeof evalResult[segment].primary_value !== 'undefined') evalSpan.textContent += ` (主值: ${evalResult[segment].primary_value})`;
             } else { evalSpan.textContent = '(未评估)';}
         });
     }
 
-    // --- Drag and Drop Handlers ---
-    // ... (与上一版本相同)
-    function handleDragStart(event) { /* ... */ 
-        draggedCardElement = event.target.closest('.card'); if (!draggedCardElement) return;
-        draggedCardImage = draggedCardElement.dataset.image; draggedCardElement.classList.add('dragging');
-        event.dataTransfer.setData('text/plain', draggedCardImage); event.dataTransfer.effectAllowed = 'move';
-        if (draggedCardElement.parentElement.id === 'player1Hand') { draggedCardOriginZone = 'hand';} 
-        else { draggedCardOriginZone = draggedCardElement.closest('.droppable-area').dataset.zoneName;}
-    }
-    function handleDragEnd() { /* ... */ 
-        if (draggedCardElement) { draggedCardElement.classList.remove('dragging');}
-        draggedCardElement = null; draggedCardImage = null; draggedCardOriginZone = null;
-        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-    }
-    function handleDragOver(event) { /* ... */ 
-        event.preventDefault(); event.dataTransfer.dropEffect = 'move';
-        const targetZone = event.target.closest('.droppable-area');
-        if (targetZone && !targetZone.classList.contains('drag-over')) {
-            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-            targetZone.classList.add('drag-over');
-        }
-    }
-    function handleDragLeave(event) { /* ... */ 
-        const targetZone = event.target.closest('.droppable-area');
-        if (targetZone && !targetZone.contains(event.relatedTarget)) { targetZone.classList.remove('drag-over');} 
-        else if (!targetZone) { document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));}
-    }
-    function handleDrop(event) { /* ... */ 
-        event.preventDefault();
-        const targetDropArea = event.target.closest('.droppable-area');
-        if (!targetDropArea || !draggedCardImage) {
-            if(draggedCardElement) draggedCardElement.classList.remove('dragging');
-            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    // --- API Calls & Game Logic (与上一版本相同，这里不再重复所有，只列出关键部分) ---
+    async function fetchGameApi(action, method = 'POST', bodyParams = null) { /* ... (同上) ... */ const options = { method: method, credentials: 'include' }; let url = `${API_GAME_URL}?action=${action}`; if (bodyParams) { const formData = new FormData(); for (const key in bodyParams) { if (typeof bodyParams[key] === 'object' && bodyParams[key] !== null) { formData.append(key, JSON.stringify(bodyParams[key])); } else { formData.append(key, bodyParams[key]);}} options.body = formData;} try { const response = await fetch(url, options); const data = await response.json(); if (data.redirectToLogin) { showMessage('会话已过期或未登录，请重新登录。', 'error'); localStorage.removeItem('userData'); localStorage.removeItem('activeGameTableId'); localStorage.removeItem('activeGameRoundId'); window.updateUserInfoDisplay?.(); setTimeout(() => window.location.href = 'login.html', 2000); return null; } return data;} catch (error) { console.error("Game API call failed:", action, error); showMessage(`游戏请求失败: ${error.message}`, 'error'); return { success: false, message: `游戏请求失败: ${error.message}` };}}
+    function resetGameScreenUI() { /* ... (同上) ... */ playerHandData = []; arrangedCardsData = { first: [], middle: [], last: [] }; fullDeckForCurrentHand = []; renderPlayerHand(); renderAllArrangementZones(); player1ArrangedDisplay.style.display = 'none'; if (opponentAreasContainer) opponentAreasContainer.innerHTML = ''; resultsArea.style.display = 'none'; submitArrangementBtn.style.display = 'none'; submitArrangementBtn.disabled = true; suggestArrangementBtn.style.display = 'none'; player1SpecialHandNameSpan.textContent = ''; if (gameStatePollInterval) { clearInterval(gameStatePollInterval); gameStatePollInterval = null;}}
+    async function loadCurrentGameAndPlayerInfo() { /* ... (同上) ... */ const userData = JSON.parse(localStorage.getItem('userData')); if (userData) { currentPlayerId = userData.id; player1NameSpan.textContent = userData.nickname || userData.username; player1ScoreSpan.textContent = `(总分: ${userData.total_score || 0})`; } else { showMessage("请先登录以进行游戏。", "error"); setTimeout(() => window.location.href = 'login.html', 1500); return false;} const params = new URLSearchParams(window.location.search); currentTableId = params.get('table') || localStorage.getItem('activeGameTableId'); currentRoundId = params.get('round') || localStorage.getItem('activeGameRoundId'); if (!currentTableId || !currentRoundId) { showMessage("无效的游戏链接或未找到游戏信息，将返回大厅。", "error"); setTimeout(() => window.location.href = 'lobby.html', 2000); return false;} localStorage.setItem('activeGameTableId', currentTableId); localStorage.setItem('activeGameRoundId', currentRoundId); return true;}
+    async function handleSuggestArrangementForGame() { /* ... (同上) ... */ if (!currentTableId || !currentRoundId) { showMessage("不在有效的游戏中，无法推荐。", "error"); return;} let totalCardsAvailable = playerHandData.length + arrangedCardsData.first.length + arrangedCardsData.middle.length + arrangedCardsData.last.length; if (totalCardsAvailable !== 13) { showMessage("手牌不完整，无法推荐。", "error"); return;} suggestArrangementBtn.disabled = true; showMessage("正在获取推荐摆法...", "info"); const data = await fetchGameApi(`suggestArrangement&playerId=${currentPlayerId}&tableId=${currentTableId}&roundId=${currentRoundId}`, 'GET'); suggestArrangementBtn.disabled = false; if (data && data.success && data.suggestion) { showMessage("已获取推荐摆法，请查看并可拖拽调整。", "success"); playerHandData = [...fullDeckForCurrentHand]; arrangedCardsData = { first: [], middle: [], last: [] }; Object.keys(data.suggestion).forEach(zone => { data.suggestion[zone].forEach(img => { if (playerHandData.find(c => c.image === img)) { playerHandData = playerHandData.filter(c => c.image !== img); arrangedCardsData[zone].push(img);}});}); renderPlayerHand(); renderAllArrangementZones();} else { showMessage(data ? data.message : "获取推荐失败。", "error");}}
+    async function handleSubmitArrangementForGame() { /* ... (同上) ... */ if (!currentTableId || !currentRoundId) { showMessage("不在有效的游戏中，无法提交。", "error"); return;} if (arrangedCardsData.first.length !== 3 || arrangedCardsData.middle.length !== 5 || arrangedCardsData.last.length !== 5) { showMessage('请确保头道3张，中道5张，尾道5张。', 'error'); return;} if (playerHandData.length > 0) { showMessage('还有手牌未放入摆牌区！', 'error'); return;} submitArrangementBtn.disabled = true; suggestArrangementBtn.disabled = true; showMessage('正在提交摆牌...', 'info'); const payload = {tableId: currentTableId, roundId: currentRoundId, arrangedCards: arrangedCardsData }; const data = await fetchGameApi('submitArrangement', 'POST', payload); if (data && data.success) { showMessage(data.message, 'success'); submitArrangementBtn.style.display = 'none'; suggestArrangementBtn.style.display = 'none'; if (data.round_results) { updateGameScreenWithState(data.gameState); if (gameStatePollInterval) { clearInterval(gameStatePollInterval); gameStatePollInterval = null; }} else { if (!gameStatePollInterval) pollGameTableState(); }} else { showMessage(data ? data.message : '提交摆牌失败', 'error'); submitArrangementBtn.disabled = false; suggestArrangementBtn.disabled = false;}}
+    
+    function updateGameScreenWithState(gameStateData) {
+        localGameData = gameStateData; 
+        if (!gameStateData || !gameStateData.table_status) {
+            showMessage("获取游戏状态异常。", "error");
             return;
-        }
-        targetDropArea.classList.remove('drag-over');
-        const targetZoneName = targetDropArea.dataset.zoneName;
-
-        if (targetZoneName !== 'hand' && targetZoneName !== draggedCardOriginZone) {
-            const zoneMaxSize = parseInt(targetDropArea.dataset.size);
-            if (arrangedCardsData[targetZoneName].length >= zoneMaxSize) {
-                showMessage(`${targetZoneName === 'first' ? '头' : targetZoneName === 'middle' ? '中' : '尾'}道已满`, 'error'); return;
-            }
         }
         
-        if (draggedCardOriginZone === 'hand') { playerHandData = playerHandData.filter(c => c.image !== draggedCardImage);} 
-        else if (arrangedCardsData[draggedCardOriginZone]) { arrangedCardsData[draggedCardOriginZone] = arrangedCardsData[draggedCardOriginZone].filter(img => img !== draggedCardImage);}
-
-        if (targetZoneName === 'hand') {
-            const cardToReturn = fullDeckForCurrentHand.find(c => c.image === draggedCardImage);
-            if (cardToReturn && !playerHandData.find(c => c.image === cardToReturn.image)) { playerHandData.push(cardToReturn);}
-        } else if (arrangementZoneDivs[targetZoneName]) {
-            if (!arrangedCardsData[targetZoneName].includes(draggedCardImage)) { arrangedCardsData[targetZoneName].push(draggedCardImage);}
+        const me = gameStateData.players?.find(p => p.user_id == currentPlayerId);
+        if (me) {
+            player1NameSpan.textContent = me.nickname;
         }
-        renderPlayerHand(); renderAllArrangementZones();
-    }
 
-    document.querySelectorAll('.droppable-area').forEach(area => { /* ... */ area.addEventListener('dragover', handleDragOver); area.addEventListener('dragleave', handleDragLeave); area.addEventListener('drop', handleDrop);});
+        if (opponentAreasContainer) opponentAreasContainer.innerHTML = ''; 
+        gameStateData.players?.forEach(player => {
+            if (player.user_id != currentPlayerId) {
+                const opponentDivId = `opponentArea_${player.user_id}`;
+                // let opponentOuterContainer = document.getElementById(opponentDivId); // 这个ID是外层容器
+                // if (!opponentOuterContainer) { // 如果不存在则创建
+                const opponentOuterContainer = document.createElement('div');
+                opponentOuterContainer.id = opponentDivId; 
+                opponentOuterContainer.classList.add('opponent-area-ingame'); 
+                opponentOuterContainer.innerHTML = `
+                    <h2>
+                        <span class="opponent-name">${player.nickname}</span> 
+                        <span class="opponent-special-hand special-hand-name"></span>
+                    </h2>
+                    <p>状态: <span class="opponent-status"></span></p>
+                    <div class="arranged-display" style="display:none;"> 
+                         <h4>对手亮牌：</h4>
+                         <div class="segment-display">头道: <span class="eval-text first-eval"></span><div class="cards-display first-cards horizontal-cards-display"></div></div>
+                         <div class="segment-display">中道: <span class="eval-text middle-eval"></span><div class="cards-display middle-cards horizontal-cards-display"></div></div>
+                         <div class="segment-display">尾道: <span class="eval-text last-eval"></span><div class="cards-display last-cards horizontal-cards-display"></div></div>
+                    </div>`;
+                opponentAreasContainer.appendChild(opponentOuterContainer);
+                // }
+                
+                const opponentNameSpan = opponentOuterContainer.querySelector('.opponent-name');
+                if(opponentNameSpan) opponentNameSpan.textContent = player.nickname;
 
-    // --- API Calls & Game Logic ---
-    // ... (fetchApi, resetGameUI 与上一版本相同)
-    async function fetchApi(action, method = 'GET', body = null) { /* ... */ 
-        const options = {method: method, headers: { 'Content-Type': 'application/json' }, credentials: 'include'};
-        if (body) { options.body = JSON.stringify(body); }
-        const url = `${API_BASE_URL}?action=${action}`;
-        try {
-            const response = await fetch(url, options);
-            if (!response.ok) { const errorData = await response.json().catch(() => ({ message: `HTTP error ${response.status}` })); throw new Error(errorData.message || `HTTP error! status: ${response.status}`);}
-            return await response.json();
-        } catch (error) { console.error("API call failed:", action, error); showMessage(`API请求失败: ${error.message}`, 'error'); return { success: false, message: `API请求失败: ${error.message}` };}
-    }
-    function resetGameUI(isFullReset = false) { /* ... */ 
-        playerHandData = []; arrangedCardsData = { first: [], middle: [], last: [] }; fullDeckForCurrentHand = [];
-        renderPlayerHand(); renderAllArrangementZones();
-        player1ArrangedDisplay.style.display = 'none'; player2ArrangedDisplay.style.display = 'none';
-        resultsArea.style.display = 'none'; submitArrangementBtn.style.display = 'none'; submitArrangementBtn.disabled = true;
-        suggestArrangementBtn.style.display = 'none'; // 隐藏推荐按钮
-        player1SpecialHandNameSpan.textContent = ''; player2SpecialHandNameSpan.textContent = '';
-        if (isFullReset) { player1ScoreSpan.textContent = '(总分: 0)'; player2ScoreSpan.textContent = '(总分: 0)';}
-        document.querySelectorAll('.segment-display').forEach(el => { el.classList.remove('segment-win', 'segment-lose', 'segment-draw');});
-        if (gameStatePollInterval) { clearInterval(gameStatePollInterval); gameStatePollInterval = null;}
-    }
-    
-    async function handleStartGame() { /* ... */ 
-        resetGameUI(false); 
-        showMessage('正在开始新游戏...', 'info');
-        startGameBtn.disabled = true; playAgainBtn.disabled = true;
-        const data = await fetchApi('startGame', 'POST');
-        startGameBtn.disabled = false; playAgainBtn.disabled = false;
-        if (data.success) {
-            showMessage(data.message, 'success');
-            playerHandData = data.player1_hand || []; 
-            fullDeckForCurrentHand = [...(data.player1_hand || [])]; 
-            renderPlayerHand();
-            submitArrangementBtn.style.display = 'inline-block'; submitArrangementBtn.disabled = false;
-            suggestArrangementBtn.style.display = 'inline-block'; // 显示推荐按钮
-            pollGameState(); 
-        } else { showMessage(data.message || '开始游戏失败', 'error');}
-    }
-    
-    async function handleSuggestArrangement() {
-        if (playerHandData.length + arrangedCardsData.first.length + arrangedCardsData.middle.length + arrangedCardsData.last.length !== 13) {
-            showMessage("请在拥有完整13张手牌（未摆放或已摆放的牌总数为13）时使用推荐功能。", "error");
-            return;
-        }
-        suggestArrangementBtn.disabled = true;
-        showMessage("正在获取推荐摆法...", "info");
-        const data = await fetchApi(`suggestArrangement&playerId=${currentPlayerId}`); // GET请求
-        suggestArrangementBtn.disabled = false;
-
-        if (data.success && data.suggestion) {
-            showMessage("已获取推荐摆法，请查看并可拖拽调整。", "success");
-            // 将所有牌先移回手牌区 (数据层面)
-            playerHandData = [...fullDeckForCurrentHand]; // 恢复完整手牌
-            arrangedCardsData = { first: [], middle: [], last: [] }; // 清空摆牌区数据
-
-            // 应用推荐的摆法 (数据层面)
-            Object.keys(data.suggestion).forEach(zone => {
-                data.suggestion[zone].forEach(img => {
-                    if (playerHandData.find(c => c.image === img)) { // 确保牌在手牌中
-                        playerHandData = playerHandData.filter(c => c.image !== img);
-                        arrangedCardsData[zone].push(img);
+                const opponentStatusSpan = opponentOuterContainer.querySelector('.opponent-status');
+                if (opponentStatusSpan) {
+                    if (gameStateData.table_status === 'playing') {
+                        opponentStatusSpan.textContent = player.has_submitted_this_round ? '已出牌' : '思考中...';
+                    } else if (gameStateData.table_status === 'finished') {
+                        opponentStatusSpan.textContent = '已亮牌';
+                    } else {
+                        opponentStatusSpan.textContent = player.is_ready ? '已准备' : '等待中';
                     }
-                });
-            });
-            // 重新渲染UI
-            renderPlayerHand();
-            renderAllArrangementZones();
-        } else {
-            showMessage(data.message || "获取推荐失败。", "error");
-        }
-    }
-
-
-    async function handleSubmitArrangement() { /* ... */ 
-        if (arrangedCardsData.first.length !== 3 || arrangedCardsData.middle.length !== 5 || arrangedCardsData.last.length !== 5) {
-            showMessage('请确保头道3张，中道5张，尾道5张。', 'error'); return;
-        }
-        let totalArrangedCount = arrangedCardsData.first.length + arrangedCardsData.middle.length + arrangedCardsData.last.length;
-        if (totalArrangedCount !== 13) { showMessage(`已摆放 ${totalArrangedCount} 张牌，请摆放所有13张牌。`, 'error'); return;}
-        if (playerHandData.length > 0) { showMessage('还有手牌未放入摆牌区！', 'error'); return;}
-        
-        submitArrangementBtn.disabled = true; suggestArrangementBtn.disabled = true; // 提交时禁用推荐
-        showMessage('正在提交摆牌...', 'info');
-        const payload = {playerId: currentPlayerId, arrangedCards: arrangedCardsData };
-        const data = await fetchApi('arrangeCards', 'POST', payload);
-        
-        if (data.success) {
-            showMessage(data.message, 'success');
-            if (data.round_results) { 
-                displayRoundResultsAndUpdateScores(data.round_results);
-                if (gameStatePollInterval) { clearInterval(gameStatePollInterval); gameStatePollInterval = null; }
-            } else {
-                showMessage(data.message + ' 等待对手...', 'info');
-                if (!gameStatePollInterval) pollGameState(); 
+                }
             }
-        } else { 
-            showMessage(data.message || '提交摆牌失败', 'error');
-            submitArrangementBtn.disabled = false; suggestArrangementBtn.disabled = false; // 失败时恢复按钮
+        });
+
+        if (gameStateData.table_status === 'playing') {
+            // ... (与上一版本相同)
+            resultsArea.style.display = 'none'; playAgainBtn.style.display = 'none'; 
+            const myPlayerData = gameStateData.players.find(p => p.user_id == currentPlayerId);
+            if (myPlayerData && !myPlayerData.has_submitted_this_round) {
+                if (gameStateData.yourHand && playerHandData.length === 0 && arrangedCardsData.first.length === 0) { 
+                    playerHandData = gameStateData.yourHand; fullDeckForCurrentHand = [...gameStateData.yourHand]; renderPlayerHand();
+                }
+                submitArrangementBtn.style.display = 'inline-block'; submitArrangementBtn.disabled = false;
+                suggestArrangementBtn.style.display = 'inline-block'; suggestArrangementBtn.disabled = false;
+            } else if (myPlayerData && myPlayerData.has_submitted_this_round) {
+                showMessage("您已提交，等待其他玩家...", "info");
+                submitArrangementBtn.style.display = 'none'; suggestArrangementBtn.style.display = 'none';
+            }
+        } else if (gameStateData.table_status === 'finished' && gameStateData.round_results) {
+            // ... (与上一版本相同，确保调用 displayArrangedHandsForPlayer)
+            submitArrangementBtn.style.display = 'none'; suggestArrangementBtn.style.display = 'none';
+            resultsArea.style.display = 'block'; playAgainBtn.textContent = "返回大厅"; playAgainBtn.style.display = 'inline-block';
+            const roundResults = gameStateData.round_results;
+            const myResultDetails = roundResults.player_details?.[currentPlayerId];
+            if (myResultDetails) {
+                displayArrangedHandsForPlayer(player1ArrangedDisplay, myResultDetails.arranged_hand_for_display, myResultDetails.cards_eval_display, player1NameSpan.textContent);
+                player1SpecialHandNameSpan.textContent = myResultDetails.special_hand_type_name ? `(${myResultDetails.special_hand_type_name})` : '';
+            }
+            gameStateData.players?.forEach(player => {
+                if (player.user_id != currentPlayerId) {
+                    const opponentOuterContainer = document.getElementById(`opponentArea_${player.user_id}`);
+                    const opponentArrangedDisplay = opponentOuterContainer?.querySelector('.arranged-display');
+                    const opponentResultDetails = roundResults.player_details?.[player.user_id];
+                    if (opponentArrangedDisplay && opponentResultDetails) {
+                        displayArrangedHandsForPlayer(opponentArrangedDisplay, opponentResultDetails.arranged_hand_for_display, opponentResultDetails.cards_eval_display, player.nickname);
+                        opponentOuterContainer.querySelector('.opponent-special-hand').textContent = opponentResultDetails.special_hand_type_name ? `(${opponentResultDetails.special_hand_type_name})` : '';
+                    }
+                }
+            });
+            roundResultTextContainer.innerHTML = ''; 
+            if (roundResults.score_details && roundResults.score_details.length > 0) { roundResults.score_details.forEach(detail => { const p = document.createElement('p'); p.textContent = detail; roundResultTextContainer.appendChild(p);});}
+            const finalMyData = gameStateData.players.find(p => p.user_id == currentPlayerId);
+            if (finalMyData && typeof finalMyData.total_score !== 'undefined') { 
+                 player1ScoreSpan.textContent = `(总分: ${finalMyData.total_score})`;
+                 const storedUser = JSON.parse(localStorage.getItem('userData'));
+                 if(storedUser && storedUser.id == currentPlayerId) { storedUser.total_score = finalMyData.total_score; localStorage.setItem('userData', JSON.stringify(storedUser));}
+            }
+            if (gameStatePollInterval) { clearInterval(gameStatePollInterval); gameStatePollInterval = null; }
         }
     }
     
-    function displayRoundResultsAndUpdateScores(results) { /* ... (与上一版本相同，确保处理 playerX_special_type_name) ... */ 
-        player1ArrangedDisplay.style.display = 'block'; player2ArrangedDisplay.style.display = 'block';
-        resultsArea.style.display = 'block'; submitArrangementBtn.style.display = 'none'; 
-        suggestArrangementBtn.style.display = 'none'; // 结果出来后隐藏推荐
+    async function pollGameTableState() { /* ... (与上一版本相同) ... */ if (gameStatePollInterval) clearInterval(gameStatePollInterval); if (!currentTableId || !currentRoundId) return; gameStatePollInterval = setInterval(async () => { if (!currentTableId || !currentRoundId) { clearInterval(gameStatePollInterval); gameStatePollInterval = null; return;} const data = await fetchGameApi(`getGameState&tableId=${currentTableId}&roundId=${currentRoundId}`, 'GET'); if (data && data.success && data.gameState) { updateGameScreenWithState(data.gameState); if (data.gameState.table_status === 'finished') { clearInterval(gameStatePollInterval); gameStatePollInterval = null;}} else { console.warn("Polling game state failed or no gameState received.");}}, 3000); }
 
-        displayArrangedHandsAfterCompare(player1ArrangedDisplay, results.player1_arranged_for_display, results.player1_cards_eval_display);
-        displayArrangedHandsAfterCompare(player2ArrangedDisplay, results.player2_arranged_for_display, results.player2_cards_eval_display);
-        
-        player1SpecialHandNameSpan.textContent = results.player1_special_type_name ? `(${results.player1_special_type_name})` : '';
-        player2SpecialHandNameSpan.textContent = results.player2_special_type_name ? `(${results.player2_special_type_name})` : '';
-
-        roundResultTextContainer.innerHTML = ''; 
-        if (results.score_details && results.score_details.length > 0) {
-            results.score_details.forEach(detail => { const p = document.createElement('p'); p.textContent = detail; roundResultTextContainer.appendChild(p);});
-        } else { const p = document.createElement('p'); p.textContent = `你获得 ${results.player1_score_change} 分, 对手获得 ${results.player2_score_change} 分.`; roundResultTextContainer.appendChild(p);}
-
-        player1ScoreSpan.textContent = `(总分: ${results.player1_total_score})`;
-        player2ScoreSpan.textContent = `(总分: ${results.player2_total_score})`;
-        player2StatusSpan.textContent = '已亮牌';
-
-        if (results.segment_results) {
-            ['first', 'middle', 'last'].forEach(segment => {
-                const p1SegmentDiv = player1ArrangedDisplay.querySelector(`.segment-display:has(.${segment}-cards)`);
-                const p2SegmentDiv = player2ArrangedDisplay.querySelector(`.segment-display:has(.${segment}-cards)`);
-                [p1SegmentDiv, p2SegmentDiv].forEach(div => div.classList.remove('segment-win', 'segment-lose', 'segment-draw'));
-                if (results.segment_results[segment] === 'p1_wins') { p1SegmentDiv.classList.add('segment-win'); p2SegmentDiv.classList.add('segment-lose');} 
-                else if (results.segment_results[segment] === 'p2_wins') { p1SegmentDiv.classList.add('segment-lose'); p2SegmentDiv.classList.add('segment-win');} 
-                else { p1SegmentDiv.classList.add('segment-draw'); p2SegmentDiv.classList.add('segment-draw');}
-            });
-        }
-    }
-
-    async function handleResetGame() { /* ... (与上一版本相同) ... */ 
-        if (!confirm("确定要重置游戏并清除服务器状态吗？这将影响所有会话。")) return;
-        const data = await fetchApi('resetGame', 'POST');
-        if (data.success) { showMessage(data.message, 'success'); resetGameUI(true); } 
-        else { showMessage(data.message || '重置游戏失败', 'error');}
-    }
-    
-    async function pollGameState() { /* ... (与上一版本相同，确保更新 playerXSpecialHandNameSpan) ... */ 
-        if (gameStatePollInterval) clearInterval(gameStatePollInterval);
-        gameStatePollInterval = setInterval(async () => {
-            const data = await fetchApi('getState');
-            if (data.success && data.gameState) {
-                const gs = data.gameState;
-                if(gs.players[0]) {
-                    player1NameSpan.textContent = gs.players[0].name || '玩家1';
-                    player1ScoreSpan.textContent = `(总分: ${gs.players[0].score || 0})`;
-                    player1SpecialHandNameSpan.textContent = gs.players[0].special_hand_type_name ? `(${gs.players[0].special_hand_type_name})` : '';
-                }
-                if(gs.players[1]) {
-                    player2NameSpan.textContent = gs.players[1].name || '电脑';
-                    player2ScoreSpan.textContent = `(总分: ${gs.players[1].score || 0})`;
-                    player2SpecialHandNameSpan.textContent = gs.players[1].special_hand_type_name ? `(${gs.players[1].special_hand_type_name})` : '';
-                    let p2status = '等待中...';
-                    if (gs.status === 'arranging') {
-                        p2status = gs.players[1].is_ready ? '已摆牌，等待你提交' : '正在摆牌...';
-                         if (gs.players[0].is_ready && !gs.players[1].is_ready && gs.players[1].is_ai) { p2status = '电脑正在思考...';}
-                    } else if (gs.status === 'comparing' || gs.status === 'finished') { p2status = '已亮牌';}
-                    player2StatusSpan.textContent = p2status;
-                }
-                if (gs.status === 'finished' && gs.round_results && resultsArea.style.display === 'none') {
-                    displayRoundResultsAndUpdateScores(gs.round_results);
-                    showMessage("比牌完成！", 'success');
-                    clearInterval(gameStatePollInterval); gameStatePollInterval = null;
-                } else if (gs.status === 'arranging' && gs.players[0] && gs.players[0].is_ready && submitArrangementBtn.style.display !== 'none') {
-                     showMessage('您已提交，等待对手...', 'info');
-                }
-            } else { console.warn("Polling getState failed or no gameState received.");}
-        }, 3000); 
-    }
-
-    // --- Initial Setup ---
-    startGameBtn.addEventListener('click', handleStartGame);
-    resetGameBtn.addEventListener('click', handleResetGame);
-    submitArrangementBtn.addEventListener('click', handleSubmitArrangement);
-    suggestArrangementBtn.addEventListener('click', handleSuggestArrangement); // 绑定新按钮
-    playAgainBtn.addEventListener('click', handleStartGame); 
-
-    fetchApi('getState').then(data => { /* ... (与上一版本相同，确保更新 playerXSpecialHandNameSpan) ... */ 
-        let initialMessage = "欢迎来到十三水！点击“开始新游戏”";
-        if (data.success && data.gameState) {
-            const gs = data.gameState;
-            if(gs.players[0]) {
-                player1NameSpan.textContent = gs.players[0].name || '玩家1';
-                player1ScoreSpan.textContent = `(总分: ${gs.players[0].score || 0})`;
-                player1SpecialHandNameSpan.textContent = gs.players[0].special_hand_type_name ? `(${gs.players[0].special_hand_type_name})` : '';
-            }
-            if(gs.players[1]) {
-                player2NameSpan.textContent = gs.players[1].name || '电脑';
-                player2ScoreSpan.textContent = `(总分: ${gs.players[1].score || 0})`;
-                player2SpecialHandNameSpan.textContent = gs.players[1].special_hand_type_name ? `(${gs.players[1].special_hand_type_name})` : '';
-            }
-            if (gs.status === 'finished' && gs.round_results) { displayRoundResultsAndUpdateScores(gs.round_results); initialMessage = "这是上一局的结果。";} 
-            else if (gs.status === 'arranging') { initialMessage = "检测到可能未完成的牌局，点击“开始新游戏”以重新开始。";}
-        }
-        showMessage(initialMessage, "info");
-    }).catch(err => { showMessage("无法连接到游戏服务器，请稍后再试。", "error");});
+    // --- Initial Setup for Game Page (与上一版本相同) ---
+    async function initializeGamePage() { /* ... (同上) ... */ resetGameScreenUI(); const canLoadGame = await loadCurrentGameAndPlayerInfo(); if (canLoadGame) { showMessage("正在加载游戏...", "info"); const initialData = await fetchGameApi(`getGameState&tableId=${currentTableId}&roundId=${currentRoundId}`, 'GET'); if (initialData && initialData.success && initialData.gameState) { updateGameScreenWithState(initialData.gameState); if (initialData.gameState.table_status === 'playing') { pollGameTableState();}} else { showMessage(initialData?.message || "无法加载游戏状态，请返回大厅。", "error"); setTimeout(() => window.location.href = 'lobby.html', 2000);}} if(startGameBtn) startGameBtn.style.display = 'none'; if(resetGameBtn) resetGameBtn.style.display = 'none'; if(playAgainBtn) { playAgainBtn.textContent = "返回大厅"; playAgainBtn.onclick = () => { window.location.href = 'lobby.html'; };}}
+    if (window.location.pathname.includes('index.html')) { window.checkUserAuthentication().then(authData => { if (authData.isAuthenticated) { initializeGamePage(); } else if (!localStorage.getItem('userData')) { showMessage("请先登录以进行游戏。", "error"); setTimeout(() => window.location.href = 'login.html', 1500);}}); if(submitArrangementBtn) submitArrangementBtn.addEventListener('click', handleSubmitArrangementForGame); if(suggestArrangementBtn) suggestArrangementBtn.addEventListener('click', handleSuggestArrangementForGame);}
 });
