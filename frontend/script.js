@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'https://wenge.cloudns.ch/api/game.php'; // 你的后端API地址
+    const API_BASE_URL = 'https://wenge.cloudns.ch/backend/api/game.php'; // 你的后端API地址
     const CARD_IMG_PATH = './cards/'; // 卡牌图片路径
 
     const startGameBtn = document.getElementById('startGameBtn');
