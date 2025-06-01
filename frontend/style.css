@@ -1,3 +1,13 @@
+/* ... (所有之前的CSS规则) ... */
+
+.special-hand-name {
+    color: #c0392b; /* 醒目的红色 */
+    font-weight: bold;
+    margin-left: 10px;
+    font-style: italic;
+}
+
+/* 确保其他规则与上一版本一致 */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -16,14 +26,14 @@ body {
     max-width: 1100px;
 }
 h1, h2, h3, h4 {
-    color: #1a237e; /* 深蓝色 */
+    color: #1a237e; 
 }
 .game-controls, .player-area, .opponent-area, #resultsArea {
     margin-bottom: 20px;
     padding: 15px;
-    border: 1px solid #c5cae9; /* 淡紫色边框 */
+    border: 1px solid #c5cae9; 
     border-radius: 6px;
-    background-color: #f8f9fa; /* 非常浅的灰色背景 */
+    background-color: #f8f9fa; 
 }
 .hand, .cards-in-zone {
     display: flex;
@@ -31,13 +41,13 @@ h1, h2, h3, h4 {
     gap: 6px; 
     min-height: 90px; 
     padding: 8px;
-    border: 2px dashed #aab8c2; /* 虚线边框 */
+    border: 2px dashed #aab8c2; 
     margin-top: 8px;
     border-radius: 4px;
-    align-content: flex-start; /* 卡牌从顶部开始排列 */
-    position: relative; /* 为了 placeholder-text */
+    align-content: flex-start; 
+    position: relative; 
 }
-.cards-display { /* 用于显示已确认的牌 */
+.cards-display { 
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
@@ -49,8 +59,8 @@ h1, h2, h3, h4 {
 }
 .card {
     width: 65px; 
-    height: 91px; /* 7:5 比例 */
-    border: 1px solid #90a4ae; /* 蓝灰色边框 */
+    height: 91px; 
+    border: 1px solid #90a4ae; 
     border-radius: 5px;
     background-color: white;
     display: flex;
@@ -70,7 +80,7 @@ h1, h2, h3, h4 {
     max-height: 95%;
     pointer-events: none; 
 }
-.card.dragging { /* 被拖拽的卡牌样式 */
+.card.dragging { 
     opacity: 0.4;
     cursor: grabbing;
 }
@@ -79,18 +89,17 @@ h1, h2, h3, h4 {
     gap: 20px;
     margin-top: 10px;
 }
-.zone { /* 摆牌区的每个道 */
+.zone { 
     flex: 1;
-    border: 1px solid #b0bec5; /* 更清晰的边框 */
+    border: 1px solid #b0bec5; 
     padding: 10px;
     border-radius: 4px;
-    background-color: #eceff1; /* 浅蓝灰色 */
+    background-color: #eceff1; 
 }
 .zone h4 { margin-top: 0; margin-bottom: 8px; }
 
-/* 拖放目标区域高亮 */
 .droppable-area.drag-over {
-    background-color: #e3f2fd !important; /* 浅蓝色高亮 */
+    background-color: #e3f2fd !important; 
     border-style: solid !important;
     border-color: #90caf9 !important;
     box-shadow: inset 0 0 10px rgba(0,123,255,0.2);
@@ -102,9 +111,9 @@ h1, h2, h3, h4 {
     transform: translate(-50%, -50%);
     color: #999;
     font-style: italic;
-    pointer-events: none; /* 确保不影响拖放 */
+    pointer-events: none; 
 }
-.hand:not(:empty) .placeholder-text { /* 手牌区有牌时隐藏 */
+.hand:not(:empty) .placeholder-text { 
     display: none;
 }
 
@@ -127,7 +136,7 @@ h1, h2, h3, h4 {
 
 button {
     padding: 10px 18px;
-    background-color: #1976d2; /* 蓝色 */
+    background-color: #1976d2; 
     color: white;
     border: none;
     border-radius: 4px;
@@ -137,7 +146,7 @@ button {
     transition: background-color 0.2s ease;
 }
 button:hover {
-    background-color: #1565c0; /* 深一点的蓝色 */
+    background-color: #1565c0; 
 }
 button:disabled {
     background-color: #9e9e9e;
@@ -145,14 +154,14 @@ button:disabled {
 }
 #submitArrangementBtn {
     margin-top: 15px;
-    background-color: #2e7d32; /* 绿色 */
+    background-color: #2e7d32; 
 }
 #submitArrangementBtn:hover {
     background-color: #1b5e20;
 }
 #playAgainBtn {
     margin-top: 10px;
-    background-color: #f57c00; /* 橙色 */
+    background-color: #f57c00; 
 }
 #playAgainBtn:hover {
     background-color: #e65100;
@@ -162,12 +171,12 @@ button:disabled {
 .arranged-display .segment-display {
     padding: 8px;
     margin-bottom: 8px;
-    border: 1px solid #d1c4e9; /* 淡紫色边框 */
+    border: 1px solid #d1c4e9; 
     border-radius: 4px;
 }
 .arranged-display .eval-text {
     font-weight: bold;
-    color: #4527a0; /* 深紫色 */
+    color: #4527a0; 
     margin-right: 10px;
     display: block;
     margin-bottom: 5px;
@@ -178,27 +187,26 @@ button:disabled {
     cursor: default;
     box-shadow: 1px 1px 2px rgba(0,0,0,0.05);
 }
-.arranged-display .cards-display .card:hover { /* 亮牌区卡牌不放大 */
+.arranged-display .cards-display .card:hover { 
     transform: none;
     box-shadow: 1px 1px 2px rgba(0,0,0,0.05);
 }
 
-/* 每道输赢标记 */
 .segment-display.segment-win {
-    border-left: 5px solid #4caf50; /* 绿色 */
+    border-left: 5px solid #4caf50; 
     background-color: #e8f5e9; 
 }
 .segment-display.segment-lose {
-    border-left: 5px solid #f44336; /* 红色 */
+    border-left: 5px solid #f44336; 
     background-color: #ffebee; 
 }
 .segment-display.segment-draw {
-    border-left: 5px solid #ff9800; /* 橙色 */
+    border-left: 5px solid #ff9800; 
     background-color: #fff3e0; 
 }
 #roundResultTextContainer {
     padding: 10px;
-    background-color: #f1f8e9; /* 浅绿色背景 */
+    background-color: #f1f8e9; 
     border-radius: 4px;
     border: 1px solid #dcedc8;
 }
