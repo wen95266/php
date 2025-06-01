@@ -12,56 +12,58 @@
 
         <div class="game-controls">
             <button id="startGameBtn">开始新游戏</button>
-            <button id="resetGameBtn">重置游戏(测试)</button>
+            <button id="resetGameBtn" title="强制清除服务器session并重置">重置(测试)</button>
         </div>
 
-        <div id="messages"></div>
+        <div id="messages" class="info"></div>
 
         <div class="player-area" id="player1Area">
-            <h2>我的手牌 (玩家1)</h2>
-            <div class="hand" id="player1Hand">
+            <h2>我的手牌 (<span id="player1Name">玩家1</span>) <span id="player1ScoreDisplay">(总分: 0)</span></h2>
+            <div class="hand droppable-area" id="player1Hand" data-zone-name="hand">
                 <!-- 卡牌会通过JS动态插入 -->
+                <span class="placeholder-text">将手牌拖拽至此</span>
             </div>
             <h3>摆牌区:</h3>
             <div class="arrangement-zones">
-                <div class="zone" id="firstHead" data-zone="first" data-size="3">
+                <div class="zone droppable-area" id="firstHeadZone" data-zone-name="first" data-size="3">
                     <h4>头道 (3张)</h4>
-                    <div class="cards-in-zone"></div>
+                    <div class="cards-in-zone" id="firstHeadCards"></div>
                 </div>
-                <div class="zone" id="middleWay" data-zone="middle" data-size="5">
+                <div class="zone droppable-area" id="middleWayZone" data-zone-name="middle" data-size="5">
                     <h4>中道 (5张)</h4>
-                    <div class="cards-in-zone"></div>
+                    <div class="cards-in-zone" id="middleWayCards"></div>
                 </div>
-                <div class="zone" id="lastWay" data-zone="last" data-size="5">
+                <div class="zone droppable-area" id="lastWayZone" data-zone-name="last" data-size="5">
                     <h4>尾道 (5张)</h4>
-                    <div class="cards-in-zone"></div>
+                    <div class="cards-in-zone" id="lastWayCards"></div>
                 </div>
             </div>
             <button id="submitArrangementBtn" style="display:none;">确认摆牌</button>
             <div id="player1ArrangedDisplay" class="arranged-display" style="display:none;">
                 <h4>我的亮牌：</h4>
-                <p>头道: <span class="first-eval"></span></p><div class="cards-display first-cards"></div>
-                <p>中道: <span class="middle-eval"></span></p><div class="cards-display middle-cards"></div>
-                <p>尾道: <span class="last-eval"></span></p><div class="cards-display last-cards"></div>
+                <div class="segment-display">头道: <span class="eval-text first-eval"></span><div class="cards-display first-cards"></div></div>
+                <div class="segment-display">中道: <span class="eval-text middle-eval"></span><div class="cards-display middle-cards"></div></div>
+                <div class="segment-display">尾道: <span class="eval-text last-eval"></span><div class="cards-display last-cards"></div></div>
             </div>
         </div>
 
         <div class="opponent-area" id="player2Area">
-            <h2>对手 (玩家2)</h2>
+            <h2>对手 (<span id="player2Name">电脑</span>) <span id="player2ScoreDisplay">(总分: 0)</span></h2>
             <p>状态: <span id="player2Status">等待中...</span></p>
             <div id="player2ArrangedDisplay" class="arranged-display" style="display:none;">
                  <h4>对手亮牌：</h4>
-                 <p>头道: <span class="first-eval"></span></p><div class="cards-display first-cards"></div>
-                 <p>中道: <span class="middle-eval"></span></p><div class="cards-display middle-cards"></div>
-                 <p>尾道: <span class="last-eval"></span></p><div class="cards-display last-cards"></div>
+                 <div class="segment-display">头道: <span class="eval-text first-eval"></span><div class="cards-display first-cards"></div></div>
+                 <div class="segment-display">中道: <span class="eval-text middle-eval"></span><div class="cards-display middle-cards"></div></div>
+                 <div class="segment-display">尾道: <span class="eval-text last-eval"></span><div class="cards-display last-cards"></div></div>
             </div>
         </div>
         
         <div id="resultsArea" style="display:none;">
             <h2>本局结果</h2>
-            <p id="roundResultText"></p>
-            <p>我的总分: <span id="player1TotalScore">0</span></p>
-            <p>对手总分: <span id="player2TotalScore">0</span></p>
+            <div id="roundResultTextContainer">
+                <!-- 详细结果会动态插入这里 -->
+            </div>
+            <button id="playAgainBtn">再来一局</button>
         </div>
 
     </div>
