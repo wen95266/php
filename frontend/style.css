@@ -1,62 +1,164 @@
-/* ... (所有已有的CSS规则) ... */
+/* frontend/style.css */
 
-.lobby-sections-container {
+/* --- 基本和布局重置 (保持或按需调整) --- */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f0f0f0;
     display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
+    justify-content: center;
+    color: #333;
 }
-.lobby-section {
-    flex: 1;
-    padding: 15px;
-    background-color: #f9f9f9;
-    border: 1px solid #eee;
-    border-radius: 5px;
+.container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.15);
+    width: 95%;
+    max-width: 1200px; /* 可以适当增加，以更好地容纳横向排列 */
 }
-.lobby-section h3 {
-    margin-top: 0;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
+h1, h2, h3, h4 {
+    color: #1a237e; 
 }
-.scrollable-list {
-    max-height: 300px; /* 或适合的高度 */
-    overflow-y: auto;
-    padding-right: 10px; /* 避免滚动条覆盖内容 */
-}
-#leaderboardList table {
-    width: 100%;
-    border-collapse: collapse;
-}
-#leaderboardList th, #leaderboardList td {
-    text-align: left;
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-}
-#leaderboardList th {
-    background-color: #e9ecef;
-}
-#gameHistoryList ul {
-    list-style-type: none;
-    padding: 0;
-}
-#gameHistoryList li {
-    background-color: #fff;
-    border: 1px solid #f0f0f0;
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    line-height: 1.5;
-}
-#gameHistoryList li strong {
-    color: #0056b3;
-}
-.score-win { color: green; font-weight: bold;}
-.score-lose { color: red; font-weight: bold;}
+h3 { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; /* 让推荐按钮靠右 */
+} 
 
-.user-info small { /* 用于显示局数胜率等 */
-    display: block;
-    font-size: 0.8em;
-    color: #555;
-    margin-top: 3px;
+/* --- 横向显示手牌和亮牌的关键样式 --- */
+.horizontal-hand,
+.horizontal-cards-display {
+    display: flex;
+    flex-direction: row; 
+    flex-wrap: wrap; 
+    justify-content: flex-start; 
+    align-items: flex-start; /* 通常希望牌的顶部对齐 */
+    gap: 8px; 
 }
+
+.horizontal-hand { /* 特指手牌区 */
+    min-height: 100px; 
+    padding: 8px;
+    border: 2px dashed #aab8c2; 
+    margin-top: 8px;
+    border-radius: 4px;
+    position: relative; 
+}
+.horizontal-cards-display { /* 用于所有亮牌区 (头中尾、自己、对手) */
+    min-height: 75px; /* 根据卡牌大小调整 */
+    align-items: center; /* 亮牌时卡牌垂直居中可能更好看 */
+    /* 如果之前 .cards-display 有其他冲突样式，这里可以覆盖 */
+}
+
+
+/* 卡牌本身样式 */
+.card {
+    width: 65px; 
+    height: 91px; 
+    border: 1px solid #90a4ae; 
+    border-radius: 5px;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: grab;
+    user-select: none; 
+    transition: transform 0.1s ease-out, box-shadow 0.15s ease-out;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+.card:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 3px 3px 6px rgba(0,0,0,0.15);
+}
+.card img {
+    max-width: 95%;
+    max-height: 95%;
+    pointer-events: none; 
+}
+.card.dragging { 
+    opacity: 0.4;
+    cursor: grabbing;
+}
+
+/* 摆牌三道区域内部的 .cards-in-zone 也应用横向显示 */
+.cards-in-zone {
+    /* 继承 .horizontal-cards-display 的大部分特性 */
+    /* min-height: 90px; /* 已在 .horizontal-cards-display 中处理 */
+    /* padding: 8px; 已在 .horizontal-cards-display 中处理 */
+    /* border: 2px dashed #aab8c2;  已在 .horizontal-cards-display 中处理*/
+    /* margin-top: 8px; 已在 .horizontal-cards-display 中处理*/
+    /* border-radius: 4px; 已在 .horizontal-cards-display 中处理*/
+    /* align-content: flex-start; 已在 .horizontal-cards-display 中处理*/
+    position: relative; 
+}
+
+
+/* --- 其他组件样式 (大部分保持不变) --- */
+.game-header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;}
+.user-info {font-size: 0.9em;}
+.user-info button {margin-left: 10px; padding: 6px 10px;}
+.game-controls, .player-area, .opponent-area-ingame, #resultsArea {margin-bottom: 20px; padding: 15px; border: 1px solid #c5cae9; border-radius: 6px; background-color: #f8f9fa; }
+.arrangement-zones {display: flex; gap: 20px; margin-top: 10px; flex-wrap: wrap;} /* 允许换行以适应小屏幕 */
+.zone { flex: 1; min-width: 200px; border: 1px solid #b0bec5; padding: 10px; border-radius: 4px; background-color: #eceff1; }
+.zone h4 { margin-top: 0; margin-bottom: 8px; }
+.droppable-area.drag-over {background-color: #e3f2fd !important; border-style: solid !important; border-color: #90caf9 !important; box-shadow: inset 0 0 10px rgba(0,123,255,0.2);}
+.placeholder-text {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999; font-style: italic; pointer-events: none; }
+.hand:not(:empty) .placeholder-text { display: none;} 
+#messages {padding: 12px 18px; margin-bottom: 18px; border-radius: 5px; font-weight: 500; border: 1px solid transparent;}
+#messages.info {background-color: #e3f2fd; color: #0d47a1; border-color: #bbdefb;}
+#messages.error {background-color: #ffebee; color: #c62828; border-color: #ffcdd2;}
+#messages.success {background-color: #e8f5e9; color: #1b5e20; border-color: #c8e6c9;}
+button {padding: 10px 18px; background-color: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; font-size: 0.95em; transition: background-color 0.2s ease;}
+button:hover {background-color: #1565c0; }
+button:disabled {background-color: #9e9e9e; cursor: not-allowed;}
+.small-btn {padding: 5px 10px; font-size: 0.85em; margin-left: 10px; background-color: #607d8b; vertical-align: middle;}
+.small-btn:hover {background-color: #546e7a;}
+#submitArrangementBtn {margin-top: 15px; background-color: #2e7d32; }
+#submitArrangementBtn:hover {background-color: #1b5e20;}
+#playAgainBtn {margin-top: 10px; background-color: #f57c00; }
+#playAgainBtn:hover {background-color: #e65100;}
+.arranged-display { margin-top: 15px; }
+.arranged-display .segment-display {padding: 8px; margin-bottom: 8px; border: 1px solid #d1c4e9; border-radius: 4px;}
+.arranged-display .eval-text {font-weight: bold; color: #4527a0; margin-right: 10px; display: block; margin-bottom: 5px;}
+/* 卡牌在亮牌区的大小 */
+.horizontal-cards-display .card {width: 50px; height: 70px; cursor: default; box-shadow: 1px 1px 2px rgba(0,0,0,0.05);}
+.horizontal-cards-display .card:hover { transform: none; box-shadow: 1px 1px 2px rgba(0,0,0,0.05);}
+.segment-display.segment-win {border-left: 5px solid #4caf50; background-color: #e8f5e9; }
+.segment-display.segment-lose {border-left: 5px solid #f44336; background-color: #ffebee; }
+.segment-display.segment-draw {border-left: 5px solid #ff9800; background-color: #fff3e0; }
+#roundResultTextContainer {padding: 10px; background-color: #f1f8e9; border-radius: 4px; border: 1px solid #dcedc8;}
+#roundResultTextContainer p {margin: 5px 0; line-height: 1.6;}
+.special-hand-name {color: #e53935; font-weight: bold; margin-left: 10px; font-style: italic; background-color: #fff3e0; padding: 2px 5px; border-radius: 3px;}
+.user-info small { display: block; font-size: 0.8em; color: #555; margin-top: 3px;}
+
+/* Auth and Lobby specific styles */
+.auth-container {max-width: 400px; margin: 50px auto; padding: 20px;}
+.auth-container div {margin-bottom: 15px;}
+.auth-container label {display: block; margin-bottom: 5px;}
+.auth-container input[type="text"], .auth-container input[type="password"], .auth-container input[type="email"] {width: calc(100% - 22px); padding: 10px; border: 1px solid #ccc; border-radius: 4px;}
+.messages-placeholder {padding: 10px; margin-bottom: 15px; border-radius: 4px; min-height: 20px; text-align: center;}
+.messages-placeholder.error { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2;}
+.messages-placeholder.success { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9;}
+.messages-placeholder.info { background-color: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb;}
+.lobby-sections-container {display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;}
+.lobby-section {flex: 1; min-width: 300px; padding: 15px; background-color: #f9f9f9; border: 1px solid #eee; border-radius: 5px;}
+.lobby-section h3 {margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px;}
+.lobby-actions {margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;}
+.lobby-actions input[type="text"]{padding: 8px; border: 1px solid #ccc; border-radius: 4px;}
+.scrollable-list {max-height: 300px; overflow-y: auto; padding-right: 10px; }
+#tablesList ul, #gameHistoryList ul {list-style-type: none; padding: 0;}
+#tablesList li, #gameHistoryList li {background-color: #fff; border: 1px solid #f0f0f0; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9em; line-height: 1.5;}
+#tablesList li {display: flex; justify-content: space-between; align-items: center;}
+#gameHistoryList li strong {color: #0056b3;}
+.score-win { color: green; font-weight: bold;} .score-lose { color: red; font-weight: bold;}
+#leaderboardList table {width: 100%; border-collapse: collapse;}
+#leaderboardList th, #leaderboardList td {text-align: left; padding: 8px; border-bottom: 1px solid #ddd;}
+#leaderboardList th {background-color: #e9ecef;}
+#currentTableInfo {margin-top: 20px; padding: 15px; background-color: #e8f5e9; border-radius: 5px;}
+#currentTableInfo h4 { margin-top: 0;}
+#currentTablePlayers ul { padding-left: 20px; }
+.opponent-area-ingame { margin-top: 20px; padding: 15px; border: 1px solid #ffe0b2; border-radius: 6px; background-color: #fff8e1; }
+.opponent-area-ingame h2 {font-size: 1.2em; color: #e65100; }
+.opponent-area-ingame .arranged-display {margin-top: 10px;}
