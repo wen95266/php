@@ -18,11 +18,18 @@
         <div id="messages" class="info"></div>
 
         <div class="player-area" id="player1Area">
-            <h2><span id="player1Name">玩家1</span> <span id="player1ScoreDisplay">(总分: 0)</span> <span id="player1SpecialHandName" class="special-hand-name"></span></h2>
+            <h2>
+                <span id="player1Name">玩家1</span> 
+                <span id="player1ScoreDisplay">(总分: 0)</span> 
+                <span id="player1SpecialHandName" class="special-hand-name"></span>
+            </h2>
             <div class="hand droppable-area" id="player1Hand" data-zone-name="hand">
                 <span class="placeholder-text">将手牌拖拽至此</span>
             </div>
-            <h3>摆牌区:</h3>
+            <h3>
+                摆牌区: 
+                <button id="suggestArrangementBtn" class="small-btn" title="让系统推荐一种摆法 (不提交)" style="display:none;">推荐摆法</button>
+            </h3>
             <div class="arrangement-zones">
                 <div class="zone droppable-area" id="firstHeadZone" data-zone-name="first" data-size="3">
                     <h4>头道 (3张)</h4>
@@ -47,7 +54,11 @@
         </div>
 
         <div class="opponent-area" id="player2Area">
-            <h2><span id="player2Name">电脑</span> <span id="player2ScoreDisplay">(总分: 0)</span> <span id="player2SpecialHandName" class="special-hand-name"></span></h2>
+             <h2>
+                <span id="player2Name">电脑</span> 
+                <span id="player2ScoreDisplay">(总分: 0)</span> 
+                <span id="player2SpecialHandName" class="special-hand-name"></span>
+            </h2>
             <p>状态: <span id="player2Status">等待中...</span></p>
             <div id="player2ArrangedDisplay" class="arranged-display" style="display:none;">
                  <h4>对手亮牌：</h4>
