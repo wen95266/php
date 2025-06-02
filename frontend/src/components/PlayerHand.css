@@ -1,0 +1,83 @@
+/* frontend/src/components/PlayerHand.css */
+.player-hand-area {
+  border: 1px solid #b2dfdb; /* 薄荷绿边框 */
+  padding: 20px;
+  margin-top: 15px;
+  background-color: #faffff; /* 非常浅的青色背景 */
+}
+
+.player-hand-area h4 {
+  margin-top: 0;
+  color: #00796b; /* 深青色标题 */
+}
+
+.instructions {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.hand-row {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 110px; /* 适应卡片高度+边距 */
+  border: 1px dashed #a7c0cd; /* 浅蓝灰色虚线边框 */
+  padding: 8px;
+  margin-bottom: 15px;
+  background-color: #fff;
+  border-radius: 4px;
+}
+
+.current-hand-display .game-card {
+  border-color: #007bff; /* 蓝色边框表示可选 */
+}
+
+.selection-info {
+    font-weight: bold;
+    color: #007bff;
+    margin: 10px 0;
+}
+
+.segments-layout {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* 道之间的间距 */
+}
+
+.segment-area {
+  padding: 15px;
+  border: 1px solid #80cbc4; /* 稍深的薄荷绿边框 */
+  border-radius: 6px;
+  background-color: #f0f7f7;
+}
+
+.segment-title {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #004d40; /* 更深的青色 */
+}
+
+.segment-area button {
+  margin-bottom: 10px;
+  background-color: #26a69a; /* 青色按钮 */
+}
+.segment-area button:hover:not(:disabled) {
+  background-color: #00897b;
+}
+
+.submit-hand-button {
+  margin-top: 25px;
+  padding: 12px 25px;
+  font-size: 1.1em;
+  background-color: #4caf50; /* 绿色提交按钮 */
+}
+.submit-hand-button:hover:not(:disabled) {
+  background-color: #388e3c;
+}
+
+.status-message {
+  font-style: italic;
+  color: #757575;
+}
