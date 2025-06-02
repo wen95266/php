@@ -1,0 +1,87 @@
+/* frontend/src/components/HandDisplay.css */
+.hand-display-wrapper {
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+}
+
+.hand-display-wrapper.self {
+  background-color: #e3f2fd; /* 淡蓝色背景表示自己 */
+  border-color: #90caf9;
+}
+
+.hand-display-wrapper.opponent {
+  background-color: #fff3e0; /* 淡橙色背景表示对手 */
+  border-color: #ffcc80;
+}
+
+.hand-display-wrapper.wulong {
+  border: 2px dashed red;
+  background-color: #ffebee; /* 淡红色背景表示乌龙 */
+}
+
+.player-name {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  color: #37474f; /* 深蓝灰色 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wulong-tag {
+  color: red;
+  font-weight: bold;
+  font-size: 0.9em;
+  margin-left: 10px;
+}
+
+.round-points {
+    font-size: 0.9em;
+    font-weight: normal;
+    color: #555;
+}
+
+.all-segments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.segment-display {
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+}
+
+.segment-display.winner-segment { /* 暂时未实现此逻辑 */
+    /* border: 2px solid gold; */
+    /* background-color: lightyellow; */
+}
+
+.segment-name {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #546e7a; /* 蓝灰色 */
+}
+
+.cards-in-segment .game-card {
+  width: 60px; /* 结果展示时卡片可以小一点 */
+  height: 85px;
+  cursor: default; /* 结果展示时不可点击 */
+}
+.cards-in-segment .game-card:hover { /* 取消结果展示时的悬停效果 */
+    transform: none;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+}
+
+
+.no-cards-text {
+  font-style: italic;
+  color: #999;
+}
