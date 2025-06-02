@@ -1,0 +1,29 @@
+.player-hand-area {
+    border: 1px solid #eee;
+    padding: 10px;
+    margin-top: 10px;
+}
+.hand-row {
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 105px; /* Accommodate card height */
+    border: 1px dashed #ddd;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+.segments {
+    margin-top: 15px;
+}
+.segment {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+.segment strong {
+    display: block;
+    margin-bottom: 5px;
+}
+.segment button {
+    margin-bottom: 5px;
+    margin-right: 5px;
+}
