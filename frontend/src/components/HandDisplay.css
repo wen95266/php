@@ -1,96 +1,25 @@
 /* frontend/src/components/HandDisplay.css */
-/* ... (保留之前的样式) ... */
-
-.hand-display-wrapper {
-  border: 1px solid #ccc;
-  padding: 12px; /* 稍微减小内边距 */
-  margin-bottom: 15px; /* 减小外边距 */
-  border-radius: 6px;
-  background-color: #f9f9f9;
-  text-align: left; /* 内容靠左 */
-}
-
-.hand-display-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.player-name-display { /* 现在是 h4 内部的 class */
-  margin: 0; /* 移除 h4 默认的 margin */
-  font-size: 1.1em; /* 调整字体大小 */
-  color: #37474f;
-  flex-grow: 1; /* 让名字占据更多空间 */
-}
-
-.tags-container {
-  display: flex;
-  gap: 5px; /* 标签之间的间距 */
-  margin-left: 10px; /* 与名字隔开 */
-}
-
-.tag {
-  font-size: 0.8em; /* 调整标签字体大小 */
-  font-weight: bold;
-  padding: 2px 5px; /* 调整标签内边距 */
-  border-radius: 3px;
-  color: white;
-  white-space: nowrap; /* 防止标签换行 */
-}
-/* ... (wulong-tag, special-hand-tag 样式保留) ... */
-
-.round-points-display {
-  font-size: 0.9em; /* 调整分数显示大小 */
-  font-weight: bold;
-  margin-left: 10px; /* 与标签隔开 */
-  padding: 2px 6px; /* 调整分数内边距 */
-  border-radius: 3px;
-  white-space: nowrap;
-}
-/* ... (positive, negative, zero 样式保留) ... */
-
-.special-hand-details {
-  text-align: center;
-  padding: 8px;
-}
-.special-type-announce {
-  font-size: 1.2em;
-  font-weight: bold;
-  color: #D32F2F; /* 特殊牌型用更醒目的颜色 */
-  margin-bottom: 8px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 5px;
-}
-
-.all-segments {
-  display: flex;
-  flex-direction: column;
-  gap: 8px; /* 道之间的间距 */
-}
-.segment-display {
-  padding: 8px; /* 减小道内边距 */
-  border-radius: 4px;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-}
-.segment-name {
-  display: block;
-  margin-bottom: 6px; /* 减小与牌的间距 */
-  font-weight: 600;
-  font-size: 0.95em; /* 调整道名称大小 */
-  color: #546e7a;
-}
-.cards-in-segment .game-card {
-  width: 55px; /* 结果展示时卡片可以更小 */
-  height: 77px; /* 保持比例 */
-  margin: 1px; /* 减小卡片间距 */
-}
-/* ... (其他 Card.css 中定义的 game-card 样式会继续生效) ... */
-
-.no-cards-text, .status-note {
-  font-style: italic;
-  color: #888;
-  font-size: 0.9em;
-  padding: 10px 0;
-}
+.hand-display-wrapper { border: 1px solid #ccc; padding: 12px; margin-bottom: 15px; border-radius: 6px; background-color: #f9f9f9; text-align: left; }
+.hand-display-wrapper.self { background-color: #e3f2fd; border-color: #90caf9; }
+.hand-display-wrapper.opponent { background-color: #fff3e0; border-color: #ffcc80; }
+.hand-display-wrapper.wulong { border: 2px dashed red; background-color: #ffebee; }
+.hand-display-wrapper.special-hand { border: 3px solid gold; background-color: #fff9c4; }
+.hand-display-wrapper.special-hand .player-name-display { color: #f57f17; }
+.hand-display-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.player-name-display { margin: 0; font-size: 1.1em; color: #37474f; flex-grow: 1; display: flex; justify-content: flex-start; align-items: center; }
+.tags-container { display: flex; gap: 5px; margin-left: 10px; }
+.tag { font-size: 0.8em; font-weight: bold; padding: 2px 5px; border-radius: 3px; color: white; white-space: nowrap; }
+.wulong-tag { background-color: #d32f2f; }
+.special-hand-tag { background-color: #FFD700; color: #424242; border: 1px solid #FFC107; }
+.round-points-display { font-size: 0.95em; font-weight: bold; margin-left: auto; padding: 3px 8px; border-radius: 4px; }
+.round-points-display.positive { color: #2e7d32; background-color: #c8e6c9; }
+.round-points-display.negative { color: #c62828; background-color: #ffcdd2; }
+.round-points-display.zero { color: #757575; background-color: #f5f5f5; }
+.special-hand-details { text-align: center; padding: 8px; }
+.special-type-announce { font-size: 1.2em; font-weight: bold; color: #D32F2F; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+.all-segments { display: flex; flex-direction: column; gap: 8px; }
+.segment-display { padding: 8px; border-radius: 4px; background-color: #fff; border: 1px solid #e0e0e0; }
+.segment-name { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.95em; color: #546e7a; }
+.cards-in-segment .game-card { width: 55px; height: 77px; margin: 1px; }
+.cards-in-segment .game-card:hover { transform: none; box-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
+.no-cards-text, .status-note { font-style: italic; color: #888; font-size: 0.9em; padding: 10px 0; }
