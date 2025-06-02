@@ -1,0 +1,44 @@
+/* frontend/src/components/Lobby.css */
+.lobby-container {
+  max-width: 450px;
+  margin: 20px auto;
+  padding: 25px;
+}
+
+.lobby-container h2 {
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.form-group input[type="text"] {
+  width: calc(100% - 22px); /* Account for padding and border */
+  box-sizing: border-box;
+}
+
+.action-group {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.action-group button {
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1em;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 30px 0;
+}
