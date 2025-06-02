@@ -1,139 +1,197 @@
 /* frontend/src/components/GameRoom.css */
-.game-room-container {
-  padding: 20px;
-  border: 1px solid #a5d6a7; /* 淡绿色边框 */
-  background-color: #f1f8e9; /* 非常浅的绿色背景 */
-}
-
-.room-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.room-header h2 {
-  margin: 0;
-  color: #388e3c; /* 深绿色 */
-}
-.leave-button {
-  background-color: #f44336; /* 红色离开按钮 */
-}
-.leave-button:hover {
-  background-color: #d32f2f;
-}
-
-.room-status {
-  font-style: italic;
-  color: #558b2f; /* 中绿色 */
-  margin-bottom: 20px;
-  padding: 10px;
-  background-color: #dcedc8; /* 更浅的绿色 */
-  border-radius: 4px;
-}
-
-.players-list {
-  margin-bottom: 20px;
+.game-room-container.container { /* 继承自 App.css 的 container 样式，可以覆盖或扩展 */
+  max-width: 1000px; /* 牌桌可以宽一些 */
   padding: 15px;
-  background-color: #fff;
-  border: 1px solid #c8e6c9;
-  border-radius: 4px;
+  background-color: #3a7d50; /* 深绿色牌桌布背景 */
+  border: 5px solid #2a5c3a; /* 深色木纹边框 (模拟) */
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3), inset 0 0 30px rgba(0,0,0,0.2);
+  color: #fff; /* 牌桌上文字默认为白色 */
+  position: relative; /* 用于绝对定位子元素 */
+  min-height: 70vh; /* 牌桌高度 */
+  display: flex;
+  flex-direction: column;
 }
-.players-list h3 {
-  margin-top: 0;
-  color: #1b5e20; /* 最深的绿色 */
+
+.game-room-container h2,
+.game-room-container h3,
+.game-room-container h4,
+.game-room-container p {
+  color: #f0f0f0; /* 牌桌上文字用浅色 */
 }
-.players-list ul {
-  padding-left: 0;
-}
-.players-list li {
-  padding: 8px 0;
-  border-bottom: 1px solid #e8f5e9;
+
+.room-header-tabletop {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 10px 20px;
+  background-color: rgba(0,0,0,0.2); /* 半透明黑色背景条 */
+  border-bottom: 2px solid #2a5c3a;
+  border-radius: 10px 10px 0 0; /* 圆角顶部 */
 }
-.players-list li:last-child {
-  border-bottom: none;
+.room-header-tabletop h2 {
+  margin: 0;
+  font-size: 1.4em;
+  color: #fff;
 }
-.players-list .current-player .player-name-ingame {
-  font-weight: bold;
-  color: #007bff; /* 当前玩家名称用蓝色 */
+.leave-button-tabletop {
+  background-color: #c62828; /* 深红色 */
+  padding: 8px 12px;
+  font-size: 0.9em;
 }
-.player-name-ingame {
-  flex-basis: 40%;
-}
-.host-tag {
-  font-size: 0.8em;
-  background-color: #ffc107; /* 黄色房主标记 */
-  color: #212121;
-  padding: 2px 5px;
-  border-radius: 3px;
-  margin-left: 5px;
-}
-.status-tag {
-  font-size: 0.85em;
-  padding: 3px 7px;
-  border-radius: 10px;
-  margin-left: 10px;
-  color: white;
-}
-.status-tag.ready { background-color: #4caf50; /* 绿色 */ }
-.status-tag.not-ready { background-color: #757575; /* 灰色 */ }
-.status-tag.submitted { background-color: #2196f3; /* 蓝色 */ }
-
-.player-score {
-    font-size: 0.9em;
-    color: #424242;
+.leave-button-tabletop:hover {
+  background-color: #a52a2a;
 }
 
-.ready-button, .next-round-button {
-  padding: 12px 20px;
-  font-size: 1.1em;
-}
-
-.info-message {
-    padding: 10px;
-    background-color: #e3f2fd;
-    border: 1px solid #bbdefb;
-    border-radius: 4px;
-    margin: 15px 0;
-    color: #1e88e5;
-}
-
-.opponents-preview-area {
-    margin-top: 25px;
-    padding-top: 15px;
-    border-top: 1px dashed #aed581;
-}
-.opponents-preview-area h4 {
-    color: #33691e;
-}
-.opponent-preview {
-    padding: 10px;
-    margin-bottom: 10px;
-    background-color: #f9fbe7; /* 浅黄色 */
-    border: 1px solid #f0f4c3;
-    border-radius: 4px;
-}
-.opponent-preview p {
-    margin: 0 0 5px 0;
-    font-weight: 500;
-}
-.opponent-facedown-cards .game-card {
-    width: 50px; /* 牌背可以更小 */
-    height: 70px;
-}
-.status-tag.submitted-dark { background-color: #1976d2; color: white; font-size: 0.8em; padding: 2px 4px; border-radius: 3px;}
-.status-tag.pending-dark { background-color: #bdbdbd; color: #424242; font-size: 0.8em; padding: 2px 4px; border-radius: 3px;}
-
-
-.results-area {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 2px solid #81c784; /* 较粗的绿色上边框 */
-}
-.results-area h3 {
-  color: #2e7d32; /* 深绿色 */
+.room-info-bar {
+  padding: 8px 15px;
+  background-color: rgba(0,0,0,0.15);
   text-align: center;
+  font-size: 0.95em;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #4a8d60;
+}
+
+/* 牌桌主体布局 */
+.tabletop-main {
+  flex-grow: 1;
+  display: grid;
+  /* 我们假设最多4个玩家：底、顶、左、右 (简化布局) */
+  /* 如果是2/3人局，可以调整 grid-template-areas 或动态添加/移除区域 */
+  grid-template-areas:
+    "opponent-top opponent-top"
+    "opponent-left game-center" /* opponent-right 可以放在 game-center 右边，或者更复杂的grid */
+    "player-self player-self";
+  grid-template-rows: auto 1fr auto; /* 顶部对手区、中间、自己区域 */
+  grid-template-columns: 200px 1fr; /* 左侧对手区、中间及右侧 */
+  gap: 15px;
+  padding: 15px;
+  position: relative; /* 允许绝对定位game-center的内容 */
+}
+
+.player-area {
+  padding: 10px;
+  border-radius: 8px;
+  background-color: rgba(255,255,255,0.05); /* 轻微的区域背景 */
+  border: 1px solid rgba(255,255,255,0.1);
+  min-height: 150px; /* 给区域一个最小高度 */
+}
+
+.player-area-self { grid-area: player-self; }
+.player-area-opponent-top { grid-area: opponent-top; text-align: center; }
+.player-area-opponent-left { grid-area: opponent-left; }
+/* .player-area-opponent-right { grid-area: opponent-right; } */ /* 如果需要，添加这个区域 */
+
+.game-center-area {
+  grid-area: game-center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 8px;
+  /* background-color: rgba(0,0,0,0.1); */
+}
+
+.player-info-tabletop {
+  margin-bottom: 10px;
+}
+.player-info-tabletop .player-name-display {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 5px;
+}
+.player-info-tabletop .player-score-display,
+.player-info-tabletop .player-status-display {
+  font-size: 0.9em;
+  color: #c0c0c0;
+}
+.player-status-display .ready { color: #81c784; font-weight: bold;} /* 准备状态绿色 */
+.player-status-display .not-ready { color: #ffcc80; } /* 未准备橙色 */
+.player-status-display .submitted { color: #90caf9; font-weight: bold;} /* 已提交蓝色 */
+
+
+/* 当前玩家手牌操作区域 PlayerHand.jsx 的容器 */
+.player-self-hand-interaction {
+  /* PlayerHand.jsx 内部可以有自己的背景和边框 */
+}
+
+/* 对手牌背展示 */
+.opponent-cards-display .hand-row { /* .hand-row 来自 PlayerHand.css/HandDisplay.css */
+  justify-content: center;
+  min-height: auto; /* 牌背不需要太高 */
+  padding: 5px;
+}
+.opponent-cards-display .game-card { /* Card.jsx 样式 */
+  width: 50px;
+  height: 70px;
+  margin: 2px;
+}
+
+
+/* 游戏消息和按钮区域 (在 game-center-area) */
+.game-messages-tabletop {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: rgba(0,0,0,0.3);
+  border-radius: 5px;
+  min-height: 40px;
+  width: 80%;
+  text-align: center;
+}
+.game-messages-tabletop p {
+  margin: 0;
+  font-size: 1em;
+  color: #fff;
+}
+
+.action-buttons-tabletop {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+.action-buttons-tabletop .ready-button-tabletop,
+.action-buttons-tabletop .next-round-button-tabletop {
+  background-color: #4CAF50; /* 绿色 */
+  font-size: 1em;
+  padding: 10px 20px;
+}
+.action-buttons-tabletop .ready-button-tabletop:hover { background-color: #388E3C; }
+.action-buttons-tabletop .next-round-button-tabletop:hover { background-color: #388E3C; }
+
+
+/* 结果展示区域 (当游戏结束时，可以覆盖整个牌桌或在中间显示) */
+.results-overlay-tabletop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7); /* 半透明遮罩 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto; /* 如果结果很多，允许滚动 */
+  z-index: 10; /* 确保在最上层 */
+}
+.results-overlay-tabletop h3 {
+  color: #fff;
   margin-bottom: 20px;
+}
+/* HandDisplay 组件在结果展示时，其内部样式可能需要调整以适应深色背景 */
+.results-overlay-tabletop .hand-display-wrapper {
+  background-color: rgba(255,255,255,0.15); /* 结果中的手牌用浅色背景 */
+  border-color: rgba(255,255,255,0.2);
+  width: 90%;
+  max-width: 500px; /* 单个玩家手牌结果宽度 */
+}
+.results-overlay-tabletop .hand-display-wrapper .player-name,
+.results-overlay-tabletop .hand-display-wrapper .segment-name,
+.results-overlay-tabletop .hand-display-wrapper .no-cards-text,
+.results-overlay-tabletop .hand-display-wrapper .round-points,
+.results-overlay-tabletop .hand-display-wrapper .wulong-tag {
+    color: #f0f0f0; /* 确保结果中的文字也是浅色 */
 }
