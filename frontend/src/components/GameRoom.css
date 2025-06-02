@@ -1,0 +1,139 @@
+/* frontend/src/components/GameRoom.css */
+.game-room-container {
+  padding: 20px;
+  border: 1px solid #a5d6a7; /* 淡绿色边框 */
+  background-color: #f1f8e9; /* 非常浅的绿色背景 */
+}
+
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.room-header h2 {
+  margin: 0;
+  color: #388e3c; /* 深绿色 */
+}
+.leave-button {
+  background-color: #f44336; /* 红色离开按钮 */
+}
+.leave-button:hover {
+  background-color: #d32f2f;
+}
+
+.room-status {
+  font-style: italic;
+  color: #558b2f; /* 中绿色 */
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #dcedc8; /* 更浅的绿色 */
+  border-radius: 4px;
+}
+
+.players-list {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #fff;
+  border: 1px solid #c8e6c9;
+  border-radius: 4px;
+}
+.players-list h3 {
+  margin-top: 0;
+  color: #1b5e20; /* 最深的绿色 */
+}
+.players-list ul {
+  padding-left: 0;
+}
+.players-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid #e8f5e9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.players-list li:last-child {
+  border-bottom: none;
+}
+.players-list .current-player .player-name-ingame {
+  font-weight: bold;
+  color: #007bff; /* 当前玩家名称用蓝色 */
+}
+.player-name-ingame {
+  flex-basis: 40%;
+}
+.host-tag {
+  font-size: 0.8em;
+  background-color: #ffc107; /* 黄色房主标记 */
+  color: #212121;
+  padding: 2px 5px;
+  border-radius: 3px;
+  margin-left: 5px;
+}
+.status-tag {
+  font-size: 0.85em;
+  padding: 3px 7px;
+  border-radius: 10px;
+  margin-left: 10px;
+  color: white;
+}
+.status-tag.ready { background-color: #4caf50; /* 绿色 */ }
+.status-tag.not-ready { background-color: #757575; /* 灰色 */ }
+.status-tag.submitted { background-color: #2196f3; /* 蓝色 */ }
+
+.player-score {
+    font-size: 0.9em;
+    color: #424242;
+}
+
+.ready-button, .next-round-button {
+  padding: 12px 20px;
+  font-size: 1.1em;
+}
+
+.info-message {
+    padding: 10px;
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 4px;
+    margin: 15px 0;
+    color: #1e88e5;
+}
+
+.opponents-preview-area {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px dashed #aed581;
+}
+.opponents-preview-area h4 {
+    color: #33691e;
+}
+.opponent-preview {
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #f9fbe7; /* 浅黄色 */
+    border: 1px solid #f0f4c3;
+    border-radius: 4px;
+}
+.opponent-preview p {
+    margin: 0 0 5px 0;
+    font-weight: 500;
+}
+.opponent-facedown-cards .game-card {
+    width: 50px; /* 牌背可以更小 */
+    height: 70px;
+}
+.status-tag.submitted-dark { background-color: #1976d2; color: white; font-size: 0.8em; padding: 2px 4px; border-radius: 3px;}
+.status-tag.pending-dark { background-color: #bdbdbd; color: #424242; font-size: 0.8em; padding: 2px 4px; border-radius: 3px;}
+
+
+.results-area {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #81c784; /* 较粗的绿色上边框 */
+}
+.results-area h3 {
+  color: #2e7d32; /* 深绿色 */
+  text-align: center;
+  margin-bottom: 20px;
+}
