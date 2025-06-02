@@ -5,7 +5,7 @@ body {
     Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #e8f0f2; /* 浅蓝灰色背景 */
+  background-color: #e8f0f2;
   color: #333;
   line-height: 1.6;
 }
@@ -13,7 +13,7 @@ body {
 #root {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0; /* App.jsx 会处理顶层padding */
   text-align: center;
 }
 
@@ -71,7 +71,6 @@ li {
   padding: 5px 0;
 }
 
-/* 基本布局 */
 .container {
   background-color: #fff;
   padding: 20px;
