@@ -1,46 +1,133 @@
 /* frontend/src/components/GameRoom.css */
-/* ... (保留之前的牌桌样式) ... */
-
-.ai-tag {
-  font-size: 0.8em;
-  color: #0277bd; /* 蓝色AI标记 */
-  font-weight: bold;
-  margin-left: 5px;
-  background-color: #e1f5fe;
-  padding: 1px 4px;
-  border-radius: 3px;
-  border: 1px solid #b3e5fc;
+.game-room-container.container {
+  max-width: 1000px;
+  padding: 15px;
+  background-color: #3a7d50; /* 深绿色牌桌布背景 */
+  border: 5px solid #2a5c3a; /* 深色木纹边框 (模拟) */
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3), inset 0 0 30px rgba(0,0,0,0.2);
+  color: #fff; /* 牌桌上文字默认为白色 */
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.host-tag-tabletop { /* 与之前的 host-tag 区分或合并 */
-  font-size: 0.8em;
-  background-color: #ffc107;
-  color: #212121;
-  padding: 2px 5px;
-  border-radius: 3px;
-  margin-left: 5px;
+.game-room-container h2,
+.game-room-container h3,
+.game-room-container h4,
+.game-room-container p {
+  color: #f0f0f0;
 }
 
-.add-ai-button {
-  background-color: #ff9800; /* 橙色添加AI按钮 */
+.room-header-tabletop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: rgba(0,0,0,0.2);
+  border-bottom: 2px solid #2a5c3a;
+  border-radius: 10px 10px 0 0;
+}
+.room-header-tabletop h2 {
+  margin: 0;
+  font-size: 1.4em;
+  color: #fff;
+}
+.leave-button-tabletop {
+  background-color: #c62828;
+  padding: 8px 12px;
   font-size: 0.9em;
-  padding: 6px 10px;
-  margin-left: 15px; /* 与房间人数信息隔开 */
 }
-.add-ai-button:hover {
-  background-color: #f57c00;
+.leave-button-tabletop:hover {
+  background-color: #a52a2a;
 }
 
-.status-text-waiting { color: #FFC107; } /* 黄色 */
-.status-text-dealing { color: #03A9F4; } /* 蓝色 */
-.status-text-playing { color: #4CAF50; } /* 绿色 */
-.status-text-comparing { color: #FF9800; } /* 橙色 */
-.status-text-finished { color: #9E9E9E; } /* 灰色 */
+.room-info-bar {
+  padding: 8px 15px;
+  background-color: rgba(0,0,0,0.15);
+  text-align: center;
+  font-size: 0.95em;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #4a8d60;
+  display: flex; /* 用于AI按钮和人数信息对齐 */
+  justify-content: center;
+  align-items: center;
+  gap: 20px; /* 元素间距 */
+}
+.room-info-bar p {
+  margin: 0; /* 移除p标签默认margin */
+}
 
+
+.tabletop-main {
+  flex-grow: 1;
+  display: grid;
+  grid-template-areas:
+    "opponent-top opponent-top"
+    "opponent-left game-center"
+    "player-self player-self";
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 220px 1fr; /* 左侧对手区宽度略微调整 */
+  gap: 15px;
+  padding: 15px;
+  position: relative;
+}
+
+.player-area {
+  padding: 10px;
+  border-radius: 8px;
+  background-color: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  min-height: 160px; /* 稍微增加最小高度 */
+  display: flex;
+  flex-direction: column; /* 内部元素垂直排列 */
+}
+
+.player-area-self { grid-area: player-self; }
+.player-area-opponent-top { grid-area: opponent-top; text-align: center; }
+.player-area-opponent-left { grid-area: opponent-left; }
+
+.game-center-area {
+  grid-area: game-center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* 垂直居中 */
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.player-info-tabletop {
+  margin-bottom: 10px;
+  text-align: center; /* 玩家信息居中 */
+}
+.player-info-tabletop .player-name-display {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 5px;
+  display: inline-block; /* 让AI tag能紧随其后 */
+}
+.player-info-tabletop .player-score-display,
+.player-info-tabletop .player-status-display {
+  font-size: 0.9em;
+  color: #c0c0c0;
+  display: block; /* 状态和分数各占一行 */
+  margin-top: 3px;
+}
+.player-status-display .ready { color: #81c784; font-weight: bold;}
+.player-status-display .not-ready { color: #ffcc80; }
+.player-status-display .submitted { color: #90caf9; font-weight: bold;}
+.player-status-display .pending { color: #fff59d; } /* 摆牌中/思考中用浅黄色 */
+
+
+.player-self-hand-interaction {
+  margin-top: 10px; /* 与玩家信息隔开 */
+}
 .submitted-hand-preview {
-    padding: 15px;
-    background-color: #e8f5e9; /* 浅绿色背景 */
-    border: 1px solid #a5d6a7;
+    padding: 10px;
+    background-color: rgba(0,0,0,0.1); /* 自己已提交的牌预览区背景 */
+    border: 1px solid rgba(255,255,255,0.1);
     border-radius: 5px;
     margin-top: 10px;
 }
@@ -48,18 +135,186 @@
     margin-top: 0;
     margin-bottom: 10px;
     font-weight: bold;
+    color: #fff;
 }
-.info-message-overlay {
-    color: white;
-    background-color: rgba(0,0,0,0.5);
-    padding: 10px;
+.current-hand-display.hand-row { /* 发牌阶段显示自己明牌的容器 */
+    justify-content: center;
+    background-color: rgba(0,0,0,0.1);
     border-radius: 5px;
-    margin-top: 15px;
 }
-.no-cards-placeholder {
-    color: #aaa;
+
+
+.opponent-cards-display {
+    margin-top: 5px; /* 与玩家信息隔开 */
+    flex-grow: 1; /* 占据剩余空间，让牌背居中 */
+    display: flex;
+    align-items: center; /* 垂直居中牌背 */
+    justify-content: center; /* 水平居中牌背 */
+}
+.opponent-cards-display .hand-row {
+  justify-content: center;
+  min-height: auto;
+  padding: 5px;
+  border: none; /* 对手牌背区域不需要额外边框 */
+  background-color: transparent; /* 背景透明 */
+  margin-bottom: 0; /* 移除底部边距 */
+}
+.opponent-cards-display .game-card {
+  width: 50px;
+  height: 70px;
+  margin: 2px;
+}
+.no-cards-placeholder { /* 用于对手区域等待操作的提示 */
+    color: rgba(255,255,255,0.6);
     font-style: italic;
-    width: 100%;
+    font-size: 0.9em;
+}
+
+
+.game-messages-tabletop {
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background-color: rgba(0,0,0,0.35);
+  border-radius: 5px;
+  min-height: 40px;
+  width: 90%;
+  max-width: 400px; /* 限制消息区最大宽度 */
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.game-messages-tabletop p {
+  margin: 0;
+  font-size: 1em;
+  color: #fff;
+}
+
+.action-buttons-tabletop {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+.action-buttons-tabletop .ready-button-tabletop,
+.action-buttons-tabletop .next-round-button-tabletop {
+  background-color: #4CAF50;
+  font-size: 1em;
+  padding: 10px 20px;
+}
+.action-buttons-tabletop .ready-button-tabletop:hover,
+.action-buttons-tabletop .next-round-button-tabletop:hover {
+     background-color: #388E3C;
+}
+
+
+.results-overlay-tabletop {
+  position: fixed; /* 改为 fixed 以覆盖整个视口 */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85); /* 更深的遮罩 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; /* 从顶部开始排列 */
+  padding: 30px 20px; /* 增加内边距 */
+  overflow-y: auto;
+  z-index: 1000; /* 确保在最上层 */
+}
+.results-overlay-tabletop h3 {
+  color: #fff;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+  border-bottom: 2px solid #4CAF50;
+  padding-bottom: 10px;
+}
+.results-overlay-tabletop .hand-display-wrapper { /* HandDisplay 组件的样式 */
+  background-color: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.15);
+  width: 100%; /* 结果中每个玩家的手牌占满可用宽度 */
+  max-width: 600px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+/* 确保结果覆盖层中的文字颜色也适配 */
+.results-overlay-tabletop .hand-display-wrapper .player-name-display,
+.results-overlay-tabletop .hand-display-wrapper .segment-name,
+.results-overlay-tabletop .hand-display-wrapper .no-cards-text,
+.results-overlay-tabletop .hand-display-wrapper .round-points-display .positive,
+.results-overlay-tabletop .hand-display-wrapper .round-points-display .negative,
+.results-overlay-tabletop .hand-display-wrapper .round-points-display .zero,
+.results-overlay-tabletop .hand-display-wrapper .tag {
+    /* 对于深色背景，可能需要反色或使用浅色 */
+    /* HandDisplay.css 中已经为 round-points 和 tag 设置了背景和前景，可能不需要在这里覆盖 */
+}
+.results-overlay-tabletop .hand-display-wrapper .player-name-display { color: #f5f5f5; }
+.results-overlay-tabletop .hand-display-wrapper .segment-name { color: #e0e0e0; }
+
+
+.results-overlay-tabletop .next-round-button-tabletop.overlay-button {
+  margin-top: 25px;
+  background-color: #8BC34A; /* 浅绿色按钮 */
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  font-size: 1.2em; /* 按钮大一些 */
+  border-radius: 5px;
+}
+.results-overlay-tabletop .next-round-button-tabletop.overlay-button:hover {
+  background-color: #689F38;
+}
+.info-message-overlay { /* 等待房主消息 */
+    color: #fff;
+    background-color: rgba(0,0,0,0.3);
+    padding: 12px;
+    border-radius: 5px;
+    margin-top: 20px;
+    font-size: 1.1em;
+}
+
+/* AI 和 Host 标签 */
+.ai-tag {
+  font-size: 0.8em;
+  color: #0277bd;
+  font-weight: bold;
+  margin-left: 5px;
+  background-color: #e1f5fe;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid #b3e5fc;
+  vertical-align: middle; /* 与玩家名字对齐 */
+}
+.host-tag-tabletop {
+  font-size: 0.8em;
+  background-color: #ffc107;
+  color: #212121;
+  padding: 2px 5px;
+  border-radius: 3px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+/* 添加AI按钮 */
+.add-ai-button {
+  background-color: #ff9800;
+  font-size: 0.9em;
+  padding: 6px 10px;
+  /* margin-left: 15px; /* 由父级gap控制 */
+}
+.add-ai-button:hover {
+  background-color: #f57c00;
+}
+
+/* 游戏状态文字颜色 */
+.status-text-waiting { color: #FFEB3B; font-weight: bold; } /* 黄色 */
+.status-text-dealing { color: #2196F3; font-weight: bold; } /* 蓝色 */
+.status-text-playing { color: #4CAF50; font-weight: bold; } /* 绿色 */
+.status-text-comparing { color: #FF9800; font-weight: bold; } /* 橙色 */
+.status-text-finished { color: #BDBDBD; font-weight: bold; } /* 灰色 */
+
+/* loading 状态 */
+.loading-room p {
+    font-size: 1.2em;
+    color: #fff;
     text-align: center;
-    padding: 20px 0;
+    padding: 30px;
 }
