@@ -1,7 +1,7 @@
 // frontend/src/utils/cardUtils.js
 
 // 假设您的牌背图片名为 card_back.svg 存放在 public/cards/ 目录下
-const CARD_BACK_IMAGE = '/cards/card_back.svg';
+const CARD_BACK_IMAGE = '/cards/abstract.svg';
 
 export const getCardImagePath = (card) => {
     if (!card || !card.id || card.facedown) { // 添加 facedown 属性判断
