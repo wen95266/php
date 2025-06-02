@@ -318,3 +318,31 @@
     text-align: center;
     padding: 30px;
 }
+/* frontend/src/components/GameRoom.css */
+/* ... (保留之前的所有样式) ... */
+
+.timer-display {
+  margin-left: 8px;
+  font-weight: bold;
+  color: #f0f0f0; /* 默认白色或浅色 */
+  font-size: 0.9em;
+}
+
+.timer-display.low-time {
+  color: #ff6b6b; /* 时间少于10秒时变红色 (示例) */
+  animation: blinkWarning 1s infinite;
+}
+
+@keyframes blinkWarning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* 确保玩家信息区域的 player-status-display 能够容纳 timer-display */
+.player-info-tabletop .player-status-display {
+  /* ... 原有样式 ... */
+  display: flex; /* 改为flex以便计时器能并排 */
+  align-items: center;
+  justify-content: center; /* 居中状态文本和计时器 */
+}
+/* 如果状态文本和计时器需要分别对齐，可以再包一层span */
