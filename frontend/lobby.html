@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>游戏大厅 - 十三水</title>
+    <!-- 路径应相对于Cloudflare Pages部署的根 -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -10,7 +11,6 @@
         <header class="game-header">
             <h1>游戏大厅</h1>
             <div id="userInfoLobby" class="user-info">
-                <!-- 用户信息: 昵称 (总分: X, 胜率: Y%) -->
                 <button id="logoutBtnLobby" style="display:none;">登出</button>
             </div>
         </header>
@@ -41,12 +41,11 @@
             </div>
         </div>
 
-
         <div id="currentTableInfo" style="display:none;">
-            <!-- ... (与上一版本相同) ... -->
             <h2>当前桌子: <span id="currentTableCode"></span> (房主: <span id="currentTableHost"></span>)</h2>
             <p>状态: <span id="currentTableStatus"></span></p>
-            <div id="currentTablePlayers"></div>
+            <div id="currentTablePlayers">
+            </div>
             <button id="playerReadyBtn" style="display:none;">准备</button>
             <button id="startGameOnTableBtn" style="display:none;">开始游戏!</button>
             <button id="leaveTableBtn" style="display:none;">离开桌子</button>
@@ -61,8 +60,10 @@
                  <p>正在加载游戏历史...</p>
              </div>
          </div>
-
     </div>
+
+    <!-- 确保 auth.js 在 lobby.js 之前 -->
+    <!-- 路径应相对于Cloudflare Pages部署的根 -->
     <script src="auth.js"></script>
     <script src="lobby.js"></script>
 </body>
