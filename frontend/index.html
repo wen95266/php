@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>十三水在线游戏</title>
+    <!-- 路径应相对于Cloudflare Pages部署的根 -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +12,6 @@
         <header class="game-header">
             <h1>十三水对战</h1>
             <div id="userInfo" class="user-info">
-                <!-- 用户信息将由JS填充 -->
                  <button id="logoutBtnIndex" style="display:none;">登出</button>
             </div>
         </header>
@@ -25,7 +25,6 @@
                 <span id="player1ScoreDisplay">(总分: 0)</span> 
                 <span id="player1SpecialHandName" class="special-hand-name"></span>
             </h2>
-            <!-- 应用 horizontal-hand 类 -->
             <div class="hand horizontal-hand droppable-area" id="player1Hand" data-zone-name="hand" data-size="13">
                 <span class="placeholder-text">手牌区</span>
             </div>
@@ -36,7 +35,6 @@
             <div class="arrangement-zones">
                 <div class="zone droppable-area" id="firstHeadZone" data-zone-name="first" data-size="3">
                     <h4>头道 (3张)</h4>
-                    <!-- 头中尾道内部的 cards-in-zone 如果也需要严格横向，可以加上 horizontal-cards-display 类 -->
                     <div class="cards-in-zone horizontal-cards-display" id="firstHeadCards"></div>
                 </div>
                 <div class="zone droppable-area" id="middleWayZone" data-zone-name="middle" data-size="5">
@@ -51,29 +49,13 @@
             <button id="submitArrangementBtn" style="display:none;">确认出牌</button>
             <div id="player1ArrangedDisplay" class="arranged-display" style="display:none;">
                 <h4>我的亮牌：</h4>
-                <!-- 应用 horizontal-cards-display 类 -->
                 <div class="segment-display">头道: <span class="eval-text first-eval"></span><div class="cards-display first-cards horizontal-cards-display"></div></div>
                 <div class="segment-display">中道: <span class="eval-text middle-eval"></span><div class="cards-display middle-cards horizontal-cards-display"></div></div>
                 <div class="segment-display">尾道: <span class="eval-text last-eval"></span><div class="cards-display last-cards horizontal-cards-display"></div></div>
             </div>
         </div>
 
-        <!-- 对手区域容器 -->
         <div id="opponentAreasContainer">
-            <!-- 
-            对手信息将由JS动态填充到这里.
-            JS在生成对手的亮牌区时，也需要确保其内部的 .cards-display 元素有 horizontal-cards-display 类。
-            例如 (JS会生成类似结构):
-            <div class="opponent-area-ingame" id="opponentArea_opponentUserId">
-                <h2><span class="opponent-name">对手昵称</span> <span class="opponent-special-hand special-hand-name"></span></h2>
-                <p>状态: <span class="opponent-status"></span></p>
-                <div class="arranged-display" style="display:none;">
-                     <h4>对手亮牌：</h4>
-                     <div class="segment-display">头道: <span class="eval-text first-eval"></span><div class="cards-display first-cards horizontal-cards-display"></div></div>
-                     ...
-                </div>
-            </div>
-            -->
         </div>
         
         <div id="resultsArea" style="display:none;">
@@ -86,8 +68,10 @@
             <button id="startGameBtn">开始新游戏 (旧)</button>
             <button id="resetGameBtn">重置(测试 - 旧)</button>
         </div>
-
     </div>
+
+    <!-- 确保 auth.js 在 script.js 之前 -->
+    <!-- 路径应相对于Cloudflare Pages部署的根 -->
     <script src="auth.js"></script> 
     <script src="script.js"></script> 
 </body>
