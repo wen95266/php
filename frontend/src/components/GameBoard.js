@@ -1,48 +1,53 @@
 import React from 'react';
 import Pile from './Pile';
-import Card from './Card';
 
-const GameBoard = ({ 
-  topPile, 
-  middlePile, 
-  bottomPile, 
-  playerCards, 
-  onDrop, 
-  gameStatus 
+const GameBoard = ({
+  topPile,
+  middlePile,
+  bottomPile,
+  playerCards,
+  onCardPlace,
+  gameStatus
 }) => {
+  // 点击手牌时，选择目标区
   return (
     <div className="game-board">
-      {/* 头道 - 3张牌 */}
-      <Pile 
-        title="头道" 
-        cards={topPile} 
-        onDrop={onDrop} 
-        pileType="top" 
+      {/* 头道 */}
+      <Pile
+        title="头道"
+        cards={topPile}
+        pileType="top"
         maxCards={3}
         gameStatus={gameStatus}
+        onCardClick={null}
       />
-      
-      {/* 中道 - 5张牌 */}
-      <Pile 
-        title={playerCards.length > 0 ? "手牌" : "中道"} 
-        cards={playerCards.length > 0 ? playerCards : middlePile} 
-        onDrop={onDrop} 
-        pileType={playerCards.length > 0 ? "middle" : "hand"} 
-        maxCards={playerCards.length > 0 ? 13 : 5}
-        gameStatus={gameStatus}
-      />
-      
-      {/* 尾道 - 5张牌 */}
-      <Pile 
-        title="尾道" 
-        cards={bottomPile} 
-        onDrop={onDrop} 
-        pileType="bottom" 
+      {/* 中道 */}
+      <Pile
+        title="中道"
+        cards={middlePile}
+        pileType="middle"
         maxCards={5}
         gameStatus={gameStatus}
+        onCardClick={null}
       />
-      
-      {/* 状态显示 */}
+      {/* 尾道 */}
+      <Pile
+        title="尾道"
+        cards={bottomPile}
+        pileType="bottom"
+        maxCards={5}
+        gameStatus={gameStatus}
+        onCardClick={null}
+      />
+      {/* 手牌区（点击出牌） */}
+      <Pile
+        title="手牌"
+        cards={playerCards}
+        pileType="hand"
+        maxCards={13}
+        gameStatus={gameStatus}
+        onCardClick={card => onCardPlace(card)}
+      />
       <div className="game-status">
         {gameStatus === 'dividing' && (
           <div className="ai-dividing">
@@ -50,7 +55,6 @@ const GameBoard = ({
             <p>AI正在分牌中...</p>
           </div>
         )}
-        {/* 分牌完成横幅已移除 */}
       </div>
     </div>
   );
