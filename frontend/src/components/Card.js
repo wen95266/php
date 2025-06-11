@@ -11,6 +11,7 @@ const Card = ({ card, disabled }) => {
     }),
   }));
 
+  // 修复拖拽后图片不显示：始终用/cards/前缀
   return (
     <div 
       ref={drag}
@@ -21,8 +22,8 @@ const Card = ({ card, disabled }) => {
         src={`/cards/${card.image}`} 
         alt={`${card.value} of ${card.suit}`}
         className="card-image"
+        onError={e => { e.target.style.display = 'none'; }} // 防止加载失败显示空白
       />
-      {/* 牌面文字已移除 */}
     </div>
   );
 };
