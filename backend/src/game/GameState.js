@@ -7,6 +7,95 @@ const MAX_PLAYERS = 4; // Max 4 players
 const AI_NAMES = ["机器人A", "机器人B", "机器人C", "机器人D"];
 const AI_THINKING_TIME = [1800, 2200, 2600, 3000]; // ms, for random AI delay
 
+/**
+ * 辅助函数：按rank从大到小排序
+ */
+function sortByRankDesc(cards) {
+    return [...cards].sort((a, b) => b.value - a.value);
+}
+
+/**
+ * 简单AI理牌算法：
+ * 1. 按点数从大到小排序
+ * 2. 尾道优先放最大对子/三条/顺子/同花，否则最大单张
+ * 3. 中道找次大对子或顺子，否则次强单张
+ * 4. 剩下给头道
+ * 尽量保证不乌龙，但不保证最优
+ */
+function aiSmartArrange(cards) {
+    let remain = sortByRankDesc(cards);
+    const used = new Set();
+
+    // 简单找对子/三条/顺子/同花
+    function findBestGroup(cards, count) {
+        // 先找三条、再对子
+        let counts = {};
+        for (let c of cards) counts[c.value] = (counts[c.value] || 0) + 1;
+        let trip = Object.entries(counts).find(([v, ct]) => ct >= 3);
+        if (trip) {
+            let group = cards.filter(c => c.value == trip[0]).slice(0, 3);
+            if (group.length >= count) return group.slice(0, count);
+        }
+        // 再找对子
+        let pair = Object.entries(counts).find(([v, ct]) => ct >= 2);
+        if (pair) {
+            let group = cards.filter(c => c.value == pair[0]).slice(0, 2);
+            if (group.length >= count) return group.slice(0, count);
+        }
+        // 没对子三条就取最大单牌
+        return cards.slice(0, count);
+    }
+
+    // 尾道优先找三条/对子
+    let back = findBestGroup(remain, 5);
+    // 补足5张
+    if (back.length < 5) {
+        let need = 5 - back.length;
+        let others = remain.filter(c => !back.includes(c)).slice(0, need);
+        back = back.concat(others);
+    }
+    back.forEach(c => used.add(c));
+
+    // 中道再找三条/对子
+    let remainMid = remain.filter(c => !used.has(c));
+    let middle = findBestGroup(remainMid, 5);
+    if (middle.length < 5) {
+        let need = 5 - middle.length;
+        let others = remainMid.filter(c => !middle.includes(c)).slice(0, need);
+        middle = middle.concat(others);
+    }
+    middle.forEach(c => used.add(c));
+
+    // 剩下的给头道
+    let front = remain.filter(c => !used.has(c)).slice(0, 3);
+
+    // 兜底处理，保证各道数量
+    if (front.length < 3) {
+        let allUsed = new Set([...back, ...middle]);
+        front = remain.filter(c => !allUsed.has(c)).slice(0, 3);
+    }
+
+    // 尝试保证不乌龙，如果有问题则随机分配兜底
+    try {
+        const evalFront = evaluateHand(front);
+        const evalMiddle = evaluateHand(middle);
+        const evalBack = evaluateHand(back);
+        if (!validateOverallHand(evalFront, evalMiddle, evalBack)) {
+            throw new Error('AI理牌结果乌龙，降级为随机分配');
+        }
+    } catch (e) {
+        // fallback: 随机分配
+        let shuffled = [...cards].sort(() => Math.random() - 0.5);
+        return {
+            front: shuffled.slice(0, 3),
+            middle: shuffled.slice(3, 8),
+            back: shuffled.slice(8, 13)
+        };
+    }
+
+    return { front, middle, back };
+}
+
 class GameState {
     constructor() {
         this.rooms = {};
@@ -155,11 +244,11 @@ class GameState {
                 this.handleTimeout(roomId, player.id);
             }, duration);
 
-            // AI自动理牌
+            // AI自动理牌（优化后）
             if (isAI) {
                 setTimeout(() => {
                     if (room.playerHands[player.id] && !room.playerHands[player.id].submitted) {
-                        const hand = this.aiArrangeHand(player.cards);
+                        const hand = aiSmartArrange(player.cards);
                         this.submitPlayerHand(roomId, player.id, hand);
                         this.clearTurnTimer(roomId, player.id);
                     }
@@ -216,8 +305,8 @@ class GameState {
         return { front, middle, back };
     }
 
+    // 已废弃（AI理牌现在用aiSmartArrange）
     aiArrangeHand(cards) {
-        // 随机理牌（可改进为更智能）
         let shuffled = [...cards].sort(() => Math.random() - 0.5);
         return {
             front: shuffled.slice(0, 3),
