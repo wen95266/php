@@ -1,22 +1,19 @@
-// frontend/src/components/PlayerHand.jsx
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import './PlayerHand.css';
 
 // 拖拽工具
 function useDragAndDrop({ hand, front, middle, back, setHand, setFront, setMiddle, setBack }) {
-    // 当前被拖拽的卡牌
     const [dragCard, setDragCard] = useState(null);
 
-    // 拖开始
     function handleDragStart(card, from) {
         setDragCard({ card, from });
     }
-    // 拖到某道
     function handleDrop(to) {
         if (!dragCard) return;
         const { card, from } = dragCard;
-        // 防止重复
+
+        // 避免重复
         if (
             (to === 'front' && front.find(c => c.id === card.id)) ||
             (to === 'middle' && middle.find(c => c.id === card.id)) ||
@@ -38,7 +35,6 @@ function useDragAndDrop({ hand, front, middle, back, setHand, setFront, setMiddl
 
         setDragCard(null);
     }
-    // 拖到手牌区（回手）
     function handleDropToHand() {
         if (!dragCard) return;
         const { card, from } = dragCard;
@@ -78,10 +74,9 @@ const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
     const isMiddleFull = middle.length === 5;
     const canSubmit = isFrontFull && isMiddleFull && isBackFull;
 
-    // 入口区名字
+    // 手牌区/中道区命名逻辑
     let handAreaName = "手牌区";
-    if (isFrontFull && !isMiddleFull && isBackFull) handAreaName = "中道区";
-    else if (isFrontFull && isBackFull && isMiddleFull) handAreaName = "全部已分配";
+    if (isFrontFull && isBackFull) handAreaName = "中道区";
 
     const handleSubmit = () => {
         if (!canSubmit) { alert("头道3张，中道5张，尾道5张！"); return; }
@@ -122,21 +117,7 @@ const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
     if (!initialCards || initialCards.length === 0) { return <p className="status-message">等待发牌...</p>; }
     return (
         <div className="player-hand-dnd-area">
-            {/* 顶部横幅：AI玩家信息 */}
-            <div className="playerhand-ai-banner">
-                <div className="ai-seat ai-seat-left">
-                    <div className="ai-avatar"></div>
-                    <div className="ai-info"><div>AI-1</div><div>分: 0</div></div>
-                </div>
-                <div className="ai-seat ai-seat-center">
-                    <div className="ai-avatar"></div>
-                    <div className="ai-info"><div>AI-2</div><div>分: 0</div></div>
-                </div>
-                <div className="ai-seat ai-seat-right">
-                    <div className="ai-avatar"></div>
-                    <div className="ai-info"><div>AI-3</div><div>分: 0</div></div>
-                </div>
-            </div>
+            {/* 只保留玩家分数横幅（AI头像/游戏名已移除） */}
             {/* 中部分区 */}
             <div className="playerhand-mainzone">
                 {/* 头道 */}
@@ -184,11 +165,10 @@ const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
                     </div>
                 </div>
             </div>
-            {/* 底部按钮横幅 */}
+            {/* 底部按钮横幅（只保留理牌相关按钮） */}
             <div className="playerhand-actionbar">
                 <button className="submit-hand-button" onClick={handleSubmit} disabled={!canSubmit}>确认摆牌</button>
                 <button className="reset-hand-button" onClick={handleReset}>重置摆牌</button>
-                <button className="exit-hand-button" onClick={() => window.location.reload()}>退出游戏</button>
             </div>
             {/* 提交确认弹窗 */}
             {showConfirm && (
