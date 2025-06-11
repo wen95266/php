@@ -57,9 +57,11 @@ function App() {
   const [stats, setStats] = useState(getInitialStats());
   const workerRef = useRef(null);
   const [aiLoading, setAiLoading] = useState(false);
+  // 新增：多分法支持
+  const [aiDivisions, setAiDivisions] = useState([]);
+  const [aiDivisionIndex, setAiDivisionIndex] = useState(0);
 
   useEffect(() => {
-    // 初始化worker
     workerRef.current = new Worker(new URL('./aiWorker.js', import.meta.url));
     return () => { workerRef.current && workerRef.current.terminate(); };
   }, []);
@@ -71,6 +73,8 @@ function App() {
     setBottomPile([]);
     setGameStatus('playing');
     setStats(s => ({ ...s, totalGames: s.totalGames + 1, lastResult: null }));
+    setAiDivisions([]);
+    setAiDivisionIndex(0);
   };
 
   const generateInitialCards = () => {
@@ -99,9 +103,11 @@ function App() {
     if (target === 'top') setTopPile(prev => [...prev, card]);
     if (target === 'middle') setMiddlePile(prev => [...prev, card]);
     if (target === 'bottom') setBottomPile(prev => [...prev, card]);
+    setAiDivisions([]);
+    setAiDivisionIndex(0);
   };
 
-  // WebWorker AI分牌
+  // WebWorker AI分牌（多分法可切换）
   const handleAIDivide = () => {
     setGameStatus('dividing');
     setAiLoading(true);
@@ -112,39 +118,72 @@ function App() {
       alert('牌数量不是13，无法AI分牌');
       return;
     }
-    workerRef.current.postMessage({ cards: all });
-    workerRef.current.onmessage = (e) => {
-      setAiLoading(false);
-      const result = e.data;
-      if (result.error) {
-        setGameStatus('playing');
-        alert(result.error);
-        return;
-      }
-      setTopPile(result.top);
-      setMiddlePile(result.middle);
-      setBottomPile(result.bottom);
+    // 如果已有分法可切换，直接切换
+    if (aiDivisions.length > 0 && aiDivisionIndex < aiDivisions.length - 1) {
+      const nextIndex = aiDivisionIndex + 1;
+      const next = aiDivisions[nextIndex];
+      setTopPile(next.top);
+      setMiddlePile(next.middle);
+      setBottomPile(next.bottom);
+      setAiDivisionIndex(nextIndex);
       setGameStatus('completed');
       setStats(s => ({
         ...s,
         aiDivides: s.aiDivides + 1,
         lastResult: {
-          top: handRankName[getHandRank(result.top)],
-          middle: handRankName[getHandRank(result.middle)],
-          bottom: handRankName[getHandRank(result.bottom)]
+          top: handRankName[getHandRank(next.top)],
+          middle: handRankName[getHandRank(next.middle)],
+          bottom: handRankName[getHandRank(next.bottom)]
+        }
+      }));
+      setAiLoading(false);
+      return;
+    }
+    // 新请求
+    workerRef.current.postMessage({ cards: all });
+    workerRef.current.onmessage = (e) => {
+      setAiLoading(false);
+      const d = e.data;
+      if (d.error) {
+        setGameStatus('playing');
+        alert(d.error);
+        return;
+      }
+      const options = d.results || [];
+      if (options.length === 0) {
+        setGameStatus('playing');
+        alert('AI未能找到合法分法');
+        return;
+      }
+      setAiDivisions(options);
+      setAiDivisionIndex(0);
+      setTopPile(options[0].top);
+      setMiddlePile(options[0].middle);
+      setBottomPile(options[0].bottom);
+      setGameStatus('completed');
+      setStats(s => ({
+        ...s,
+        aiDivides: s.aiDivides + 1,
+        lastResult: {
+          top: handRankName[getHandRank(options[0].top)],
+          middle: handRankName[getHandRank(options[0].middle)],
+          bottom: handRankName[getHandRank(options[0].bottom)]
         }
       }));
     };
   };
 
-  const resetGame = () => initGame();
+  const resetGame = () => {
+    setAiDivisions([]);
+    setAiDivisionIndex(0);
+    initGame();
+  };
 
   useEffect(() => {
     initGame();
     // eslint-disable-next-line
   }, []);
 
-  // 统计区块
   const StatsPanel = () => (
     <div style={{
       background: '#222c36',
