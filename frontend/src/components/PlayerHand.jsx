@@ -3,27 +3,28 @@ import Card from './Card';
 import './PlayerHand.css';
 
 // 拖拽逻辑
-function useDragAndDrop({ areas, setAreas }) {
+function useDragAndDrop({ hand, front, back, setHand, setFront, setBack }) {
     const [dragCard, setDragCard] = useState(null);
 
-    function handleDragStart(card, fromAreaIdx) {
-        setDragCard({ card, fromAreaIdx });
+    function handleDragStart(card, from) {
+        setDragCard({ card, from });
     }
-
-    function handleDrop(toAreaIdx) {
+    function handleDrop(to) {
         if (!dragCard) return;
-        const { card, fromAreaIdx } = dragCard;
-        if (fromAreaIdx === toAreaIdx) {
+        const { card, from } = dragCard;
+        // 只允许从手牌区拖到头道/尾道，或从头道/尾道拖回手牌区
+        if (from === to) {
             setDragCard(null);
             return;
         }
-        // 从原区移除，加到目标区
-        setAreas(prev => {
-            const newAreas = prev.map(a => [...a]);
-            newAreas[fromAreaIdx] = newAreas[fromAreaIdx].filter(c => c.id !== card.id);
-            newAreas[toAreaIdx].push(card);
-            return newAreas;
-        });
+        // 从原区移除
+        if (from === 'hand') setHand(prev => prev.filter(c => c.id !== card.id));
+        if (from === 'front') setFront(prev => prev.filter(c => c.id !== card.id));
+        if (from === 'back') setBack(prev => prev.filter(c => c.id !== card.id));
+        // 加入目标区
+        if (to === 'hand') setHand(prev => [...prev, card]);
+        if (to === 'front') setFront(prev => prev.length < 3 ? [...prev, card] : prev);
+        if (to === 'back') setBack(prev => prev.length < 5 ? [...prev, card] : prev);
         setDragCard(null);
     }
     return {
@@ -33,74 +34,53 @@ function useDragAndDrop({ areas, setAreas }) {
     };
 }
 
-// 自动识别头道/中道/尾道
-function getAreaNames(areas) {
-    const counts = areas.map(a => a.length);
-    const sortedCounts = [...counts].sort((a, b) => a - b);
-    // 判断是否正好3/5/5
-    if (sortedCounts[0] === 3 && sortedCounts[1] === 5 && sortedCounts[2] === 5) {
-        // 按数量自动命名
-        const mapping = {};
-        areas.forEach((a, idx) => {
-            if (a.length === 3) mapping[idx] = '头道';
-            else if (a.length === 5 && !Object.values(mapping).includes('中道')) mapping[idx] = '中道';
-            else if (a.length === 5) mapping[idx] = '尾道';
-            else mapping[idx] = '';
-        });
-        return mapping;
-    }
-    // 未达到3/5/5，区域只叫“理牌区A/B/C”
-    return {0: '理牌区A', 1: '理牌区B', 2: '理牌区C'};
-}
-
-const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
-    // 三理牌区，初始所有牌在第0区
-    const [areas, setAreas] = useState([[], [], []]);
+const PlayerHand = ({ initialCards, onSubmitHand, roomStatus, aiPlayers = [] }) => {
+    const [hand, setHand] = useState([]);
+    const [front, setFront] = useState([]);
+    const [back, setBack] = useState([]);
     const [showConfirm, setShowConfirm] = useState(false);
 
     useEffect(() => {
-        setAreas([[...(initialCards || [])], [], []]);
+        setHand(initialCards ? [...initialCards] : []);
+        setFront([]); setBack([]);
     }, [initialCards]);
 
-    const dragDrop = useDragAndDrop({ areas, setAreas });
+    // 拖拽工具
+    const dragDrop = useDragAndDrop({ hand, front, back, setHand, setFront, setBack });
 
-    const areaNames = getAreaNames(areas);
-    // 是否满足3/5/5
-    const counts = areas.map(a => a.length);
-    const canSubmit = [...counts].sort((a, b) => a - b).join(',') === '3,5,5';
+    // 剩余5张自动定为中道，提交时处理
+    const isFrontFull = front.length === 3;
+    const isBackFull = back.length === 5;
+    const middle = hand.length === 5 && isFrontFull && isBackFull ? hand : [];
 
-    // 提交
+    // 能否提交
+    const canSubmit = isFrontFull && isBackFull && hand.length === 5;
+
     const handleSubmit = () => {
-        if (!canSubmit) { alert("请将三组牌分为3、5、5张！"); return; }
+        if (!canSubmit) { alert("头道3张、尾道5张，剩余5张自动为中道！"); return; }
         setShowConfirm(true);
     };
     const confirmSubmit = () => {
         setShowConfirm(false);
-        // 提交时，按名字映射
-        let front = [], middle = [], back = [];
-        Object.entries(areaNames).forEach(([idx, name]) => {
-            if (name === '头道') front = areas[idx];
-            if (name === '中道') middle = areas[idx];
-            if (name === '尾道') back = areas[idx];
-        });
-        onSubmitHand({ front, middle, back });
+        onSubmitHand({ front, middle: hand, back });
     };
 
     const handleReset = () => {
-        setAreas([[...(initialCards || [])], [], []]);
+        setHand([...initialCards]);
+        setFront([]); setBack([]);
     };
 
     // 拖拽Props
-    function getCardDraggable(card, fromIdx) {
+    function getCardDraggable(card, from) {
         return {
             draggable: true,
-            onDragStart: () => dragDrop.handleDragStart(card, fromIdx),
+            onDragStart: () => dragDrop.handleDragStart(card, from),
         };
     }
-    function getDropZoneProps(toIdx) {
+    function getDropZoneProps(zone) {
         return {
             onDragOver: e => e.preventDefault(),
-            onDrop: () => dragDrop.handleDrop(toIdx),
+            onDrop: () => dragDrop.handleDrop(zone),
         };
     }
 
@@ -108,24 +88,58 @@ const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
     if (!initialCards || initialCards.length === 0) { return <p className="status-message">等待发牌...</p>; }
 
     return (
-        <div className="player-hand-dnd-area">
-            <div className="playerhand-mainzone">
-                {[0, 1, 2].map(idx => (
-                    <div className="playerhand-segment handzone-segment"
-                         key={idx}
-                         {...getDropZoneProps(idx)}>
-                        <div className="segment-title">{areaNames[idx]} [{areas[idx].length}]</div>
-                        <div className="segment-cards hand-row">
-                            {areas[idx].map(card => (
-                                <div key={card.id} {...getCardDraggable(card, idx)}>
-                                    <Card card={card} />
-                                </div>
-                            ))}
+        <div className="player-hand-5rows">
+            {/* 1. 顶部横幅：AI玩家状态 */}
+            <div className="playerhand-5rows-ai-banner">
+                {aiPlayers && aiPlayers.length === 3
+                    ? aiPlayers.map((ai, idx) => (
+                        <div key={ai.id || idx} className="ai-status-block">
+                            <span className="ai-name">{ai.name || `电脑${idx + 1}`}</span>
+                            <span className="ai-score">分: {ai.score ?? 0}</span>
                         </div>
-                    </div>
-                ))}
+                    ))
+                    : [1,2,3].map((no) => (
+                        <div key={no} className="ai-status-block">
+                            <span className="ai-name">{`电脑-${no}`}</span>
+                            <span className="ai-score">分: 0</span>
+                        </div>
+                    ))}
             </div>
-            <div className="playerhand-actionbar">
+            {/* 2. 头道 */}
+            <div className="playerhand-5rows-segment" {...getDropZoneProps('front')}>
+                <span className="segment-title">头道 (3张) [{front.length}/3]</span>
+                <div className="segment-cards hand-row">
+                    {front.map(card => (
+                        <div key={card.id} {...getCardDraggable(card, 'front')}>
+                            <Card card={card} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            {/* 3. 手牌区 */}
+            <div className="playerhand-5rows-segment" {...getDropZoneProps('hand')}>
+                <span className="segment-title">手牌区 [{hand.length}]</span>
+                <div className="segment-cards hand-row">
+                    {hand.map(card => (
+                        <div key={card.id} {...getCardDraggable(card, 'hand')}>
+                            <Card card={card} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            {/* 4. 尾道 */}
+            <div className="playerhand-5rows-segment" {...getDropZoneProps('back')}>
+                <span className="segment-title">尾道 (5张) [{back.length}/5]</span>
+                <div className="segment-cards hand-row">
+                    {back.map(card => (
+                        <div key={card.id} {...getCardDraggable(card, 'back')}>
+                            <Card card={card} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            {/* 5. 按钮区 */}
+            <div className="playerhand-5rows-actionbar">
                 <button className="submit-hand-button" onClick={handleSubmit} disabled={!canSubmit}>确认摆牌</button>
                 <button className="reset-hand-button" onClick={handleReset}>重置摆牌</button>
             </div>
