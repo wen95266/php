@@ -45,13 +45,7 @@ body {
 }
 
 .app-header h1 {
-  font-size: 2.5rem;
-  background: linear-gradient(90deg, #ff8a00, #e52e71);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin-bottom: 10px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: none;
 }
 
 .game-container {
@@ -137,14 +131,7 @@ body {
 }
 
 .card-value {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  font-weight: bold;
-  font-size: 1.2rem;
-  z-index: 2;
-  color: var(--text-dark);
-  text-shadow: 0 0 2px white;
+  display: none !important;
 }
 
 .empty-pile {
@@ -280,10 +267,11 @@ body {
 
 .game-status {
   text-align: center;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
-  margin-top: 20px;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  margin-top: 0;
+  box-shadow: none;
 }
 
 .ai-dividing {
@@ -319,13 +307,7 @@ body {
 }
 
 .app-footer {
-  text-align: center;
-  padding: 20px;
-  margin-top: 20px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
+  display: none;
 }
 
 /* 响应式设计 */
@@ -339,8 +321,8 @@ body {
     height: 90px;
   }
 }
-/* ...原有内容保持不变，在文件末尾添加： */
 
+/* 新横幅布局 */
 .new-horizontal-layout {
   flex-direction: column;
   gap: 0;
@@ -389,4 +371,9 @@ body {
   .ai-control > .game-rules {
     min-width: 0;
   }
+}
+
+/* 隐藏批改喊话按钮 */
+.red-corner-button, .批改喊话 {
+  display: none !important;
 }
