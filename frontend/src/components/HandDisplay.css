@@ -1,4 +1,3 @@
-/* frontend/src/components/HandDisplay.css */
 .hand-display-wrapper { border: 1px solid #ccc; padding: 12px; margin-bottom: 15px; border-radius: 6px; background-color: #f9f9f9; text-align: left; }
 .hand-display-wrapper.self { background-color: #e3f2fd; border-color: #90caf9; }
 .hand-display-wrapper.opponent { background-color: #fff3e0; border-color: #ffcc80; }
