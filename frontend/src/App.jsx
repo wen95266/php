@@ -83,9 +83,6 @@ function App() {
 
     return (
         <div className="app-container">
-            <header>
-                <h1>十三水单机牌桌</h1>
-            </header>
             {error && <p className="error-message global-error">{error}</p>}
             <main>
                 {!isConnected && !currentRoom && !error && (
@@ -100,9 +97,6 @@ function App() {
                     />
                 )}
             </main>
-            <footer>
-                <p>© {new Date().getFullYear()} 十三水单机版</p>
-            </footer>
         </div>
     );
 }
