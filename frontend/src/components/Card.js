@@ -1,22 +1,11 @@
 import React from 'react';
-import { useDrag } from 'react-dnd';
 
-const Card = ({ card, disabled }) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'CARD',
-    // 关键：拖拽时带上完整card对象
-    item: { card },
-    canDrag: !disabled,
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  }));
-
+const Card = ({ card, disabled, onClick }) => {
   return (
     <div
-      ref={drag}
-      className={`card ${isDragging ? 'dragging' : ''} ${disabled ? 'disabled' : ''}`}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
+      className={`card ${disabled ? 'disabled' : ''}`}
+      style={{ opacity: disabled ? 0.7 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
+      onClick={!disabled ? onClick : undefined}
     >
       <img
         src={`/cards/${card.image}`}
