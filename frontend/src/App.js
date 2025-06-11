@@ -69,7 +69,6 @@ function App() {
     
     // 检查是否完成分牌
     if (topPile.length === 2 && card.pile === 'top' && bottomPile.length === 5) {
-      // 当顶堆有3张，底堆有5张时，剩余5张自动成为中堆
       setMiddlePile(playerCards);
       setPlayerCards([]);
     }
@@ -78,18 +77,13 @@ function App() {
   // AI自动分牌
   const handleAIDivide = async () => {
     setGameStatus('dividing');
-    
-    // 模拟AI分牌过程
     setTimeout(() => {
       const sortedCards = [...playerCards].sort((a, b) => 
         cardValue(b.value) - cardValue(a.value)
       );
-      
-      // 简单分牌逻辑：最大5张放尾道，中间5张放中道，最小3张放头道
       const bottom = sortedCards.slice(0, 5);
       const middle = sortedCards.slice(5, 10);
       const top = sortedCards.slice(10);
-      
       setBottomPile(bottom);
       setMiddlePile(middle);
       setTopPile(top);
@@ -120,12 +114,11 @@ function App() {
     <DndProvider backend={HTML5Backend}>
       <div className="app">
         <header className="app-header">
-          <h1>十三水多人游戏</h1>
+          {/* 删除大标题 */}
           <div className="game-info">
             <PlayerInfo name={playerName} status={gameStatus} />
           </div>
         </header>
-        
         <main className="game-container new-horizontal-layout">
           <div className="main-board-column">
             <GameBoard 
@@ -135,8 +128,8 @@ function App() {
               playerCards={playerCards}
               onDrop={handleDrop}
               gameStatus={gameStatus}
+              /* 删除分牌完成横幅的展示，已在GameBoard处理显示 */
             />
-            {/* 横幅显示AIControl */}
             <div className="ai-banner">
               <AIControl 
                 onAIDivide={handleAIDivide}
@@ -146,10 +139,7 @@ function App() {
             </div>
           </div>
         </main>
-        
-        <footer className="app-footer">
-          <p>前端: https://mm.9525.ip-ddns.com | 后端: https://wenge.cloudns.ch:10758</p>
-        </footer>
+        {/* 删除底部footer */}
       </div>
     </DndProvider>
   );
