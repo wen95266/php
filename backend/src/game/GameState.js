@@ -3,32 +3,19 @@ const { v4: uuidv4 } = require('uuid');
 const Deck = require('./Deck');
 const { evaluateHand, validateOverallHand, compareEvaluatedHands } = require('./HandEvaluator');
 
-const MAX_PLAYERS = 4; // Max 4 players
+const MAX_PLAYERS = 4;
 const AI_NAMES = ["机器人A", "机器人B", "机器人C", "机器人D"];
-const AI_THINKING_TIME = [1800, 2200, 2600, 3000]; // ms, for random AI delay
+const AI_THINKING_TIME = [1800, 2200, 2600, 3000];
 
-/**
- * 辅助函数：按rank从大到小排序
- */
 function sortByRankDesc(cards) {
     return [...cards].sort((a, b) => b.value - a.value);
 }
 
-/**
- * 简单AI理牌算法：
- * 1. 按点数从大到小排序
- * 2. 尾道优先放最大对子/三条/顺子/同花，否则最大单张
- * 3. 中道找次大对子或顺子，否则次强单张
- * 4. 剩下给头道
- * 尽量保证不乌龙，但不保证最优
- */
 function aiSmartArrange(cards) {
     let remain = sortByRankDesc(cards);
     const used = new Set();
 
-    // 简单找对子/三条/顺子/同花
     function findBestGroup(cards, count) {
-        // 先找三条、再对子
         let counts = {};
         for (let c of cards) counts[c.value] = (counts[c.value] || 0) + 1;
         let trip = Object.entries(counts).find(([v, ct]) => ct >= 3);
@@ -36,19 +23,15 @@ function aiSmartArrange(cards) {
             let group = cards.filter(c => c.value == trip[0]).slice(0, 3);
             if (group.length >= count) return group.slice(0, count);
         }
-        // 再找对子
         let pair = Object.entries(counts).find(([v, ct]) => ct >= 2);
         if (pair) {
             let group = cards.filter(c => c.value == pair[0]).slice(0, 2);
             if (group.length >= count) return group.slice(0, count);
         }
-        // 没对子三条就取最大单牌
         return cards.slice(0, count);
     }
 
-    // 尾道优先找三条/对子
     let back = findBestGroup(remain, 5);
-    // 补足5张
     if (back.length < 5) {
         let need = 5 - back.length;
         let others = remain.filter(c => !back.includes(c)).slice(0, need);
@@ -56,7 +39,6 @@ function aiSmartArrange(cards) {
     }
     back.forEach(c => used.add(c));
 
-    // 中道再找三条/对子
     let remainMid = remain.filter(c => !used.has(c));
     let middle = findBestGroup(remainMid, 5);
     if (middle.length < 5) {
@@ -66,16 +48,13 @@ function aiSmartArrange(cards) {
     }
     middle.forEach(c => used.add(c));
 
-    // 剩下的给头道
     let front = remain.filter(c => !used.has(c)).slice(0, 3);
 
-    // 兜底处理，保证各道数量
     if (front.length < 3) {
         let allUsed = new Set([...back, ...middle]);
         front = remain.filter(c => !allUsed.has(c)).slice(0, 3);
     }
 
-    // 尝试保证不乌龙，如果有问题则随机分配兜底
     try {
         const evalFront = evaluateHand(front);
         const evalMiddle = evaluateHand(middle);
@@ -84,7 +63,6 @@ function aiSmartArrange(cards) {
             throw new Error('AI理牌结果乌龙，降级为随机分配');
         }
     } catch (e) {
-        // fallback: 随机分配
         let shuffled = [...cards].sort(() => Math.random() - 0.5);
         return {
             front: shuffled.slice(0, 3),
@@ -99,7 +77,7 @@ function aiSmartArrange(cards) {
 class GameState {
     constructor() {
         this.rooms = {};
-        this.timers = {}; // roomId => { playerId: timerObj }
+        this.timers = {};
     }
 
     createRoom(hostId, hostName) {
@@ -113,7 +91,7 @@ class GameState {
             turnTimeout: null,
             playerHands: {},
             comparisonResults: null,
-            timeLeft: {}, // 新增：每个玩家剩余倒计时
+            timeLeft: {},
         };
         this.addPlayerToRoom(roomId, hostId, hostName);
         return this.rooms[roomId];
@@ -123,13 +101,10 @@ class GameState {
         return this.rooms[roomId];
     }
 
-    // --- AI相关 ---
     addAIPlayer(roomId) {
         const room = this.getRoom(roomId);
         if (!room) return { error: "Room not found" };
         if (room.players.length >= MAX_PLAYERS) return { error: "Room full" };
-
-        // 生成唯一AI名
         let aiName = AI_NAMES[room.players.filter(p => p.isAI).length] || `电脑${room.players.length + 1}`;
         let aiId = `AI_${uuidv4().slice(0,8)}`;
         const aiPlayer = {
@@ -167,11 +142,9 @@ class GameState {
     removePlayerFromRoom(roomId, playerId) {
         const room = this.getRoom(roomId);
         if (!room) return;
-
         room.players = room.players.filter(p => p.id !== playerId);
         delete room.playerHands[playerId];
         delete room.timeLeft?.[playerId];
-
         if (room.players.length === 0) {
             delete this.rooms[roomId];
             delete this.timers[roomId];
@@ -189,10 +162,7 @@ class GameState {
         const player = room.players.find(p => p.id === playerId);
         if (!player) return { error: "Player not found" };
         player.isReady = isReady;
-
-        // AI自动准备
         if (player.isAI) player.isReady = true;
-
         const readyPlayers = room.players.filter(p => p.isReady);
         if (readyPlayers.length === room.players.length && room.players.length >= 2) {
             this.startGame(roomId);
@@ -201,18 +171,15 @@ class GameState {
         return { room, gameStarted: false };
     }
 
-    // --- 游戏流程 ---
     startGame(roomId) {
         const room = this.getRoom(roomId);
         if (!room || room.status !== 'waiting') return { error: "Cannot start game" };
-
         room.status = 'dealing';
         room.deck.reset();
         room.deck.shuffle();
         room.playerHands = {};
         room.comparisonResults = null;
         room.timeLeft = {};
-
         room.players.forEach(player => {
             player.cards = room.deck.deal(13);
             player.isReady = false;
@@ -230,7 +197,6 @@ class GameState {
     }
 
     startTurnTimers(roomId) {
-        // 每人30s倒计时，AI自动提交
         const room = this.getRoom(roomId);
         if (!room) return;
         if (!this.timers[roomId]) this.timers[roomId] = {};
@@ -239,12 +205,9 @@ class GameState {
             const isAI = player.isAI;
             let duration = isAI ? (AI_THINKING_TIME[Math.floor(Math.random()*AI_THINKING_TIME.length)]) : 30000;
             room.timeLeft[player.id] = duration;
-            // 设置倒计时
             this.timers[roomId][player.id] = setTimeout(() => {
                 this.handleTimeout(roomId, player.id);
             }, duration);
-
-            // AI自动理牌（优化后）
             if (isAI) {
                 setTimeout(() => {
                     if (room.playerHands[player.id] && !room.playerHands[player.id].submitted) {
@@ -252,11 +215,9 @@ class GameState {
                         this.submitPlayerHand(roomId, player.id, hand);
                         this.clearTurnTimer(roomId, player.id);
                     }
-                }, duration - 400); // 比剩余时间略早提交
+                }, duration - 400);
             }
         });
-
-        // 开启tick定时器
         if (!this.timers[roomId]._interval) {
             this.timers[roomId]._interval = setInterval(() => {
                 let changed = false;
@@ -287,7 +248,6 @@ class GameState {
     }
 
     handleTimeout(roomId, playerId) {
-        // 超时自动生成乌龙牌并提交
         const room = this.getRoom(roomId);
         if (!room) return;
         const player = room.players.find(p => p.id === playerId);
@@ -298,14 +258,12 @@ class GameState {
     }
 
     generateWuLongHand(cards) {
-        // 简单分配为乌龙：按顺序分配
         const front = cards.slice(0, 3);
         const middle = cards.slice(3, 8);
         const back = cards.slice(8, 13);
         return { front, middle, back };
     }
 
-    // 已废弃（AI理牌现在用aiSmartArrange）
     aiArrangeHand(cards) {
         let shuffled = [...cards].sort(() => Math.random() - 0.5);
         return {
@@ -354,7 +312,6 @@ class GameState {
         playerHandData.submitted = true;
         this.clearTurnTimer(roomId, playerId);
 
-        // 检查是否全部提交
         const allSubmitted = room.players.every(p => room.playerHands[p.id] && room.playerHands[p.id].submitted);
         if (allSubmitted) {
             this.clearAllTimers(roomId);
@@ -364,17 +321,81 @@ class GameState {
         return { room, allSubmitted };
     }
 
+    /**
+     * 完整计分规则：支持2~4人
+     */
     compareAllHands(roomId) {
-        // ...（原有逻辑不变）
         const room = this.getRoom(roomId);
         if (!room) return;
-        // ...保持原有比牌和计分逻辑...
-        // 结算时可清理倒计时
-        this.clearAllTimers(roomId);
+
+        // 初始化所有玩家本局分数
+        room.players.forEach(p => {
+            p.roundPoints = 0;
+            if (room.playerHands[p.id]) room.playerHands[p.id].roundPoints = 0;
+            if (room.playerHands[p.id]) {
+                room.playerHands[p.id].isDaGong = false;
+                room.playerHands[p.id].isQuanLeiDa = false;
+            }
+        });
+
+        // 乌龙玩家直接-3分，不计入比牌
+        const validPlayers = room.players.filter(p => !room.playerHands[p.id].isWuLong);
+
+        // 逐对比牌
+        for (let i = 0; i < validPlayers.length; i++) {
+            const playerA = validPlayers[i];
+            const handA = room.playerHands[playerA.id];
+            for (let j = 0; j < validPlayers.length; j++) {
+                if (i === j) continue;
+                const playerB = validPlayers[j];
+                const handB = room.playerHands[playerB.id];
+
+                let winCountA = 0;
+                let winCountB = 0;
+
+                // 头道
+                const resFront = compareEvaluatedHands(handA.evaluated.front, handB.evaluated.front);
+                if (resFront > 0) { winCountA++; playerA.roundPoints += 1; handA.roundPoints += 1; playerB.roundPoints -= 1; }
+                else if (resFront < 0) { winCountB++; playerB.roundPoints += 1; handB.roundPoints += 1; playerA.roundPoints -= 1; }
+
+                // 中道
+                const resMid = compareEvaluatedHands(handA.evaluated.middle, handB.evaluated.middle);
+                if (resMid > 0) { winCountA++; playerA.roundPoints += 1; handA.roundPoints += 1; playerB.roundPoints -= 1; }
+                else if (resMid < 0) { winCountB++; playerB.roundPoints += 1; handB.roundPoints += 1; playerA.roundPoints -= 1; }
+
+                // 尾道
+                const resBack = compareEvaluatedHands(handA.evaluated.back, handB.evaluated.back);
+                if (resBack > 0) { winCountA++; playerA.roundPoints += 1; handA.roundPoints += 1; playerB.roundPoints -= 1; }
+                else if (resBack < 0) { winCountB++; playerB.roundPoints += 1; handB.roundPoints += 1; playerA.roundPoints -= 1; }
+
+                // 全垒打/打枪处理
+                if (winCountA === 3) {
+                    playerA.roundPoints += 3;
+                    handA.roundPoints += 3;
+                    playerB.roundPoints -= 3;
+                    handB.roundPoints -= 3;
+                    handA.isQuanLeiDa = true;
+                    handB.isDaGong = true;
+                }
+            }
+        }
+
+        // 乌龙-3分
+        for (const p of room.players) {
+            if (room.playerHands[p.id].isWuLong) {
+                p.roundPoints -= 3;
+                room.playerHands[p.id].roundPoints = -3;
+            }
+        }
+
+        // 统计总分
+        room.players.forEach(player => {
+            player.score = (player.score || 0) + (player.roundPoints || 0);
+        });
+
         room.status = 'finished';
     }
 
-    // --- 新增：服务端倒计时推送 ---
     getSanitizedRoom(roomId) {
         const room = this.getRoom(roomId);
         if (!room) return null;
