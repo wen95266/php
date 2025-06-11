@@ -1,66 +1,64 @@
-.player-hand-dnd-area {
-  background: rgba(30,34,40,0.98);
-  border-radius: 24px;
-  margin: 0 auto;
-  padding: 0;
-  box-shadow: 0 0 50px #ff512f44, 0 0 30px #29ffc644;
-  position: relative;
-  min-width: 370px;
-  max-width: 410px;
-}
-
-.playerhand-ai-banner {
+.player-hand-5rows {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding: 20px 28px 8px 28px;
-  background: linear-gradient(100deg, #0cebeb33 60%, #232526cc 100%);
-  border-radius: 24px 24px 0 0;
-  border-bottom: 2.4px solid #29ffc688;
-  box-shadow: 0 8px 22px #0cebeb22;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 480px;
+  width: 100%;
 }
 
-.ai-seat {
+.playerhand-5rows-ai-banner {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: #112831cc;
+  border-radius: 18px;
+  padding: 14px 0 10px 0;
+  box-shadow: 0 2px 10px #29ffc632;
+  min-height: 46px;
+  margin-bottom: 0;
+  margin-top: 0;
+}
+
+.ai-status-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 60px;
-  margin: 0 9px;
-}
-.ai-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #0cebeb 10%, #29ffc6 100%);
-  margin-bottom: 4px;
-  border: 3px solid #fff;
-  box-shadow: 0 0 10px #29ffc6cc;
-}
-.ai-info { color: #fff; font-size: 0.95em; text-align: center; }
-
-.playerhand-mainzone {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  align-items: stretch;
-  padding: 16px 12px 16px 12px;
-  background: linear-gradient(120deg, #232526e0 74%, #ff512f22 100%);
+  min-width: 88px;
+  color: #29ffc6;
+  font-weight: bold;
+  font-family: 'Orbitron', Arial, sans-serif;
+  font-size: 1.08em;
+  background: rgba(32,38,44,0.18);
+  border-radius: 10px;
+  padding: 5px 0;
+  border: 1.4px solid #20e3b2;
+  box-shadow: 0 0 6px #29ffc633;
 }
 
-.playerhand-segment {
-  background: #e3f2fd22;
+.ai-status-block .ai-name {
+  font-size: 1.12em;
+  color: #29ffc6;
+  margin-bottom: 2px;
+}
+
+.ai-status-block .ai-score {
+  color: #ffd700;
+  font-size: 0.97em;
+}
+
+.playerhand-5rows-segment {
+  background: #1e2229ee;
   border-radius: 13px;
   border: 1.5px solid #29ffc655;
-  margin: 2px 0;
-  padding: 10px 8px 16px 8px;
-  min-height: 90px;
-  box-shadow: 0 0 18px #29ffc622;
-  transition: box-shadow 0.2s, border 0.2s;
-}
-.playerhand-segment.handzone-segment {
-  background: #fff9c41a;
-  border: 2.5px solid #ff512faa;
-  min-height: 90px;
+  padding: 10px 10px 16px 10px;
+  min-height: 80px;
+  margin: 0 0 0 0;
+  box-shadow: 0 0 14px #29ffc622;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .segment-title {
@@ -68,58 +66,65 @@
   color: #29ffc6;
   margin-bottom: 8px;
   font-family: 'Orbitron', Arial, sans-serif;
-}
-.segment-cards.hand-row {
-  display: flex;
-  min-height: 60px;
-  gap: 2px;
-  flex-wrap: wrap;
+  font-size: 1.07em;
+  letter-spacing: 0.03em;
+  display: inline-block;
 }
 
-.playerhand-actionbar {
+.segment-cards.hand-row {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  min-height: 64px;
+  gap: 2px;
   align-items: center;
-  background: linear-gradient(90deg, #29ffc6 0%, #0cebeb 100%);
-  border-radius: 0 0 20px 20px;
-  padding: 18px 16px 18px 16px;
-  gap: 8px;
-  box-shadow: 0 0 22px #29ffc655;
+}
+
+.playerhand-5rows-actionbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  border-radius: 0 0 16px 16px;
+  padding: 17px 0 15px 0;
+  background: none;
 }
 
 .submit-hand-button {
   background: linear-gradient(90deg, #29ffc6 0%, #0cebeb 100%);
   color: #232526;
   font-weight: bold;
-  border-radius: 20px;
-  padding: 10px 30px;
-  font-size: 1.12em;
+  border-radius: 22px;
+  padding: 12px 32px;
+  font-size: 1.11em;
   border: none;
-  margin-right: 10px;
+  margin-right: 8px;
   box-shadow: 0 0 8px #29ffc688;
+  transition: background 0.3s, box-shadow 0.2s, color 0.18s;
 }
-.submit-hand-button:disabled { background: #bdbdbd; color: #757575; }
+.submit-hand-button:disabled {
+  background: #bdbdbd;
+  color: #757575;
+}
+
 .reset-hand-button {
   background: linear-gradient(90deg, #ffe082 0%, #ffcc80 100%);
   color: #444;
-  border-radius: 20px;
-  padding: 10px 16px;
-  border: none;
-  box-shadow: 0 0 8px #ffe08299;
-}
-.exit-hand-button {
-  background: linear-gradient(90deg, #ff512f 0%, #dd2476 100%);
-  color: #fff;
-  border-radius: 20px;
-  padding: 10px 16px;
+  border-radius: 22px;
+  padding: 12px 22px;
   border: none;
   font-weight: bold;
-  box-shadow: 0 0 8px #ff512faa;
+  box-shadow: 0 0 8px #ffe08299;
+  font-size: 1.05em;
+  transition: background 0.3s, box-shadow 0.2s, color 0.18s;
 }
+
 .confirm-overlay {
-  position: fixed; top:0; left:0; right:0; bottom:0;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.62);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 999;
 }
 .confirm-box {
@@ -128,13 +133,25 @@
   border-radius: 12px;
   min-width: 280px;
   box-shadow: 0 0 36px #29ffc655;
+  text-align: center;
+}
+.confirm-box button {
+  margin: 0 12px;
+  min-width: 90px;
+}
+
+.status-message {
+  color: #29ffc6;
+  text-align: center;
+  font-size: 1.17em;
+  margin: 32px 0;
 }
 
 @media (max-width: 600px) {
-  .player-hand-dnd-area { min-width: 90vw; max-width: 98vw;}
-  .playerhand-segment { min-height: 70px; }
-  .playerhand-mainzone { padding: 8px 2px; }
-  .playerhand-ai-banner { padding: 12px 6px 4px 6px;}
-  .playerhand-actionbar { flex-direction: column; gap: 4px; padding: 12px 2px;}
-  .confirm-box { min-width: 60vw; }
+  .player-hand-5rows { min-width: 98vw; max-width: 99vw; }
+  .playerhand-5rows-segment { min-height: 55px; padding: 6px 2px 12px 2px;}
+  .playerhand-5rows-ai-banner { padding: 9px 1px 7px 1px; }
+  .segment-title { font-size: 0.99em; }
+  .playerhand-5rows-actionbar { flex-direction: column; gap: 6px; padding: 12px 1px;}
+  .confirm-box { min-width: 60vw; font-size: 1em; }
 }
