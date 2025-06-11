@@ -9,7 +9,6 @@ const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
     const [middle, setMiddle] = useState([]);
     const [back, setBack] = useState([]);
     const [selectedCardFromHand, setSelectedCardFromHand] = useState(null);
-    // 新增撤销堆栈
     const [actionStack, setActionStack] = useState([]);
     const [showConfirm, setShowConfirm] = useState(false);
 
@@ -20,7 +19,6 @@ const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
         setActionStack([]);
     }, [initialCards]);
 
-    // 操作记录
     const recordAction = (type, payload) => {
         setActionStack(stack => [...stack, { type, payload }]);
     };
@@ -47,13 +45,11 @@ const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
         }
     };
 
-    // 撤销上一步
     const handleUndo = () => {
         if (actionStack.length === 0) return;
         const last = actionStack[actionStack.length - 1];
         setActionStack(prev => prev.slice(0, -1));
         if (last.type === "add") {
-            // 删除segment最后一张，回到hand
             const { card, to } = last.payload;
             if (to === 'front') setFront(f => f.slice(0, -1));
             if (to === 'middle') setMiddle(m => m.slice(0, -1));
@@ -68,7 +64,6 @@ const PlayerHand = ({ initialCards, onSubmitHand, roomStatus }) => {
         }
     };
 
-    // 全部重置
     const handleReset = () => {
         setHand([...initialCards]);
         setFront([]); setMiddle([]); setBack([]);
