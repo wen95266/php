@@ -50,17 +50,7 @@ const GameBoard = ({
             <p>AI正在分牌中...</p>
           </div>
         )}
-        
-        {gameStatus === 'completed' && (
-          <div className="game-completed">
-            <h3>分牌完成!</h3>
-            <div className="result-summary">
-              <p>头道: {topPile.length}张</p>
-              <p>中道: {middlePile.length}张</p>
-              <p>尾道: {bottomPile.length}张</p>
-            </div>
-          </div>
-        )}
+        {/* 分牌完成横幅已移除 */}
       </div>
     </div>
   );
