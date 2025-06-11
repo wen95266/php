@@ -11,8 +11,8 @@ const Pile = ({ title, cards, onDrop, pileType, maxCards, gameStatus }) => {
     }),
   }));
 
-  const isFull = cards.length >= maxCards;
-  const pileClass = isFull ? 'pile full' : 'pile';
+  // 取消已满提示
+  const pileClass = 'pile';
   const pileStyle = {
     backgroundColor: isOver ? '#4a5568' : '#2d3748',
     border: isOver ? '2px dashed #63b3ed' : '2px solid #4a5568',
@@ -24,7 +24,6 @@ const Pile = ({ title, cards, onDrop, pileType, maxCards, gameStatus }) => {
         <h3>{title}</h3>
         <span>({cards.length}/{maxCards})</span>
       </div>
-      
       <div className="cards-container">
         {cards.map((card, index) => (
           <Card 
@@ -33,14 +32,10 @@ const Pile = ({ title, cards, onDrop, pileType, maxCards, gameStatus }) => {
             disabled={gameStatus === 'completed'}
           />
         ))}
-        
         {cards.length === 0 && (
           <div className="empty-pile">拖拽扑克牌到此处</div>
         )}
-        
-        {isFull && (
-          <div className="pile-full-message">此区域已满</div>
-        )}
+        {/* 移除“此区域已满”提示 */}
       </div>
     </div>
   );
