@@ -1,49 +1,8 @@
-/* frontend/src/components/Card.css */
-.game-card {
-    width: 70px; /* 根据您的SVG调整 */
-    height: 100px; /* 根据您的SVG调整 */
-    border: 1px solid #aaa;
-    border-radius: 6px;
-    margin: 3px;
-    display: inline-flex; /* 改为flex以便内部图片居中 */
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    background-color: #fff;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
-    user-select: none; /* 防止拖拽时选中文本 */
-    overflow: hidden; /* 确保图片不超出边框 */
-}
-
-.game-card img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain; /* 保持图片比例 */
-}
-
-.game-card:hover:not(.facedown) {
-    transform: translateY(-3px);
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-}
-
-.game-card.selected:not(.facedown) {
-    border: 2px solid #007bff; /* 蓝色边框表示选中 */
-    transform: translateY(-5px) scale(1.05);
-    box-shadow: 0px 5px 10px rgba(0,0,0,0.2);
-}
-
-.game-card.facedown {
-    cursor: default;
-    /* background-color: #ddd; /* 可以给牌背一个不同的背景色 */
-}
-
-/* 可选：按花色给牌文字/边框上色 */
-.game-card.suit-hearts, .game-card.suit-diamonds {
-  /* color: red; */ /* 如果SVG内部文字颜色是currentColor */
-  /* border-color: red; */
-}
-.game-card.suit-spades, .game-card.suit-clubs {
-  /* color: black; */
-  /* border-color: black; */
+/* ...原有代码... */
+@media (max-width: 600px) {
+    .game-card {
+        width: 45px;
+        height: 62px;
+        margin: 1.5px;
+    }
 }
