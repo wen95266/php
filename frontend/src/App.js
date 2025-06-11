@@ -2,9 +2,21 @@ import React, { useState, useEffect } from 'react';
 import GameBoard from './components/GameBoard';
 import PlayerInfo from './components/PlayerInfo';
 import AIControl from './components/AIControl';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import './index.css';
+
+// AI分牌算法
+function getBestAIDivision(cards) {
+  const valueMap = {
+    '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
+    'jack': 11, 'queen': 12, 'king': 13, 'ace': 14
+  };
+  const sorted = [...cards].sort((a, b) => valueMap[b.value] - valueMap[a.value]);
+  return {
+    top: sorted.slice(10, 13),
+    middle: sorted.slice(5, 10),
+    bottom: sorted.slice(0, 5),
+  };
+}
 
 function App() {
   const [playerCards, setPlayerCards] = useState([]);
@@ -13,6 +25,7 @@ function App() {
   const [bottomPile, setBottomPile] = useState([]);
   const [playerName, setPlayerName] = useState('玩家1');
   const [gameStatus, setGameStatus] = useState('waiting'); // waiting, playing, completed
+  const [selectedZone, setSelectedZone] = useState(null);
 
   // 初始化游戏
   const initGame = () => {
@@ -42,65 +55,37 @@ function App() {
     return cards.sort(() => Math.random() - 0.5).slice(0, 13);
   };
 
-  // 处理拖放操作
-  const handleDrop = (pile, card) => {
-    if (pile === 'top' && topPile.length >= 3) return;
-    if (pile === 'bottom' && bottomPile.length >= 5) return;
-
-    setPlayerCards(prev => prev.filter(c => c.id !== card.id));
-    switch (pile) {
-      case 'top':
-        setTopPile(prev => [...prev, card]);
-        break;
-      case 'middle':
-        setMiddlePile(prev => [...prev, card]);
-        break;
-      case 'bottom':
-        setBottomPile(prev => [...prev, card]);
-        break;
-      default:
-        break;
+  // 点击手牌弹出选择区
+  const handleCardPlace = (card) => {
+    if (!card) return;
+    // 简单弹窗，可用更优UI替换
+    const pile = window.prompt('放到哪个区？输入: top, middle, bottom');
+    if (!pile) return;
+    if (pile === 'top' && topPile.length < 3) {
+      setPlayerCards(prev => prev.filter(c => c.id !== card.id));
+      setTopPile(prev => [...prev, card]);
+    } else if (pile === 'middle' && middlePile.length < 5) {
+      setPlayerCards(prev => prev.filter(c => c.id !== card.id));
+      setMiddlePile(prev => [...prev, card]);
+    } else if (pile === 'bottom' && bottomPile.length < 5) {
+      setPlayerCards(prev => prev.filter(c => c.id !== card.id));
+      setBottomPile(prev => [...prev, card]);
     }
   };
 
-  // AI自动分牌（修复：只分配剩余手牌，合并到已分区）
-  const handleAIDivide = async () => {
+  // 前端AI分牌
+  const handleAIDivide = () => {
     setGameStatus('dividing');
     setTimeout(() => {
-      // 1. 保留已分区的牌
-      const currentTop = [...topPile];
-      const currentMiddle = [...middlePile];
-      const currentBottom = [...bottomPile];
-      const remainingCards = [...playerCards];
-
-      // 2. 分配剩余未分的牌
-      const sortedCards = [...remainingCards].sort((a, b) =>
-        cardValue(b.value) - cardValue(a.value)
-      );
-      const topNeed = 3 - currentTop.length;
-      const middleNeed = 5 - currentMiddle.length;
-      const bottomNeed = 5 - currentBottom.length;
-
-      // 防止负数，优先分底道，再中道，再头道
-      const bottomAI = bottomNeed > 0 ? sortedCards.splice(0, bottomNeed) : [];
-      const middleAI = middleNeed > 0 ? sortedCards.splice(0, middleNeed) : [];
-      const topAI = topNeed > 0 ? sortedCards.splice(0, topNeed) : [];
-
-      setTopPile([...currentTop, ...topAI]);
-      setMiddlePile([...currentMiddle, ...middleAI]);
-      setBottomPile([...currentBottom, ...bottomAI]);
+      const aiResult = getBestAIDivision([
+        ...topPile, ...middlePile, ...bottomPile, ...playerCards
+      ]);
+      setTopPile(aiResult.top);
+      setMiddlePile(aiResult.middle);
+      setBottomPile(aiResult.bottom);
       setPlayerCards([]);
       setGameStatus('completed');
-    }, 1500);
-  };
-
-  // 计算牌面值
-  const cardValue = (value) => {
-    const values = {
-      '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
-      'jack': 11, 'queen': 12, 'king': 13, 'ace': 14
-    };
-    return values[value] || 0;
+    }, 1200);
   };
 
   // 重置游戏
@@ -113,7 +98,6 @@ function App() {
   }, []);
 
   return (
-    <DndProvider backend={HTML5Backend}>
       <div className="app">
         <header className="app-header">
           <div className="game-info">
@@ -127,7 +111,7 @@ function App() {
               middlePile={middlePile}
               bottomPile={bottomPile}
               playerCards={playerCards}
-              onDrop={handleDrop}
+              onCardPlace={handleCardPlace}
               gameStatus={gameStatus}
             />
             <div className="ai-banner">
@@ -140,7 +124,6 @@ function App() {
           </div>
         </main>
       </div>
-    </DndProvider>
   );
 }
 
