@@ -1,11 +1,21 @@
 import React from 'react';
+import { useDrag } from 'react-dnd';
 
-const Card = ({ card, disabled, onClick }) => {
+const Card = ({ card, from, disabled }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'CARD',
+    item: { card, from },
+    canDrag: !disabled,
+    collect: monitor => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }), [card, from, disabled]);
+
   return (
     <div
-      className={`card ${disabled ? 'disabled' : ''}`}
-      style={{ opacity: disabled ? 0.7 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
-      onClick={!disabled ? onClick : undefined}
+      ref={drag}
+      className={`card ${isDragging ? 'dragging' : ''} ${disabled ? 'disabled' : ''}`}
+      style={{ opacity: isDragging ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'grab' }}
     >
       <img
         src={`/cards/${card.image}`}
