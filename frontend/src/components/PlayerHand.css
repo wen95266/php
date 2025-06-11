@@ -1,4 +1,3 @@
-/* frontend/src/components/PlayerHand.css */
 .player-hand-area { border: 1px solid #b2dfdb; padding: 20px; margin-top: 15px; background-color: #faffff; }
 .player-hand-area h4 { margin-top: 0; color: #00796b; }
 .instructions { font-size: 0.9em; color: #555; margin-bottom: 15px; }
@@ -13,3 +12,9 @@
 .submit-hand-button { margin-top: 25px; padding: 12px 25px; font-size: 1.1em; background-color: #4caf50; }
 .submit-hand-button:hover:not(:disabled) { background-color: #388e3c; }
 .status-message { font-style: italic; color: #757575; }
+@media (max-width: 600px) {
+    .player-hand-area { padding: 8px; }
+    .hand-row { min-height: 56px; padding: 3px; }
+    .segment-area { padding: 6px; }
+    .submit-hand-button { font-size: 1em; padding: 10px 14px; }
+}
