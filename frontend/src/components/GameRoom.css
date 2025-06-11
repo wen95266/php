@@ -1,278 +1,86 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
-
-.game-room-container.container {
-  max-width: 1200px;
-  padding: 0;
-  background: transparent;
-  border-radius: 32px;
-  box-shadow: none;
-  color: #f6f7f8;
-  min-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  border: none;
-  position: relative;
-  overflow: visible;
-}
-
-/* 炫酷发光圆桌 */
-.tabletop-main {
-  min-height: 700px;
-  min-width: 900px;
+.full-banner-top {
+  width: 100%;
   margin: 0 auto;
-  padding: 25px 0 70px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.tabletop-background {
-  position: relative;
-  width: 900px;
-  height: 700px;
-  margin: 0 auto 0 auto;
-  background: radial-gradient(ellipse at 55% 45%, #021d2a 50%, #0cebeb 120%);
-  border-radius: 60% 60% 55% 45% / 65% 45% 55% 55%;
-  box-shadow:
-    0 0 120px 30px #29ffc655,
-    0 0 120px 10px #0cebeb44,
-    0 0 22px 6px #23252677;
-  border: 10px solid #29ffc6bb;
-  z-index: 1;
-  transition: background 1s;
-  overflow: visible;
-}
-
-/* 玩家区域分布在桌面椭圆四周 */
-.player-area {
-  position: absolute;
-  width: 270px;
-  min-height: 120px;
-  max-width: 320px;
-  background: linear-gradient(120deg, #232526ee 60%, #232526bb 100%);
-  border: 3px solid #29ffc6bb;
-  border-radius: 38px 38px 28px 28px / 42px 42px 36px 36px;
-  box-shadow: 0 0 28px #0cebeb77, 0 3px 20px #29ffc655;
-  color: #fff;
-  font-family: 'Orbitron', Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 3;
-  pointer-events: auto;
-  overflow: visible;
-  transition: box-shadow 0.4s, border 0.4s;
-}
-.player-area-self { /* 自己-底部中央 */
-  left: 50%;
-  bottom: -40px;
-  transform: translate(-50%, 0);
-  background: linear-gradient(120deg, #1c2027 70%, #0cebeb33 100%);
-  border: 4px solid #ff512f;
-  box-shadow: 0 0 40px #ff512faa, 0 0 28px #29ffc655;
-  z-index: 10;
-}
-.player-area-opponent-top { /* 顶部中央 */
-  left: 50%;
-  top: -40px;
-  transform: translate(-50%, 0);
-}
-.player-area-opponent-left { /* 左侧 */
-  left: -60px;
-  top: 50%;
-  transform: translate(0, -50%);
-}
-.player-area-opponent-right { /* 右侧 */
-  right: -60px;
-  top: 50%;
-  transform: translate(0, -50%);
-}
-
-/* 桌面中间消息区 */
-.game-center-area {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 370px;
-  min-height: 110px;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(120deg, #232526dd 70%, #0cebeb33 100%);
-  border-radius: 22px;
-  border: 2.5px solid #29ffc6bb;
-  box-shadow: 0 0 40px #0cebeb44;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
-
-/* 玩家信息区炫酷字体高光 */
-.player-info-tabletop {
-  margin-bottom: 8px;
-  text-align: center;
-}
-.player-info-tabletop .player-name-display {
-  font-weight: bold;
-  font-size: 1.15em;
-  color: #fff;
-  text-shadow: 0 0 16px #29ffc6, 0 0 7px #0cebeb88;
-  letter-spacing: 0.05em;
-  margin-bottom: 3px;
-  display: block;
-}
-.player-info-tabletop .player-score-display, .player-info-tabletop .player-status-display {
-  font-size: 1em;
-  color: #ffd700;
-  display: block;
-  margin-top: 3px;
-  text-shadow: 0 0 8px #ffd70055;
-}
-.player-status-display .ready { color: #81c784; font-weight: bold;}
-.player-status-display .not-ready { color: #ffcc80; }
-.player-status-display .submitted { color: #90caf9; font-weight: bold;}
-.player-status-display .pending { color: #fff59d; }
-
-/* 卡牌区 */
-.opponent-cards-display, .current-hand-display.hand-row {
-  margin-top: 5px;
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 90px;
-}
-.opponent-cards-display .hand-row {
-  justify-content: center;
-  min-height: auto;
-  padding: 6px;
-  border: none;
+  padding-top: 16px;
+  padding-bottom: 8px;
   background: transparent;
-  margin-bottom: 0;
-}
-.opponent-cards-display .game-card {
-  width: 52px;
-  height: 72px;
-  margin: 2px;
-  filter: brightness(0.93) drop-shadow(0 0 6px #0cebeb55);
-  transition: transform 0.2s;
-}
-.opponent-cards-display .game-card.facedown {
-  filter: grayscale(0.7) brightness(0.5) drop-shadow(0 0 5px #23252688);
-}
-
-.current-hand-display .game-card {
-  transform: translateY(-4px) scale(1.1);
-  box-shadow: 0 6px 16px #29ffc644;
-}
-
-.player-area-self .current-hand-display .game-card.selected {
-  border-color: #ff512f;
-  box-shadow: 0 0 18px #ff512faa, 0 0 9px #29ffc655;
-}
-
-/* 卡牌hover动画 */
-.game-card:not(.facedown):hover {
-  transform: scale(1.17) rotate(-2deg);
-  z-index: 10;
-  box-shadow: 0 0 24px 6px #29ffc6cc, 0 0 18px #ff512f77;
-}
-
-/* 按钮炫彩 */
-button, .ready-button-tabletop, .next-round-button-tabletop, .leave-button-tabletop {
-  font-family: 'Orbitron', 'Segoe UI', Arial, sans-serif;
-  background: linear-gradient(90deg, #29ffc6 0%, #0cebeb 100%);
-  color: #222;
-  font-size: 1.05em;
-  padding: 10px 30px;
-  border-radius: 20px;
-  box-shadow: 0 0 12px #0cebeb33, 0 0 6px #29ffc633;
-  transition: background 0.3s, box-shadow 0.2s, color 0.18s;
-  border: none;
-  margin: 5px;
-}
-button:hover:not(:disabled), .ready-button-tabletop:hover:not(:disabled), .next-round-button-tabletop:hover:not(:disabled), .leave-button-tabletop:hover:not(:disabled) {
-  background: linear-gradient(100deg, #ff512f 0%, #dd2476 100%);
-  color: #fff;
-  box-shadow: 0 0 20px #ff512f88, 0 0 16px #dd247666;
-}
-button:disabled, .ready-button-tabletop:disabled, .next-round-button-tabletop:disabled, .leave-button-tabletop:disabled {
-  background: #7a7a7a;
-  color: #ccc;
-  cursor: not-allowed;
-}
-
-/* 结算弹窗 */
-.results-overlay-tabletop {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.77);
-  z-index: 2000;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+.game-title-xuan {
+  color: #29ffc6;
+  font-family: 'Orbitron', Arial, sans-serif;
+  font-size: 2.1em;
+  font-weight: bold;
+  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 18px #0cebeb99, 0 0 8px #29ffc644;
+}
+.all-player-banner-row {
+  width: 74vw;
+  max-width: 970px;
+  display: flex;
   justify-content: center;
-  animation: overlayFadeIn 0.5s;
+  gap: 28px;
+  margin: 0 auto 14px auto;
 }
-@keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.player-banner-item {
+  min-width: 130px;
+  min-height: 68px;
+  border-radius: 18px;
+  padding: 10px 22px;
+  margin: 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Orbitron', Arial, sans-serif;
+  font-size: 1.08em;
+  box-shadow: 0 0 12px #29ffc655;
+  background: rgba(44,62,80,0.22);
+  transition: border 0.2s, box-shadow 0.2s;
 }
-.results-overlay-tabletop h3 {
-  color: #ffe082;
-  text-shadow: 0 0 16px #29ffc6, 0 0 8px #ff512f99;
-  margin-bottom: 15px;
+.player-banner-name {
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #fff;
+  text-shadow: 0 0 8px #29ffc6cc;
 }
-.results-overlay-tabletop .hand-display-wrapper {
-  margin: 12px 0;
-  box-shadow: 0 0 12px #0cebeb44;
+.player-banner-score {
+  color: #ffd700;
+  font-size: 0.97em;
+  margin-bottom: 3px;
 }
-.results-overlay-tabletop .overlay-button {
-  background: linear-gradient(90deg, #29ffc6 0%, #0cebeb 100%);
-  color: #222;
-  font-size: 1.09em;
-  margin-top: 18px;
-}
+.score-num { font-weight:bold; }
+.player-banner-status.ready { color: #81c784; }
+.player-banner-status.not-ready { color: #ffcc80; }
+.ai-tag { color:#0cebeb; font-size:0.9em; margin-left:2px;}
 
-/* 响应式适配 */
-@media (max-width: 1100px) {
-  .tabletop-background, .tabletop-main {
-    width: 99vw;
-    min-width: 340px;
-    max-width: 100vw;
-    height: 670px;
-  }
-  .player-area {
-    width: 180px;
-    min-height: 90px;
-    max-width: 210px;
-    font-size: 0.98em;
-    padding: 8px 2px;
-  }
-  .player-area-opponent-top, .player-area-self {
-    left: 50%;
-    transform: translate(-50%, 0);
-  }
-  .player-area-opponent-left { left: 0; }
-  .player-area-opponent-right { right: 0; }
+.main-game-content-xuan {
+  margin: 8px auto 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 620px;
+  width: 100%;
+  max-width: 480px;
 }
-@media (max-width: 700px) {
-  .tabletop-background, .tabletop-main {
-    min-width: 100vw;
-    width: 100vw;
-    height: 440px;
-    min-height: 440px;
-  }
-  .player-area {
-    width: 120px;
-    min-height: 60px;
-    max-width: 140px;
-    font-size: 0.85em;
-    padding: 4px 0;
-  }
-  .game-center-area {
-    width: 170px;
-    min-height: 56px;
-    font-size: 0.9em;
-  }
+.main-game-message-xuan {
+  text-align: center;
+  font-size: 1.15em;
+  margin: 16px auto 8px auto;
+  color: #29ffc6;
+  text-shadow: 0 0 6px #0cebeb77;
+}
+.main-self-handarea {
+  width: 100%;
+  margin: 0 auto;
+}
+.main-bottom-actionbar-xuan {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 18px;
+  margin-bottom: 18px;
 }
