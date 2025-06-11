@@ -1,35 +1,20 @@
-.full-banner-top {
+.all-player-banner-row,
+.all-player-banner-row.wide-row {
   width: 100%;
-  margin: 0 auto;
-  padding-top: 16px;
-  padding-bottom: 8px;
-  background: transparent;
+  max-width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  margin: 0 0 18px 0;
+  padding: 0;
 }
-.game-title-xuan {
-  color: #29ffc6;
-  font-family: 'Orbitron', Arial, sans-serif;
-  font-size: 2.1em;
-  font-weight: bold;
-  margin-bottom: 8px;
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 18px #0cebeb99, 0 0 8px #29ffc644;
-}
-.all-player-banner-row {
-  width: 74vw;
-  max-width: 970px;
-  display: flex;
-  justify-content: center;
-  gap: 28px;
-  margin: 0 auto 14px auto;
-}
+
 .player-banner-item {
-  min-width: 130px;
+  flex: 1 1 0%;
+  min-width: 0;
   min-height: 68px;
   border-radius: 18px;
-  padding: 10px 22px;
+  padding: 10px 0;
   margin: 0 8px;
   display: flex;
   flex-direction: column;
@@ -40,6 +25,7 @@
   background: rgba(44,62,80,0.22);
   transition: border 0.2s, box-shadow 0.2s;
 }
+
 .player-banner-name {
   font-weight: bold;
   margin-bottom: 4px;
@@ -52,25 +38,17 @@
   margin-bottom: 3px;
 }
 .score-num { font-weight:bold; }
-.player-banner-status.ready { color: #81c784; }
-.player-banner-status.not-ready { color: #ffcc80; }
 .ai-tag { color:#0cebeb; font-size:0.9em; margin-left:2px;}
 
 .main-game-content-xuan {
-  margin: 8px auto 0 auto;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 620px;
   width: 100%;
-  max-width: 480px;
-}
-.main-game-message-xuan {
-  text-align: center;
-  font-size: 1.15em;
-  margin: 16px auto 8px auto;
-  color: #29ffc6;
-  text-shadow: 0 0 6px #0cebeb77;
+  max-width: 600px;
+  min-height: 620px;
+  padding: 0;
 }
 .main-self-handarea {
   width: 100%;
@@ -83,4 +61,28 @@
   align-items: center;
   margin-top: 18px;
   margin-bottom: 18px;
+}
+.exit-hand-button {
+  background: linear-gradient(90deg, #ff512f 0%, #dd2476 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 12px 32px;
+  font-size: 1.08em;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 0 8px #ff512faa;
+  letter-spacing: 0.05em;
+  margin: 0 8px;
+  transition: background 0.2s, box-shadow 0.15s;
+}
+.exit-hand-button:disabled {
+  background: #aaa;
+  color: #ddd;
+  box-shadow: none;
+}
+@media (max-width: 800px) {
+  .all-player-banner-row, .all-player-banner-row.wide-row { max-width: 99vw; }
+  .player-banner-item { font-size: 0.96em; padding: 7px 0; min-height: 54px;}
+  .main-game-content-xuan { max-width: 99vw; min-height: 420px; }
+  .main-bottom-actionbar-xuan { margin-top: 10px; margin-bottom: 10px; }
 }
