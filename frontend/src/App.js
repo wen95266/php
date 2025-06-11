@@ -126,21 +126,25 @@ function App() {
           </div>
         </header>
         
-        <main className="game-container">
-          <GameBoard 
-            topPile={topPile}
-            middlePile={middlePile}
-            bottomPile={bottomPile}
-            playerCards={playerCards}
-            onDrop={handleDrop}
-            gameStatus={gameStatus}
-          />
-          
-          <AIControl 
-            onAIDivide={handleAIDivide}
-            onReset={resetGame}
-            gameStatus={gameStatus}
-          />
+        <main className="game-container new-horizontal-layout">
+          <div className="main-board-column">
+            <GameBoard 
+              topPile={topPile}
+              middlePile={middlePile}
+              bottomPile={bottomPile}
+              playerCards={playerCards}
+              onDrop={handleDrop}
+              gameStatus={gameStatus}
+            />
+            {/* 横幅显示AIControl */}
+            <div className="ai-banner">
+              <AIControl 
+                onAIDivide={handleAIDivide}
+                onReset={resetGame}
+                gameStatus={gameStatus}
+              />
+            </div>
+          </div>
         </main>
         
         <footer className="app-footer">
