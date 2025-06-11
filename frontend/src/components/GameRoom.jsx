@@ -37,29 +37,36 @@ const GameRoom = ({ initialRoom, onLeaveRoom, setGlobalError, hideRoomInfo }) =>
         setMyPlayer(mine || null);
     }, [room]);
 
+    // 自动准备并自动让AI准备，满足4人直接发牌
+    useEffect(() => {
+        if (!room || !room.players) return;
+        // 如果不是playing且所有人未ready，自动全部ready
+        if (room.status === 'waiting' && room.players.length === 4) {
+            room.players.forEach(player => {
+                if (!player.isReady) {
+                    if (player.id === socket.id) {
+                        socket.emit('playerReady', { roomId: room.id, isReady: true }, () => {});
+                    }
+                }
+            });
+        }
+    }, [room]);
+
     // 游戏提示
     useEffect(() => {
         if (!room || !room.status) return setGameMessage('');
-        if (room.status === 'waiting') setGameMessage('等待所有玩家准备...');
+        if (room.status === 'waiting') setGameMessage('正在发牌...');
         else if (room.status === 'dealing') setGameMessage('发牌中...');
-        else if (room.status === 'playing') setGameMessage('请摆牌，点击牌面选择分道，然后提交！');
+        else if (room.status === 'playing') setGameMessage('请摆牌（拖拽分道），然后点击“确认摆牌”！');
         else if (room.status === 'comparing') setGameMessage('比牌中...');
         else if (room.status === 'finished') setGameMessage('本局已结束，可开始下一局。');
         else setGameMessage('');
     }, [room]);
 
-    // 对手玩家
-    const opponentPlayers = React.useMemo(() => {
-        if (!room?.players || !myPlayer) return [];
-        return room.players.filter(p => p.id !== myPlayer.id);
-    }, [room, myPlayer]);
-
-    // 处理自己准备
-    const handlePlayerReady = () => {
-        socket.emit('playerReady', { roomId: room.id, isReady: !myPlayer.isReady }, (res) => {
-            if (!res.success) setGlobalError(res.message || "准备失败");
-        });
-    };
+    // 全部玩家信息横幅
+    const allPlayers = room.players || [];
+    const myId = myPlayer ? myPlayer.id : '';
+    const aiCount = allPlayers.filter(p => p.isAI).length;
 
     // 提交摆牌
     const handleSubmitHand = useCallback(
@@ -86,96 +93,61 @@ const GameRoom = ({ initialRoom, onLeaveRoom, setGlobalError, hideRoomInfo }) =>
         });
     };
 
-    // 渲染对手区域
-    function renderOpponentArea(player, idx) {
-        if (!player) return null;
-        const handData = room.playerHands?.[player.id];
+    // 顶部横幅渲染所有玩家
+    function renderPlayerBanner(player) {
+        const isSelf = player.id === myId;
         return (
-            <div key={player.id} className={`player-area player-area-opponent-top`}>
-                <div className="player-info-tabletop">
-                    <span className="player-name-display">{player.name}{player.isAI ? <span className="ai-tag">[AI]</span> : ''}</span>
-                    <span className="player-score-display">总分: {player.score ?? 0}</span>
-                    <span className="player-status-display">
-                        {room.status === 'waiting' ? (player.isReady ? <span className="ready">已准备</span> : <span className="not-ready">未准备</span>)
-                        : room.status === 'playing' ? (handData?.submitted ? <span className="submitted">已提交</span> : <span className="pending">未提交</span>)
-                        : null}
-                    </span>
+            <div
+                key={player.id}
+                className="player-banner-item"
+                style={{
+                    background: isSelf ? 'rgba(255,81,47,0.12)' : 'rgba(44,62,80,0.22)',
+                    border: isSelf ? '2.5px solid #ff512f' : '2.5px solid #29ffc6',
+                    boxShadow: isSelf ? '0 0 16px #ff512faa' : '0 0 12px #29ffc6aa'
+                }}
+            >
+                <div className="player-banner-name">
+                    {player.name}{player.isAI ? <span className="ai-tag">[AI]</span> : ' (你)'}
                 </div>
-                <div className="opponent-cards-display">
-                    {room.status === 'playing'
-                        ? <div className="hand-row">{player.cards.map((c, i) => <Card key={i} card={null} facedownProp={true} />)}</div>
-                        : <HandDisplay playerName={player.name} handData={handData} isSelf={false} roomStatus={room.status} />}
+                <div className="player-banner-score">
+                    总分: <span className="score-num">{player.score ?? 0}</span>
                 </div>
+                {room.status === 'waiting' && (
+                    <div className={`player-banner-status ${player.isReady ? 'ready' : 'not-ready'}`}>{player.isReady ? '已准备' : '未准备'}</div>
+                )}
             </div>
         );
     }
 
-    // 渲染自己
-    function renderSelfArea() {
+    // 理牌区
+    function renderSelfHandArea() {
         const handData = room.playerHands?.[myPlayer.id];
         return (
-            <div className="player-area player-area-self">
-                <div className="player-info-tabletop">
-                    <span className="player-name-display">{myPlayer.name} (你)</span>
-                    <span className="player-score-display">总分: {myPlayer.score ?? 0}</span>
-                    <span className="player-status-display">
-                        {room.status === 'waiting'
-                            ? (myPlayer.isReady ? <span className="ready">已准备</span> : <span className="not-ready">未准备</span>)
-                            : room.status === 'playing'
-                                ? (handData?.submitted ? <span className="submitted">已提交</span> : <span className="pending">未提交</span>)
-                                : null}
-                    </span>
-                </div>
+            <div className="main-self-handarea">
                 {room.status === 'playing' && handData && !handData.submitted
                     ? <PlayerHand initialCards={myPlayer.cards} onSubmitHand={handleSubmitHand} roomStatus={room.status} />
                     : <HandDisplay playerName={myPlayer.name} handData={handData} isSelf={true} roomStatus={room.status} />
                 }
-                {room.status === 'waiting' && (
-                    <button onClick={handlePlayerReady} className="ready-button-tabletop">
-                        {myPlayer.isReady ? '取消准备' : '点击准备'}
-                    </button>
-                )}
-                {room.status === 'finished' && myPlayer.id === room.hostId && (
-                    <button onClick={handleRequestNextRound} className="next-round-button-tabletop">开始下一局</button>
-                )}
-                <button onClick={handleLeaveRoomClick} className="leave-button-tabletop" style={{marginTop:10}}>退出游戏</button>
             </div>
         );
     }
 
-    // 牌桌布局
+    // 主要布局
     return (
-        <div className="game-room-container container tabletop-background">
-            {/* 房间信息（可选隐藏） */}
-            {!hideRoomInfo && (
-                <div className="room-header-tabletop">
-                    <h2>房间: {room.id} (状态: <span className={`status-text-${room.status}`}>{room.status}</span>)</h2>
-                    <button onClick={handleLeaveRoomClick} className="leave-button-tabletop">离开房间</button>
+        <div className="game-room-container container tabletop-background" style={{padding:'0', marginTop:'0'}}>
+            {/* 顶部横幅：游戏名+全部玩家 */}
+            <div className="full-banner-top">
+                <div className="game-title-xuan">
+                    十三水单机牌桌
                 </div>
-            )}
-            <div className="tabletop-main">
-                {/* 对手区（3家） */}
-                {opponentPlayers.map((op, i) => renderOpponentArea(op, i))}
-                {/* 桌面中间：消息、按钮 */}
-                <div className="game-center-area">
-                    <div className="game-messages-tabletop">
-                        <p>{gameMessage || " "}</p>
-                    </div>
-                    {/* 提示倒计时 */}
-                    {room.players && room.players.length > 0 && (
-                        <div style={{color: '#0cebeb', fontWeight:'bold', fontSize:'1.15em', margin:'10px 0'}}>
-                            {room.players.map(p => 
-                                (timeLeft?.[p.id] > 0 && <span key={p.id} style={{marginRight:18}}>
-                                    {p.name}{p.isAI ? '[AI]' : ''}：{Math.ceil(timeLeft[p.id]/1000)}秒
-                                </span>)
-                            )}
-                        </div>
-                    )}
+                <div className="all-player-banner-row">
+                    {allPlayers.map(renderPlayerBanner)}
                 </div>
-                {/* 自己 */}
-                {myPlayer && renderSelfArea()}
             </div>
-            {/* 结算弹窗 */}
+            <div className="main-game-content-xuan">
+                <div className="main-game-message-xuan">{gameMessage}</div>
+                {myPlayer && renderSelfHandArea()}
+            </div>
             {room.status === 'finished' && room.playerHands && (
                 <div className="results-overlay-tabletop">
                     <h3>本局最终结果</h3>
@@ -187,6 +159,10 @@ const GameRoom = ({ initialRoom, onLeaveRoom, setGlobalError, hideRoomInfo }) =>
                     )}
                 </div>
             )}
+            {/* 底部按钮区 */}
+            <div className="main-bottom-actionbar-xuan">
+                <button className="exit-hand-button" onClick={handleLeaveRoomClick}>退出游戏</button>
+            </div>
         </div>
     );
 };
