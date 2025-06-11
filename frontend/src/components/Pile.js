@@ -1,26 +1,35 @@
 import React from 'react';
 import Card from './Card';
+import { useDrop } from 'react-dnd';
 
-const Pile = ({ title, cards, onCardClick, pileType, maxCards, gameStatus }) => {
-  // 彻底移除拖拽，全部用点击
-  const pileClass = 'pile';
+const Pile = ({ title, cards, pileType, onDrop, gameStatus }) => {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: 'CARD',
+    drop: (item) => {
+      onDrop && onDrop(pileType, item.card, item.from);
+    },
+    collect: monitor => ({
+      isOver: !!monitor.isOver(),
+    }),
+  }), [pileType, onDrop]);
+
   return (
-    <div className={pileClass}>
+    <div className="pile" ref={drop} style={{ background: isOver ? '#4a5568' : undefined }}>
       <div className="pile-header">
         <h3>{title}</h3>
-        <span>({cards.length}/{maxCards})</span>
+        <span>({cards.length})</span>
       </div>
       <div className="cards-container">
-        {cards.map((card, index) => (
+        {cards.map((card, idx) => (
           <Card
-            key={`${card.id}-${index}`}
+            key={`${card.id}-${idx}`}
             card={card}
+            from={pileType}
             disabled={gameStatus === 'completed'}
-            onClick={() => onCardClick && onCardClick(card)}
           />
         ))}
         {cards.length === 0 && (
-          <div className="empty-pile">点击手牌放到此处</div>
+          <div className="empty-pile">拖拽扑克牌到此处</div>
         )}
       </div>
     </div>
