@@ -22,7 +22,7 @@ const Card = ({ card, disabled }) => {
         alt={`${card.value} of ${card.suit}`}
         className="card-image"
       />
-      <div className="card-value">{card.value.toUpperCase()}</div>
+      {/* 牌面文字已移除 */}
     </div>
   );
 };
