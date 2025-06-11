@@ -11,17 +11,25 @@ const valueMap = {
 };
 const countBy = (arr, key) => arr.reduce((obj, c) => { obj[c[key]] = (obj[c[key]] || 0) + 1; return obj; }, {});
 const isFlush = cards => cards.length > 0 && cards.every(c => c.suit === cards[0].suit);
-const isStraight = cards => {
+const isStraight = (cards) => {
   if (cards.length < 5) return false;
-  const vals = Array.from(new Set(cards.map(c => valueMap[c.value]))).sort((a, b) => a - b);
-  if (vals.length !== cards.length) return false;
-  for (let i = 1; i < vals.length; ++i) if (vals[i] !== vals[i - 1] + 1) return vals.join(',') === "2,3,4,5,14"; // A2345
+  let vals = cards.map(c => valueMap[c.value]).sort((a, b) => a - b);
+  // 处理A2345
+  const isLowAceStraight = vals.join(',') === '2,3,4,5,14';
+  if (isLowAceStraight) return true;
+  for (let i = 1; i < vals.length; ++i) if (vals[i] !== vals[i - 1] + 1) return false;
   return true;
 };
+const isStraightFlush = cards => isFlush(cards) && isStraight(cards);
 const getHandRank = (cards) => {
-  // 返回数字大表示牌型大
   const vcnt = Object.values(countBy(cards, 'value')).sort((a, b) => b - a);
-  if (isFlush(cards) && isStraight(cards)) return 8; // 同花顺
+  if (cards.length < 3) return 0;
+  if (cards.length === 3) {
+    if (vcnt[0] === 3) return 3; // 三条
+    if (vcnt[0] === 2) return 1; // 一对
+    return 0; // 高牌
+  }
+  if (isStraightFlush(cards)) return 8; // 同花顺
   if (vcnt[0] === 4) return 7; // 四条
   if (vcnt[0] === 3 && vcnt[1] === 2) return 6; // 葫芦
   if (isFlush(cards)) return 5;
@@ -33,38 +41,77 @@ const getHandRank = (cards) => {
 };
 const handRankName = ['高牌','一对','两对','三条','顺子','同花','葫芦','四条','同花顺'];
 
-// --- 智能AI分牌（最大尾道，同花顺>四条>葫芦>同花>顺子...） ---
-function smartDivide(cards) {
-  // 枚举尾道5张最大，然后中道5张最大，剩下3张头道
-  function combinations(arr, k, start = 0, path = [], res = []) {
-    if (path.length === k) { res.push([...path]); return res; }
-    for (let i = start; i < arr.length; ++i) {
-      path.push(arr[i]);
-      combinations(arr, k, i + 1, path, res);
-      path.pop();
+// --- 高效AI分牌 ---
+// 剪枝：只取最强的部分组合，大幅提升性能
+function bestDivisionEfficient(cards) {
+  const N = 40; // 尾道剪枝数量
+  const M = 30; // 中道剪枝数量
+
+  function combinations(arr, k) {
+    let res = [];
+    function dfs(start, path) {
+      if (path.length === k) { res.push([...path]); return; }
+      for (let i = start; i < arr.length; ++i) {
+        path.push(arr[i]);
+        dfs(i + 1, path);
+        path.pop();
+      }
     }
+    dfs(0, []);
     return res;
   }
-  let maxRank = -1, best = null;
-  for (const bottomIdxs of combinations([...Array(cards.length).keys()], 5)) {
-    const bottom = bottomIdxs.map(i => cards[i]);
-    const left1 = cards.filter((_, i) => !bottomIdxs.includes(i));
-    for (const middleIdxs of combinations([...Array(left1.length).keys()], 5)) {
-      const middle = middleIdxs.map(i => left1[i]);
-      const top = left1.filter((_, i) => !middleIdxs.includes(i));
-      // 检查道型强度
-      const bottomRank = getHandRank(bottom);
-      const middleRank = getHandRank(middle);
-      const topRank = getHandRank(top);
-      // 十三水要求尾>中>头，但这里只要求最大尾道和最大总rank
-      const totalRank = bottomRank * 100 + middleRank * 10 + topRank;
-      if (totalRank > maxRank) {
-        maxRank = totalRank;
+
+  const idxArr = Array.from({ length: 13 }, (_, i) => i);
+  let bottomComb = combinations(idxArr, 5);
+  bottomComb.sort((a, b) => {
+    const ca = a.map(i => cards[i]);
+    const cb = b.map(i => cards[i]);
+    const ra = getHandRank(ca), rb = getHandRank(cb);
+    if (rb !== ra) return rb - ra;
+    const suma = ca.reduce((s, c) => s + valueMap[c.value], 0);
+    const sumb = cb.reduce((s, c) => s + valueMap[c.value], 0);
+    return sumb - suma;
+  });
+  bottomComb = bottomComb.slice(0, N);
+
+  let maxScore = -Infinity;
+  let best = { top: [], middle: [], bottom: [] };
+
+  for (const bottomIdxs of bottomComb) {
+    const usedB = new Set(bottomIdxs);
+    const left1 = idxArr.filter(i => !usedB.has(i));
+    let middleComb = combinations(left1, 5);
+    middleComb.sort((a, b) => {
+      const ca = a.map(i => cards[i]);
+      const cb = b.map(i => cards[i]);
+      const ra = getHandRank(ca), rb = getHandRank(cb);
+      if (rb !== ra) return rb - ra;
+      const suma = ca.reduce((s, c) => s + valueMap[c.value], 0);
+      const sumb = cb.reduce((s, c) => s + valueMap[c.value], 0);
+      return sumb - suma;
+    });
+    middleComb = middleComb.slice(0, M);
+
+    for (const middleIdxs of middleComb) {
+      const usedM = new Set(middleIdxs);
+      const topIdxs = left1.filter(i => !usedM.has(i));
+      if (topIdxs.length !== 3) continue;
+      const bottom = bottomIdxs.map(i => cards[i]);
+      const middle = middleIdxs.map(i => cards[i]);
+      const top = topIdxs.map(i => cards[i]);
+      const br = getHandRank(bottom), mr = getHandRank(middle), tr = getHandRank(top);
+      if (br < mr || mr < tr) continue;
+      const bval = bottom.reduce((s, c) => s + valueMap[c.value], 0);
+      const mval = middle.reduce((s, c) => s + valueMap[c.value], 0);
+      const tval = top.reduce((s, c) => s + valueMap[c.value], 0);
+      const score = br * 100000 + mr * 10000 + tr * 1000 + bval * 100 + mval * 10 + tval;
+      if (score > maxScore) {
+        maxScore = score;
         best = { top, middle, bottom };
       }
     }
   }
-  return best || { top: [], middle: [], bottom: [] };
+  return best;
 }
 
 // --- 统计 ---
@@ -123,7 +170,7 @@ function App() {
     if (target === 'bottom') setBottomPile(prev => [...prev, card]);
   };
 
-  // 智能AI分牌
+  // 高效AI分牌
   const handleAIDivide = () => {
     setGameStatus('dividing');
     setTimeout(() => {
@@ -133,7 +180,7 @@ function App() {
         alert('牌数量不是13，无法AI分牌');
         return;
       }
-      const result = smartDivide(all);
+      const result = bestDivisionEfficient(all);
       setTopPile(result.top);
       setMiddlePile(result.middle);
       setBottomPile(result.bottom);
@@ -147,7 +194,7 @@ function App() {
           bottom: handRankName[getHandRank(result.bottom)]
         }
       }));
-    }, 1200);
+    }, 400); // 更快
   };
 
   const resetGame = () => initGame();
@@ -209,3 +256,7 @@ function App() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default App;
