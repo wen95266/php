@@ -61,6 +61,26 @@ body {
   gap: 20px;
 }
 
+/* 横向可滑动容器 */
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 150px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
+  scrollbar-color: #3498db #2d3748;
+}
+.cards-container::-webkit-scrollbar {
+  height: 8px;
+  background: #2d3748;
+}
+.cards-container::-webkit-scrollbar-thumb {
+  background: #3498db;
+  border-radius: 4px;
+}
+
 .pile {
   background: var(--bg-medium);
   border-radius: 10px;
@@ -83,13 +103,6 @@ body {
   color: var(--primary);
 }
 
-.cards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  min-height: 150px;
-}
-
 .card {
   width: 80px;
   height: 120px;
@@ -104,6 +117,7 @@ body {
   position: relative;
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex: 0 0 auto;
 }
 
 .card:hover {
@@ -311,14 +325,98 @@ body {
 }
 
 /* 响应式设计 */
+@media (max-width: 900px) {
+  .ai-control {
+    flex-direction: column;
+    gap: 16px;
+    width: 98vw;
+    padding: 18px 8px;
+  }
+  .ai-control > .game-rules {
+    min-width: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .game-container {
     flex-direction: column;
+    gap: 10px;
   }
-  
+
+  .main-board-column {
+    width: 100%;
+    padding: 0;
+  }
+
+  .pile {
+    padding: 8px;
+    margin-bottom: 12px;
+  }
+
+  .pile-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .cards-container {
+    gap: 6px;
+    min-height: 90px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
   .card {
-    width: 60px;
-    height: 90px;
+    width: 48px;
+    height: 72px;
+    padding: 3px;
+  }
+
+  .empty-pile {
+    height: 72px;
+    font-size: 0.9rem;
+  }
+
+  .ai-banner {
+    margin-top: 12px;
+  }
+
+  .ai-control, .game-rules {
+    padding: 8px 2px;
+    border-radius: 8px;
+  }
+
+  .ai-button, .reset-button {
+    padding: 13px 0;
+    font-size: 1.2rem;
+    border-radius: 10px;
+    min-width: 48vw;
+    margin: 0 2vw;
+  }
+
+  .player-info {
+    gap: 8px;
+  }
+
+  .player-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 460px) {
+  .app-header {
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+  .game-container {
+    padding: 0;
+    gap: 0;
+  }
+  .ai-button, .reset-button {
+    min-width: 90vw;
+    margin: 3px 0;
+    font-size: 1.1rem;
   }
 }
 
@@ -359,18 +457,6 @@ body {
 
 .ai-control > .game-rules {
   min-width: 220px;
-}
-
-@media (max-width: 900px) {
-  .ai-control {
-    flex-direction: column;
-    gap: 16px;
-    width: 98vw;
-    padding: 18px 8px;
-  }
-  .ai-control > .game-rules {
-    min-width: 0;
-  }
 }
 
 /* 隐藏批改喊话按钮 */
