@@ -185,11 +185,10 @@ export default function GameRoom() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId, nickname, cards: playCards })
     });
-    // AI自动分牌并出牌
+    // AI自动分牌并出牌（用各自的hand字段！）
     for (const p of players) {
-      if (p.nickname.startsWith("AI-") && !p.cards) {
-        // AI手牌
-        const aiResult = aiSplit(p.cards ? p.cards : originHand);
+      if (p.nickname.startsWith("AI-") && !p.cards && Array.isArray(p.hand) && p.hand.length === 13) {
+        const aiResult = aiSplit(p.hand);
         const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
         await fetch(API_BASE + "play_cards.php", {
           method: "POST",
