@@ -3,7 +3,8 @@ import axios from 'axios';
 import { useParams, useSearchParams } from 'react-router-dom';
 import Card from '../ui/Card';
 
-const API_BASE = "https://wenge.cloudns.ch:10758/api/";
+// 使用你实际后端API地址
+const API_BASE = "https://wenge.cloudns.ch/backend/api/";
 
 export default function GameRoom() {
   const { roomId } = useParams();
