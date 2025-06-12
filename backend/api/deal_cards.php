@@ -3,7 +3,7 @@
 header('Content-Type: application/json');
 $data = json_decode(file_get_contents('php://input'), true);
 $roomId = trim($data['roomId'] ?? '');
-$roomfile = "../data/room_$roomId.json";
+$roomfile = __DIR__ . "/rooms/{$roomId}.json";
 if (!file_exists($roomfile)) { echo json_encode(['success'=>false,'message'=>'房间不存在']); exit; }
 $room = json_decode(file_get_contents($roomfile), true);
 $deck = [];
@@ -16,5 +16,5 @@ foreach($room['players'] as &$p) {
   $p['played'] = false;
 }
 $room['status'] = 'dealt';
-file_put_contents($roomfile, json_encode($room));
+file_put_contents($roomfile, json_encode($room, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
 echo json_encode(['success'=>true]);
