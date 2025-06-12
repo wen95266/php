@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../ui/Card';
-import { aiSplit } from '../ai/shisanshui';
+import { aiSplitVariants } from '../ai/shisanshui';
 
 const API_BASE = "https://wenge.cloudns.ch/backend/api/";
 
@@ -119,9 +119,11 @@ export default function GameRoom() {
   const [showCompare, setShowCompare] = useState(false);
   const [compareData, setCompareData] = useState([]);
 
-  // 新增loading状态
   const [aiLoading, setAiLoading] = useState(false);
   const [playLoading, setPlayLoading] = useState(false);
+
+  // 新增：ai策略索引
+  const [aiIdx, setAiIdx] = useState(0);
 
   useEffect(() => {
     const nick = randomNickname();
@@ -192,7 +194,6 @@ export default function GameRoom() {
     };
     fetchState();
     return () => clearTimeout(timer);
-    // eslint-disable-next-line
   }, [roomId, nickname, originHand.length]);
 
   const onDragStart = (card, from) => {
@@ -240,13 +241,15 @@ export default function GameRoom() {
       if (head.length === 3 && tail.length === 5) return;
       setHand(originHand.filter(c => !head.includes(c) && !tail.includes(c)));
     }
-    // eslint-disable-next-line
   }, [head, tail, hand, main, originHand]);
 
+  // 新实现：AI智能分牌按钮每次点击切换策略
   const handleAISplit = () => {
     if (!originHand.length) return;
     setAiLoading(true);
-    aiSplit(originHand, ({ head, main, tail }) => {
+    const nextIdx = (aiIdx + 1) % aiSplitVariants.length;
+    setAiIdx(nextIdx);
+    aiSplitVariants[nextIdx].fn(originHand, ({ head, main, tail }) => {
       setHead(head || []);
       setMain(main || []);
       setTail(tail || []);
@@ -278,7 +281,7 @@ export default function GameRoom() {
       // AI自动出牌
       for (const p of players) {
         if (p.nickname.startsWith("AI-") && !p.cards && Array.isArray(p.hand) && p.hand.length === 13) {
-          aiSplit(p.hand, aiResult => {
+          aiSplitVariants[aiIdx].fn(p.hand, aiResult => {
             const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
             fetch(API_BASE + "play_cards.php", {
               method: "POST",
@@ -652,7 +655,11 @@ export default function GameRoom() {
           }}
           onClick={handleAISplit}
           disabled={aiLoading || loading}
-        >{aiLoading ? 'AI分牌中...' : 'AI智能分牌'}</button>
+        >
+          {aiLoading
+            ? 'AI分牌中...'
+            : `AI智能分牌（${aiSplitVariants[aiIdx].name}）`}
+        </button>
         <button style={{
           padding: '9px 28px',
           fontSize: 18,
