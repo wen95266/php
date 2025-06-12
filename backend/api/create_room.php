@@ -18,7 +18,7 @@ $nickname = trim($input['nickname']);
 // 生成唯一房间号
 $roomId = strtoupper(substr(md5(uniqid('', true)), 0, 6));
 
-// 假设你用文件存储（建议生产用数据库）
+// 文件路径统一
 $roomDir = __DIR__ . "/rooms";
 if (!is_dir($roomDir)) {
     mkdir($roomDir, 0777, true);
@@ -33,22 +33,26 @@ $roomData = [
         [
             "nickname" => $nickname,
             "isAI" => false,
-            "cards" => null
+            "cards" => null,
+            "played" => false
         ],
         [
             "nickname" => "AI-1",
             "isAI" => true,
-            "cards" => null
+            "cards" => null,
+            "played" => false
         ],
         [
             "nickname" => "AI-2",
             "isAI" => true,
-            "cards" => null
+            "cards" => null,
+            "played" => false
         ],
         [
             "nickname" => "AI-3",
             "isAI" => true,
-            "cards" => null
+            "cards" => null,
+            "played" => false
         ]
     ]
 ];
