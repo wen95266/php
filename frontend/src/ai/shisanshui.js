@@ -118,7 +118,6 @@ function detectFivePairsThree(cards) {
 // ------ 三顺子全排列检测（极大加强） ------
 function detectThreeStraights(cards) {
   const cs = parse(cards);
-  const used = new Set();
   // 全部5张顺子
   const all5s = combinations(cs,5).filter(isStraight);
   // 对每种first顺子，递归找第二、第三
@@ -131,7 +130,6 @@ function detectThreeStraights(cards) {
       const remain2 = filterCards(remain1, second);
       if (remain2.length!==3) continue;
       if (isStraight(remain2)) {
-        // 顺子按尾、中、头道排列
         return {
           pattern: '三顺子',
           split: {
