@@ -222,8 +222,133 @@ export default function GameRoom() {
     }, 500);
   };
 
-  // ... UI渲染部分保持不变（省略，见原文件） ...
-  // 请直接用你原有的UI渲染部分，无需变动
+  return (
+    <div>
+      <h2>十三水牌桌</h2>
+      <div>房间号：{roomId} &nbsp; 我的昵称：{nickname}</div>
+      {loading && <div>加载中...</div>}
+      <div style={{ display: 'flex', marginTop: 12 }}>
+        <div style={{ flex: 1 }}>
+          <div>
+            {players.map((p, idx) => (
+              <span key={p.nickname} style={{
+                marginRight: 30,
+                color: p.nickname === nickname ? '#2380ff' : '#888',
+                fontWeight: p.nickname === nickname ? 'bold' : 'normal'
+              }}>
+                {p.nickname === nickname ? '你' : p.nickname}
+                <br />
+                {p.cards ? '已出牌' : '未出牌'}
+              </span>
+            ))}
+          </div>
+          <div style={{ margin: '24px 0' }}>
+            <div>
+              <b>头道</b>
+              <div
+                style={{ minHeight: 48, border: '1px dashed #ddd', borderRadius: 6, margin: '6px 0', display: 'flex' }}
+                onDragOver={allowDrop}
+                onDrop={() => onDropTo('head')}
+              >
+                {head.map(card => (
+                  <div key={card}
+                    draggable
+                    onDragStart={() => onDragStart(card, 'head')}
+                    onDragEnd={onDragEnd}
+                  >
+                    <Card name={card} border />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <b>中道</b>
+              <div
+                style={{ minHeight: 48, border: '1px dashed #ddd', borderRadius: 6, margin: '6px 0', display: 'flex' }}
+                onDragOver={allowDrop}
+                onDrop={() => onDropTo('main')}
+              >
+                {main.map(card => (
+                  <div key={card}
+                    draggable
+                    onDragStart={() => onDragStart(card, 'main')}
+                    onDragEnd={onDragEnd}
+                  >
+                    <Card name={card} border />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <b>尾道</b>
+              <div
+                style={{ minHeight: 48, border: '1px dashed #ddd', borderRadius: 6, margin: '6px 0', display: 'flex' }}
+                onDragOver={allowDrop}
+                onDrop={() => onDropTo('tail')}
+              >
+                {tail.map(card => (
+                  <div key={card}
+                    draggable
+                    onDragStart={() => onDragStart(card, 'tail')}
+                    onDragEnd={onDragEnd}
+                  >
+                    <Card name={card} border />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <b>手牌</b>
+              <div
+                style={{ minHeight: 48, border: '1px dashed #ddd', borderRadius: 6, margin: '6px 0', display: 'flex' }}
+                onDragOver={allowDrop}
+                onDrop={onDropToHand}
+              >
+                {hand.map(card => (
+                  <div key={card}
+                    draggable
+                    onDragStart={() => onDragStart(card, 'hand')}
+                    onDragEnd={onDragEnd}
+                  >
+                    <Card name={card} border />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div>
+            <button onClick={handlePlay} disabled={played}>出牌</button>
+            <button onClick={handleAISplit} disabled={played}>AI智能分牌</button>
+            <button onClick={() => window.location.reload()}>再来一局</button>
+          </div>
+          {message && <div style={{ color: 'red', marginTop: 10 }}>{message}</div>}
+        </div>
+      </div>
 
-  // 省略的部分见你原文件，或直接将此逻辑块替换进你现有GameRoom.js即可
+      {showCompare && (
+        <div style={{
+          position: 'fixed', left: 0, top: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.08)', zIndex: 99
+        }}>
+          <div style={{
+            background: '#fff', width: 700, margin: '60px auto', borderRadius: 12, padding: 18
+          }}>
+            <h3>比牌结果</h3>
+            <div>
+              {compareData.map(p => (
+                <div key={p.nickname} style={{ marginBottom: 16 }}>
+                  <b>{p.nickname}</b>
+                  <div>头道: {p.headResult.join(', ')}（{p.headScore}分）</div>
+                  <div>中道: {p.mainResult.join(', ')}（{p.mainScore}分）</div>
+                  <div>尾道: {p.tailResult.join(', ')}（{p.tailScore}分）</div>
+                  <div>总分: {p.totalScore}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setShowCompare(false)}>关闭</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
