@@ -1,15 +1,9 @@
 /**
- * 十三水 极致AI分牌算法 - 多线程(WebWorker)+特殊牌型识别+极致评分
- * - 彻底防倒水
- * - 强制优先特殊牌型（清龙、三顺子、三同花、全小、全大、连对等）
- * - WebWorker多线程穷举，不卡主线程
- * - 结构清晰、可扩展
- * 
- * 用法（React）：
- *   import { aiSplit } from '../ai/shisanshui';
- *   aiSplit(cards, result => { setHead(result.head); setMain(result.main); setTail(result.tail); });
+ * 十三水 极致AI分牌算法 - 支持WebWorker异步/同步
+ * 用法：
+ *   aiSplit(cards, ({head,main,tail}) => {...});   // 推荐
+ *   // 或 const {head,main,tail} = aiSplit(cards); // 只在不支持Worker时同步返回
  */
-
 const CARD_ORDER = {
   '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,
   'jack':11,'queen':12,'king':13,'ace':14
@@ -17,7 +11,6 @@ const CARD_ORDER = {
 const SUITS = ['spades','hearts','diamonds','clubs'];
 const RANKS = ['2','3','4','5','6','7','8','9','10','jack','queen','king','ace'];
 
-// --- 工具函数 ---
 function parse(cards) {
   return cards.map(c => {
     const [rank, , suit] = c.split(/_of_|_/);
@@ -45,19 +38,19 @@ function getGroups(cs) {
 }
 function handType(cs) {
   if (cs.length === 5) {
-    if (isStraightFlush(cs)) return 8; // 同花顺
-    if (getGroups(cs)[0][0] === 4) return 7; // 四条
-    if (getGroups(cs)[0][0] === 3 && getGroups(cs)[1][0] === 2) return 6; // 葫芦
+    if (isStraightFlush(cs)) return 8;
+    if (getGroups(cs)[0][0] === 4) return 7;
+    if (getGroups(cs)[0][0] === 3 && getGroups(cs)[1][0] === 2) return 6;
     if (isFlush(cs)) return 5;
     if (isStraight(cs)) return 4;
-    if (getGroups(cs)[0][0] === 3) return 3; // 三条
-    if (getGroups(cs)[0][0] === 2 && getGroups(cs)[1][0] === 2) return 2; // 两对
-    if (getGroups(cs)[0][0] === 2) return 1; // 一对
-    return 0; // 高牌
+    if (getGroups(cs)[0][0] === 3) return 3;
+    if (getGroups(cs)[0][0] === 2 && getGroups(cs)[1][0] === 2) return 2;
+    if (getGroups(cs)[0][0] === 2) return 1;
+    return 0;
   } else if (cs.length === 3) {
-    if (getGroups(cs)[0][0] === 3) return 3; // 三条
-    if (getGroups(cs)[0][0] === 2) return 1; // 一对
-    return 0; // 高牌
+    if (getGroups(cs)[0][0] === 3) return 3;
+    if (getGroups(cs)[0][0] === 2) return 1;
+    return 0;
   }
   return 0;
 }
@@ -77,83 +70,21 @@ function compareHand(a, b) {
   }
   return 0;
 }
-function combinations(arr, n, start = 0, path = [], res = []) {
-  // 避免递归溢出：用循环分批处理
-  if (arr.length < n) return [];
-  let stack = [{start, path:[]}];
-  while (stack.length) {
-    let {start, path} = stack.pop();
-    if (path.length === n) { res.push(path); continue; }
-    for (let i = arr.length - 1; i >= start; i--) {
-      stack.push({start: i+1, path: [arr[i], ...path]});
+function combinations(arr, n) {
+  const res = [];
+  (function f(start, path) {
+    if (path.length === n) { res.push(path); return; }
+    for (let i = start; i < arr.length; i++) {
+      f(i+1, path.concat([arr[i]]));
     }
-  }
+  })(0, []);
   return res;
 }
 function filterCards(origin, picked) {
   const names = new Set(picked.map(c=>c.name));
   return origin.filter(c => !names.has(c.name));
 }
-
-// --- 特殊牌型检测 ---
-function isQingLong(cs) {
-  for (const s of SUITS) {
-    const has = RANKS.map(r => cs.some(c=>c.suit===s&&c.rank===r));
-    if (has.every(x=>x)) return true;
-  }
-  return false;
-}
-function isSanShun(cs) {
-  // 三顺子（暴力分组尝试所有3+5+5,5+5+3,5+3+5等）
-  let vals = cs.map(c=>c.value).sort((a,b)=>a-b);
-  function isSeq(arr) {
-    arr = arr.slice().sort((a,b)=>a-b);
-    // A2345
-    if (arr.length===5 && arr.toString()==='2,3,4,5,14') return true;
-    for(let i=1;i<arr.length;i++) if(arr[i]-arr[i-1]!==1) return false;
-    return true;
-  }
-  for (let x=3;x<=5;x++) for(let y=3;y<=5;y++) {
-    let z=13-x-y;
-    if (z<3||z>5) continue;
-    let combs = combinations(cs,x);
-    for (const arr1 of combs) {
-      let left1 = filterCards(cs, arr1);
-      let combs2 = combinations(left1,y);
-      for (const arr2 of combs2) {
-        let arr3 = filterCards(left1, arr2);
-        if (isSeq(arr1.map(c=>c.value)) && isSeq(arr2.map(c=>c.value)) && isSeq(arr3.map(c=>c.value))) return true;
-      }
-    }
-  }
-  return false;
-}
-function isSanTongHua(cs) {
-  // 三同花
-  let suits = {};
-  for(const c of cs) suits[c.suit]=(suits[c.suit]||0)+1;
-  let nums = Object.values(suits);
-  nums.sort((a,b)=>b-a);
-  return nums[0]>=5&&nums[1]>=5&&nums[2]>=3;
-}
-function isQuanDa(cs) {
-  return cs.every(c=>c.value>=10);
-}
-function isQuanXiao(cs) {
-  return cs.every(c=>c.value<=8);
-}
-function isLianDui(cs) {
-  const groups = getGroups(cs);
-  const pairs = groups.filter(g=>g[0]===2).map(g=>g[1]).sort((a,b)=>a-b);
-  let cnt=1,maxCnt=1;
-  for(let i=1;i<pairs.length;i++) {
-    if (pairs[i]===pairs[i-1]+1) {cnt++;maxCnt=Math.max(maxCnt,cnt);}
-    else cnt=1;
-  }
-  return maxCnt>=3;
-}
-
-// --- 评分体系 ---
+// 评分体系（可继续增强）
 function smartScore(tail, main, head) {
   const tScore = handScore(tail);
   const mScore = handScore(main);
@@ -161,12 +92,6 @@ function smartScore(tail, main, head) {
   let score =
     tScore[0]*1e9 + tScore[1]*1e7 + mScore[0]*1e6 + mScore[1]*1e4 + hScore[0]*1e3 + hScore[1]*10;
   // 特殊牌型加权
-  if (isQingLong([...tail,...main,...head])) score += 1e11;
-  if (isSanShun([...tail,...main,...head])) score += 1e10;
-  if (isSanTongHua([...tail,...main,...head])) score += 5e9;
-  if (isQuanDa([...tail,...main,...head])) score += 2e9;
-  if (isQuanXiao([...tail,...main,...head])) score += 2e9;
-  if (isLianDui([...tail,...main,...head])) score += 1e9;
   if (hScore[0]===3) score += 8e7;
   if (tScore[0]===8) score += 7e8;
   if (tScore[0]===7) score += 3e8;
@@ -177,7 +102,7 @@ function smartScore(tail, main, head) {
   return score;
 }
 
-// --- WebWorker代码字符串 ---
+// --- Worker代码 ---
 const workerCode = `
 ${parse.toString()}
 ${isFlush.toString()}
@@ -189,14 +114,7 @@ ${handScore.toString()}
 ${compareHand.toString()}
 ${combinations.toString()}
 ${filterCards.toString()}
-${isQingLong.toString()}
-${isSanShun.toString()}
-${isSanTongHua.toString()}
-${isQuanDa.toString()}
-${isQuanXiao.toString()}
-${isLianDui.toString()}
 ${smartScore.toString()}
-
 onmessage = function(e) {
   const cards = e.data;
   const cs = parse(cards);
@@ -220,7 +138,7 @@ onmessage = function(e) {
       }
     }
   }
-  // 放宽
+  // 放宽为 >=
   if (!best) {
     let relaxBest = null, relaxScore = -Infinity;
     for(const tail of t5s) {
@@ -255,15 +173,14 @@ onmessage = function(e) {
 };
 `;
 
-// --- 主函数：支持WebWorker多线程分牌 ---
+// --- 主导出函数 ---
 export function aiSplit(cards, cb) {
-  // cb(result) 异步回调
   if (!cards || cards.length!==13) {
     if (cb) cb({head:[],main:[],tail:[]});
     return {head:[],main:[],tail:[]};
   }
-  if (typeof window.Worker !== 'undefined') {
-    // WebWorker分线程不阻塞主界面
+  if (typeof window !== "undefined" && window.Worker) {
+    // 异步worker
     const blob = new Blob([workerCode], {type:'application/javascript'});
     const worker = new Worker(URL.createObjectURL(blob));
     worker.onmessage = function(e) {
@@ -271,10 +188,10 @@ export function aiSplit(cards, cb) {
       worker.terminate();
     };
     worker.postMessage(cards);
-    // 返回空，等待回调
+    // 返回undefined（异步）
     return;
   } else {
-    // 不支持Worker则主线程分牌（极端慢）
+    // fallback同步
     const cs = parse(cards);
     let best = null, bestScore = -Infinity;
     const t5s = combinations(cs, 5);
