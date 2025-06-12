@@ -1,6 +1,9 @@
 <?php
-// 洗牌、发牌
+error_reporting(E_ERROR | E_PARSE);
+ini_set('display_errors', 0);
 header('Content-Type: application/json');
+
+// 洗牌、发牌
 $data = json_decode(file_get_contents('php://input'), true);
 $roomId = trim($data['roomId'] ?? '');
 $roomfile = __DIR__ . "/rooms/{$roomId}.json";
