@@ -1,10 +1,9 @@
 // 十三水 AI理牌模块（极致增强版）
-// 1. 特殊牌型优先（一条龙、清龙、全小、全大、全黑、全红等）
-// 2. 牌型组合可自定义权重
-// 3. 支持策略配置（如头道对子优先、尾道炸弹优先等）
-// 4. 极限性能优化：组合剪枝+优先级分流
+// 1. 特殊牌型优先（一条龙、清一色、全小、全大、全黑、全红）
+// 2. 牌型权重可配置
+// 3. 策略可配置（头道对子优先等）
+// 4. 性能优化（剪枝）
 
-// =================== 配置 ===================
 const CONFIG = {
   SPECIALS: [
     { name: "一条龙", check: isDragon, score: 200000 },
@@ -37,7 +36,6 @@ const CONFIG = {
     maxMainComb: 10
   }
 };
-// ===========================================
 
 const CARD_ORDER = {
   '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,
@@ -45,7 +43,6 @@ const CARD_ORDER = {
 };
 const SUITS = ['spades','hearts','diamonds','clubs'];
 
-// ---------- 牌型辅助 ----------
 function parseCard(card) {
   const [rank, , suit] = card.split(/_of_|_/);
   return { rank, suit, point: CARD_ORDER[rank] };
@@ -55,7 +52,6 @@ function sortByPointDesc(cards) {
   return [...cards].sort((a, b) => CARD_ORDER[parseCard(b).rank] - CARD_ORDER[parseCard(a).rank]);
 }
 function combinations(arr, k, filterFn) {
-  // 可选filterFn剪枝
   let res = [];
   function dfs(path, start) {
     if (path.length === k) {
@@ -87,7 +83,6 @@ function countBySuit(cards) {
 }
 // ---------- 特殊牌型 ----------
 function isDragon(cards) {
-  // A~K不重复
   let points = uniq(cards.map(c=>parseCard(c).point));
   return points.length === 13 && points.includes(14) && points.includes(2) && points.includes(3);
 }
@@ -228,10 +223,9 @@ function checkSpecial(cards) {
 export function aiSplit(cards) {
   if (!Array.isArray(cards) || cards.length !== 13) return { head: [], main: [], tail: [] };
 
-  // 特殊牌型一出直接全押
+  // 特殊牌型优先
   let special = checkSpecial(cards);
   if (special) {
-    // 一条龙/清一色等拆分随便分，保证不倒水
     let sorted = sortByPointDesc(cards);
     return {
       head: sorted.slice(10,13),
@@ -241,13 +235,11 @@ export function aiSplit(cards) {
     };
   }
 
-  // 穷举+剪枝
   let best = null, bestScore = -1;
   let headCandidates = [];
-  // 优先三条、对子、最大高牌
   let { maxHeadComb } = CONFIG.STRATEGY;
   let tried = new Set();
-  for (const t of ['trips','pair','high']) {
+  for (const t of CONFIG.STRATEGY.head) {
     let combs = combinations(cards, 3, path => {
       if (t==='trips') return findTrips(path).length===3;
       if (t==='pair') return findPair(path).length===2;
@@ -266,7 +258,6 @@ export function aiSplit(cards) {
     let left10 = cards.filter(c=>!head.includes(c));
     let mainCandidates = [], { maxMainComb } = CONFIG.STRATEGY;
     let triedMain = new Set();
-    // 按优先级扫各大牌型
     for (const t of CONFIG.STRATEGY.main) {
       let combs = combinations(left10, 5, path => {
         if (t==='straightFlush') return findStraightFlush(path,5).length===5;
@@ -300,7 +291,6 @@ export function aiSplit(cards) {
       }
     }
   }
-  // fallback
   if (!best) {
     let sorted = sortByPointDesc(cards);
     best = {
