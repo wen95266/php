@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../ui/Card';
-import { aiSplit } from '../ai/shisanshui'; // AI分牌模块
+import { aiSplit } from '../ai/shisanshui';
 
 const API_BASE = "https://wenge.cloudns.ch/backend/api/";
 
@@ -12,6 +12,79 @@ const CARD_ORDER = {
   '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,
   'jack':11,'queen':12,'king':13,'ace':14
 };
+
+function parseCard(name) {
+  const [rank, , suit] = name.split(/_of_|_/);
+  return { rank, suit, name, value: CARD_ORDER[rank] };
+}
+function getGroups(cs) {
+  const m = {};
+  for (const c of cs) m[c.value] = (m[c.value]||0) + 1;
+  const arr = Object.entries(m).map(([v,cnt])=>[cnt,parseInt(v)]);
+  arr.sort((a,b)=>b[0]-a[0]||b[1]-a[1]);
+  return arr;
+}
+function isFlush(cs) {
+  return cs.length > 0 && cs.every(c => c.suit === cs[0].suit);
+}
+function isStraight(cs) {
+  let vs = cs.map(c=>c.value).sort((a,b)=>a-b);
+  if (cs.length === 5 && vs.toString() === '2,3,4,5,14') return true;
+  for(let i=1;i<vs.length;i++) if(vs[i]-vs[i-1]!==1) return false;
+  return true;
+}
+function isStraightFlush(cs) {
+  return isFlush(cs) && isStraight(cs);
+}
+function handType(cs) {
+  if (cs.length === 5) {
+    if (isStraightFlush(cs)) return 8;
+    if (getGroups(cs)[0][0] === 4) return 7;
+    if (getGroups(cs)[0][0] === 3 && getGroups(cs)[1][0] === 2) return 6;
+    if (isFlush(cs)) return 5;
+    if (isStraight(cs)) return 4;
+    if (getGroups(cs)[0][0] === 3) return 3;
+    if (getGroups(cs)[0][0] === 2 && getGroups(cs)[1][0] === 2) return 2;
+    if (getGroups(cs)[0][0] === 2) return 1;
+    return 0;
+  } else if (cs.length === 3) {
+    if (getGroups(cs)[0][0] === 3) return 3;
+    if (getGroups(cs)[0][0] === 2) return 1;
+    return 0;
+  }
+  return -1;
+}
+function handTypeName(cs) {
+  if (!cs.length) return "";
+  const type = handType(cs);
+  const groups = getGroups(cs);
+  const getRankName = v => {
+    for (let k in CARD_ORDER) if (CARD_ORDER[k] === v) return k.replace('jack','J').replace('queen','Q').replace('king','K').replace('ace','A').toUpperCase();
+    return v;
+  };
+  if (cs.length === 5) {
+    switch(type) {
+      case 8: return "同花顺";
+      case 7: return "四条 " + getRankName(groups[0][1]);
+      case 6: return "葫芦 " + getRankName(groups[0][1]) + "带" + getRankName(groups[1][1]);
+      case 5: return "同花";
+      case 4: return "顺子";
+      case 3: return "三条 " + getRankName(groups[0][1]);
+      case 2: return "两对 " + getRankName(groups[0][1]) + "和" + getRankName(groups[1][1]);
+      case 1: return "一对 " + getRankName(groups[0][1]);
+      case 0: return "高牌 " + getRankName(groups[0][1]);
+      default: return "";
+    }
+  } else if (cs.length === 3) {
+    switch(type) {
+      case 3: return "三条 " + getRankName(groups[0][1]);
+      case 1: return "一对 " + getRankName(groups[0][1]);
+      case 0: return "高牌 " + getRankName(groups[0][1]);
+      default: return "";
+    }
+  }
+  return "";
+}
 
 function sortCards(cards) {
   const suitOrder = { spades: 0, hearts: 1, clubs: 2, diamonds: 3 };
@@ -26,7 +99,6 @@ function sortCards(cards) {
 }
 
 export default function GameRoom() {
-  // 基础游戏状态
   const [roomId, setRoomId] = useState('');
   const [nickname, setNickname] = useState('');
   const [players, setPlayers] = useState([]);
@@ -36,21 +108,17 @@ export default function GameRoom() {
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // 理牌区状态
   const [head, setHead] = useState([]);
   const [tail, setTail] = useState([]);
   const [main, setMain] = useState([]);
   const [hand, setHand] = useState([]);
 
-  // 拖拽状态
   const [dragCard, setDragCard] = useState(null);
   const [dragFrom, setDragFrom] = useState(null);
 
-  // 比牌弹窗
   const [showCompare, setShowCompare] = useState(false);
   const [compareData, setCompareData] = useState([]);
 
-  // 自动创建房间
   useEffect(() => {
     const nick = randomNickname();
     setNickname(nick);
@@ -69,7 +137,6 @@ export default function GameRoom() {
       });
   }, []);
 
-  // 自动发牌
   useEffect(() => {
     if (roomId) {
       fetch(API_BASE + "deal_cards.php", {
@@ -80,7 +147,6 @@ export default function GameRoom() {
     }
   }, [roomId]);
 
-  // 长轮询获取状态
   useEffect(() => {
     if (!roomId || !nickname) return;
     let timer;
@@ -95,7 +161,6 @@ export default function GameRoom() {
           setLoading(false);
           if (data.success) {
             setPlayers(data.players || []);
-            // 初始化理牌，仅一次
             if (!originHand.length && Array.isArray(data.myHand)) {
               setOriginHand(data.myHand);
               setHand(data.myHand); setHead([]); setTail([]); setMain([]);
@@ -111,7 +176,6 @@ export default function GameRoom() {
     // eslint-disable-next-line
   }, [roomId, nickname, originHand.length]);
 
-  // 拖拽实现
   const onDragStart = (card, from) => {
     setDragCard(card);
     setDragFrom(from);
@@ -122,7 +186,6 @@ export default function GameRoom() {
   };
   const allowDrop = e => e.preventDefault();
 
-  // 拖放到理牌区
   const onDropTo = (toZone) => {
     if (!dragCard) return;
     let fromArr, setFromArr;
@@ -145,7 +208,6 @@ export default function GameRoom() {
   };
   const onDropToHand = () => onDropTo('hand');
 
-  // 自动识别“手牌=5张”转“中道”
   useEffect(() => {
     if (hand.length === 5 && head.length === 3 && tail.length === 5) {
       setMain(hand);
@@ -162,7 +224,6 @@ export default function GameRoom() {
     // eslint-disable-next-line
   }, [head, tail, hand, main, originHand]);
 
-  // AI智能分牌（异步回调！）
   const handleAISplit = () => {
     if (!originHand.length) return;
     aiSplit(originHand, ({ head, main, tail }) => {
@@ -173,20 +234,17 @@ export default function GameRoom() {
     });
   };
 
-  // 出牌并展示比牌界面
   const handlePlay = async () => {
     if (head.length !==3 || main.length !==5 || tail.length !==5) {
       setMessage("请完成理牌（头道3，中道5，尾道5）再出牌");
       return;
     }
     const playCards = [...head, ...main, ...tail];
-    // 玩家出牌
     await fetch(API_BASE + "play_cards.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId, nickname, cards: playCards })
     });
-    // AI自动分牌并出牌（用各自的hand字段！）
     for (const p of players) {
       if (p.nickname.startsWith("AI-") && !p.cards && Array.isArray(p.hand) && p.hand.length === 13) {
         aiSplit(p.hand, aiResult => {
@@ -199,7 +257,6 @@ export default function GameRoom() {
         });
       }
     }
-    // 查询比牌数据
     setTimeout(async () => {
       const resp = await fetch(API_BASE + "compare_cards.php", {
         method: "POST",
@@ -214,7 +271,6 @@ export default function GameRoom() {
     }, 500);
   };
 
-  // ------- UI 渲染 ---------
   const renderPlayersBanner = () => (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 36, marginBottom: 10, padding: '8px 0 0 0',
@@ -282,6 +338,15 @@ export default function GameRoom() {
           </span>
         }
       </div>
+      <div style={{
+        minWidth: 140,
+        color: '#43a047',
+        fontWeight: 600,
+        fontSize: 15,
+        padding: '4px 0 0 24px'
+      }}>
+        {handTypeName(cards.map(parseCard))}
+      </div>
     </div>
   );
 
@@ -347,10 +412,18 @@ export default function GameRoom() {
             </div>
           )}
         </div>
+        <div style={{
+          minWidth: 140,
+          color: '#43a047',
+          fontWeight: 600,
+          fontSize: 15,
+          padding: '4px 0 0 24px'
+        }}>
+          {handTypeName(main.map(parseCard))}
+        </div>
       </div>
   );
 
-  // 田字型堆叠比牌弹窗
   const renderCompareModal = () => (
     showCompare &&
     <div style={{
@@ -373,7 +446,6 @@ export default function GameRoom() {
           {[0,1,2,3].map(idx=>{
             const player = compareData[idx];
             if (!player) return null;
-            // 田字型排布
             return (
               <div key={player.nickname}
                 style={{
@@ -492,7 +564,6 @@ export default function GameRoom() {
       padding: 30,
       minHeight: 520
     }}>
-      {/* 顶部横幅 */}
       <div style={{display:'flex',alignItems:'center',gap:24,marginBottom:4}}>
         <h2 style={{margin:0,fontSize:26,color:'#2e91f7',letterSpacing:1}}>十三水牌桌</h2>
         <span style={{fontSize:15,color:'#888'}}>房间号: <b>{roomId || '正在创建房间...'}</b></span>
@@ -503,7 +574,6 @@ export default function GameRoom() {
       {renderMain()}
       {renderHand()}
       {renderLane("尾道", "tail", tail, 5, onDropTo)}
-
       <div style={{
         display:'flex',alignItems:'center',marginTop:18,gap:24
       }}>
