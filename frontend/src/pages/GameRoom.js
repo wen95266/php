@@ -348,6 +348,10 @@ export default function GameRoom() {
       </div>
   );
 
+  // 比分显示相关工具
+  const resultIcon = (r) => r==="win"?"✔️":(r==="lose"?"❌":"＝");
+  const resultColor = (r) => r==="win"?"#43a047":r==="lose"?"#e53935":"#888";
+
   // 田字型堆叠比牌弹窗
   const renderCompareModal = () => (
     showCompare &&
@@ -371,12 +375,11 @@ export default function GameRoom() {
           {[0,1,2,3].map(idx=>{
             const player = compareData[idx];
             if (!player) return null;
-            // 田字型排布
             return (
               <div key={player.nickname}
                 style={{
                   width: 280,
-                  minHeight: 220,
+                  minHeight: 280,
                   background:"#f8fbfd",
                   borderRadius:10,
                   padding:"16px 18px 18px 18px",
@@ -396,8 +399,36 @@ export default function GameRoom() {
                 }}>
                   {player.nickname}
                 </div>
+                {/* 比分显示 */}
+                <div style={{margin:"10px 0 2px 0",fontSize:15}}>
+                  <b>头道</b> {player.headScore} 分
+                  {player.headResult && player.headResult.map((r,i) =>
+                    <span key={i} style={{marginLeft:4,color:resultColor(r),fontWeight:700}}>{resultIcon(r)}</span>
+                  )}
+                </div>
+                <div style={{margin:"4px 0 2px 0",fontSize:15}}>
+                  <b>中道</b> {player.mainScore} 分
+                  {player.mainResult && player.mainResult.map((r,i) =>
+                    <span key={i} style={{marginLeft:4,color:resultColor(r),fontWeight:700}}>{resultIcon(r)}</span>
+                  )}
+                </div>
+                <div style={{margin:"4px 0 8px 0",fontSize:15}}>
+                  <b>尾道</b> {player.tailScore} 分
+                  {player.tailResult && player.tailResult.map((r,i) =>
+                    <span key={i} style={{marginLeft:4,color:resultColor(r),fontWeight:700}}>{resultIcon(r)}</span>
+                  )}
+                </div>
+                <div style={{
+                  fontSize:19,
+                  marginTop:3,
+                  color:player.totalScore>0?"#43a047":player.totalScore<0?"#e53935":"#888",
+                  fontWeight:700
+                }}>
+                  总分 {player.totalScore} 分
+                </div>
+                {/* 牌型展示 */}
                 {/* 头道 */}
-                <div style={{margin:"3px 0 0 0"}}>
+                <div style={{margin:"9px 0 0 0"}}>
                   <div style={{fontSize:13,color:"#2e91f7",marginBottom:1}}>头道</div>
                   <div style={{
                     position:"relative",
