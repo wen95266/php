@@ -33,7 +33,7 @@ export default function Lobby() {
       } else {
         setError(res.data.message || '加入失败');
       }
-    } catch {
+    } catch (err) {
       setError('网络错误');
     }
   };
