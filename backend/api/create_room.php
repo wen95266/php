@@ -15,22 +15,39 @@ if (!$input || !isset($input['nickname']) || !$input['nickname']) {
 
 $nickname = trim($input['nickname']);
 
-// TODO: 这里你需要连接数据库或文件系统，实现房间创建逻辑
-// 示例：生成一个唯一房间号（实际可用更复杂的逻辑）
+// 生成唯一房间号
 $roomId = strtoupper(substr(md5(uniqid('', true)), 0, 6));
 
-// 假设你用文件存储（仅演示，生产建议用数据库）
-$roomFile = __DIR__ . "/rooms/{$roomId}.json";
-if (!is_dir(__DIR__ . "/rooms")) {
-    mkdir(__DIR__ . "/rooms", 0777, true);
+// 假设你用文件存储（建议生产用数据库）
+$roomDir = __DIR__ . "/rooms";
+if (!is_dir($roomDir)) {
+    mkdir($roomDir, 0777, true);
 }
+$roomFile = "$roomDir/{$roomId}.json";
 
+// 自动添加3个AI玩家
 $roomData = [
     "roomId" => $roomId,
     "createdAt" => date('Y-m-d H:i:s'),
     "players" => [
         [
             "nickname" => $nickname,
+            "isAI" => false,
+            "cards" => null
+        ],
+        [
+            "nickname" => "AI-1",
+            "isAI" => true,
+            "cards" => null
+        ],
+        [
+            "nickname" => "AI-2",
+            "isAI" => true,
+            "cards" => null
+        ],
+        [
+            "nickname" => "AI-3",
+            "isAI" => true,
             "cards" => null
         ]
     ]
