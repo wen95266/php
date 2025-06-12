@@ -2,15 +2,18 @@ import React, { useEffect, useState } from 'react';
 import Card from '../ui/Card';
 
 const AI_NAMES = ['AI-1', 'AI-2', 'AI-3'];
-const SUITS = ['♠', '♥', '♣', '♦'];
-const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-const CARD_ORDER = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
+const SUITS = ['spades', 'hearts', 'clubs', 'diamonds'];
+const RANKS = ['2','3','4','5','6','7','8','9','10','jack','queen','king','ace'];
+const CARD_ORDER = { 
+  '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,
+  'jack':11,'queen':12,'king':13,'ace':14
+};
 
 function createDeck() {
   const deck = [];
-  for (const s of SUITS) {
-    for (const r of RANKS) {
-      deck.push(s + r);
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      deck.push(`${rank}_of_${suit}`);
     }
   }
   return deck;
@@ -28,7 +31,8 @@ function shuffleDeck(deck) {
 function getMaxCard(cards) {
   let max = 0;
   for (const card of cards) {
-    let rank = card.slice(1);
+    // card格式如 "jack_of_clubs"
+    const [rank] = card.split('_of_');
     if (CARD_ORDER[rank] > max) max = CARD_ORDER[rank];
   }
   return max;
