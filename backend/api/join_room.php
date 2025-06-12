@@ -10,8 +10,12 @@ if (!$nickname || !$roomId) { echo json_encode(['success'=>false,'message'=>'参
 $roomfile = __DIR__ . "/rooms/{$roomId}.json";
 if (!file_exists($roomfile)) { echo json_encode(['success'=>false,'message'=>'房间不存在']); exit; }
 $room = json_decode(file_get_contents($roomfile), true);
-foreach($room['players'] as $p) if ($p['nickname']===$nickname) {
-  echo json_encode(['success'=>true]); exit;
+// 昵称唯一性校验
+foreach($room['players'] as $p) {
+  if ($p['nickname'] === $nickname) {
+    echo json_encode(['success'=>false, 'message'=>'该昵称已存在，请换一个昵称']);
+    exit;
+  }
 }
 $room['players'][] = ['nickname'=>$nickname, 'cards'=>[], 'played'=>false, 'isAI'=>false];
 file_put_contents($roomfile, json_encode($room, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
