@@ -1,6 +1,7 @@
 /**
- * 十三水 AI分牌算法（造型优先版）
- * 支持依次切换五对三条、三顺子、三同花、一条龙、清一色、全大、全小、普通分法。
+ * 十三水 AI分牌算法（造型优先·全排列加强版）
+ * 支持五对三条、三顺子、三同花、一条龙、清一色、全大、全小、普通分法。
+ * 三顺子/三同花采用全排列+剪枝，保证发现所有可行分法。
  */
 
 const CARD_ORDER = {
@@ -73,7 +74,8 @@ function headTypeCompare(a, b) {
   return 0;
 }
 
-// 检测五对三条
+// 五对三条检测同前版...
+
 function detectFivePairsThree(cards) {
   const cs = parse(cards);
   const groups = {};
@@ -93,7 +95,6 @@ function detectFivePairsThree(cards) {
   }
   if (pairs.length < 5 || !three) return null;
   const used = new Set();
-  let usedThree = false;
   const out = [];
   for (const arr of pairs) {
     if (out.length < 5) {
@@ -104,7 +105,6 @@ function detectFivePairsThree(cards) {
   for (const c of three) used.add(c.name);
   const rest = cs.filter(c=>!used.has(c.name));
   if (rest.length !== 3) return null;
-  // 尽量让三条上头道
   return {
     pattern: '五对三条',
     split: {
@@ -115,55 +115,66 @@ function detectFivePairsThree(cards) {
   };
 }
 
-// 检测三顺子
+// ------ 三顺子全排列检测（极大加强） ------
 function detectThreeStraights(cards) {
   const cs = parse(cards);
-  const fives = combinations(cs,5).filter(isStraight);
-  for (const first of fives) {
+  const used = new Set();
+  // 全部5张顺子
+  const all5s = combinations(cs,5).filter(isStraight);
+  // 对每种first顺子，递归找第二、第三
+  for (let i=0; i<all5s.length; ++i) {
+    const first = all5s[i];
     const remain1 = filterCards(cs, first);
-    const second = combinations(remain1,5).find(isStraight);
-    if (!second) continue;
-    const remain2 = filterCards(remain1, second);
-    if (remain2.length!==3) continue;
-    if (isStraight(remain2)) {
-      return {
-        pattern: '三顺子',
-        split: {
-          head: remain2.map(c=>c.name),
-          main: second.map(c=>c.name),
-          tail: first.map(c=>c.name)
-        }
-      };
+    const all5s_2 = combinations(remain1,5).filter(isStraight);
+    for (let j=0; j<all5s_2.length; ++j) {
+      const second = all5s_2[j];
+      const remain2 = filterCards(remain1, second);
+      if (remain2.length!==3) continue;
+      if (isStraight(remain2)) {
+        // 顺子按尾、中、头道排列
+        return {
+          pattern: '三顺子',
+          split: {
+            head: remain2.map(c=>c.name),
+            main: second.map(c=>c.name),
+            tail: first.map(c=>c.name)
+          }
+        };
+      }
     }
   }
   return null;
 }
 
-// 检测三同花
+// ------ 三同花全排列检测（极大加强） ------
 function detectThreeFlush(cards) {
   const cs = parse(cards);
-  const fives = combinations(cs,5).filter(isFlush);
-  for (const first of fives) {
+  const all5s = combinations(cs,5).filter(isFlush);
+  for (let i=0; i<all5s.length; ++i) {
+    const first = all5s[i];
     const remain1 = filterCards(cs, first);
-    const second = combinations(remain1,5).find(isFlush);
-    if (!second) continue;
-    const remain2 = filterCards(remain1, second);
-    if (remain2.length!==3) continue;
-    if (isFlush(remain2)) {
-      return {
-        pattern: '三同花',
-        split: {
-          head: remain2.map(c=>c.name),
-          main: second.map(c=>c.name),
-          tail: first.map(c=>c.name)
-        }
-      };
+    const all5s_2 = combinations(remain1,5).filter(isFlush);
+    for (let j=0; j<all5s_2.length; ++j) {
+      const second = all5s_2[j];
+      const remain2 = filterCards(remain1, second);
+      if (remain2.length!==3) continue;
+      if (isFlush(remain2)) {
+        return {
+          pattern: '三同花',
+          split: {
+            head: remain2.map(c=>c.name),
+            main: second.map(c=>c.name),
+            tail: first.map(c=>c.name)
+          }
+        };
+      }
     }
   }
   return null;
 }
 
-// 检测一条龙
+// 其它造型同前版...
+
 function detectDragon(cards) {
   const cs = parse(cards);
   const values = cs.map(c=>c.value).sort((a,b)=>a-b);
@@ -179,8 +190,6 @@ function detectDragon(cards) {
   }
   return null;
 }
-
-// 检测清一色
 function detectFlushAll(cards) {
   const cs = parse(cards);
   if (cs.every(c=>c.suit===cs[0].suit)) {
@@ -195,8 +204,6 @@ function detectFlushAll(cards) {
   }
   return null;
 }
-
-// 检测全大
 function detectAllBig(cards) {
   const cs = parse(cards);
   if (cs.every(c=>c.value>=10)) {
@@ -211,7 +218,6 @@ function detectAllBig(cards) {
   }
   return null;
 }
-// 检测全小
 function detectAllSmall(cards) {
   const cs = parse(cards);
   if (cs.every(c=>c.value<=8)) {
@@ -227,7 +233,7 @@ function detectAllSmall(cards) {
   return null;
 }
 
-// 普通智能分法
+// 普通智能分法同前版...
 function aiSplitStrong(cards) {
   const cs = parse(cards);
   let best = null, bestScore = -Infinity;
