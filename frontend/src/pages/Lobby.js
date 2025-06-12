@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = "https://wenge.cloudns.ch:10758/api/";
+const API_BASE = "https://wenge.cloudns.ch/backend/api/";
 
 export default function Lobby() {
   const [nickname, setNickname] = useState('');
