@@ -1,11 +1,22 @@
 import React from 'react';
 
 export default function Card({ name }) {
+  // name 形如 "♠6", "♥K"
   return (
-    <img
-      src={`/cards/${name}.svg`}
-      alt={name}
-      style={{ width: 60, height: 90, margin: 2, borderRadius: 6, boxShadow: '0 1px 3px #999' }}
-    />
+    <div style={{
+      display: 'inline-block',
+      border: '1px solid #ccc',
+      borderRadius: 8,
+      padding: 8,
+      margin: 4,
+      width: 60,
+      height: 90,
+      fontSize: 24,
+      background: '#fff',
+      textAlign: 'center',
+      verticalAlign: 'top'
+    }}>
+      <div>{name}</div>
+    </div>
   );
 }
