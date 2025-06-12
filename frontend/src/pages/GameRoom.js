@@ -37,10 +37,10 @@ export default function GameRoom() {
   const [loading, setLoading] = useState(true);
 
   // 理牌区状态
-  const [head, setHead] = useState([]);   // 头道 3张
-  const [tail, setTail] = useState([]);   // 尾道 5张
-  const [main, setMain] = useState([]);   // 中道 5张
-  const [hand, setHand] = useState([]);   // 临时手牌>5张时
+  const [head, setHead] = useState([]);
+  const [tail, setTail] = useState([]);
+  const [main, setMain] = useState([]);
+  const [hand, setHand] = useState([]);
 
   // 拖拽状态
   const [dragCard, setDragCard] = useState(null);
@@ -215,8 +215,6 @@ export default function GameRoom() {
   };
 
   // ------- UI 渲染 ---------
-  // ...（下方所有UI渲染和你原版一致，未做删减）...
-
   const renderPlayersBanner = () => (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 36, marginBottom: 10, padding: '8px 0 0 0',
