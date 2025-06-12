@@ -119,9 +119,14 @@ export default function GameRoom() {
   const [showCompare, setShowCompare] = useState(false);
   const [compareData, setCompareData] = useState([]);
 
+  // 新增loading状态
+  const [aiLoading, setAiLoading] = useState(false);
+  const [playLoading, setPlayLoading] = useState(false);
+
   useEffect(() => {
     const nick = randomNickname();
     setNickname(nick);
+    setLoading(true);
     fetch(API_BASE + "create_room.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -129,21 +134,28 @@ export default function GameRoom() {
     })
       .then(res => res.json())
       .then(data => {
+        setLoading(false);
         if (data.success && data.roomId) {
           setRoomId(data.roomId);
         } else {
           setMessage(data.message || "房间创建失败");
         }
+      })
+      .catch(() => {
+        setLoading(false);
+        setMessage("网络错误，房间创建失败");
       });
   }, []);
 
   useEffect(() => {
     if (roomId) {
+      setLoading(true);
       fetch(API_BASE + "deal_cards.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roomId })
-      });
+      })
+      .finally(() => setLoading(false));
     }
   }, [roomId]);
 
@@ -167,8 +179,15 @@ export default function GameRoom() {
             }
             const me = data.players.find(p => p.nickname === nickname);
             setPlayed(me && me.cards ? true : false);
+          } else {
+            setMessage(data.message || "房间状态同步失败");
           }
-          timer = setTimeout(fetchState, 1500);
+          timer = setTimeout(fetchState, 1800);
+        })
+        .catch(() => {
+          setLoading(false);
+          setMessage("网络异常，房间状态同步失败");
+          timer = setTimeout(fetchState, 4000);
         });
     };
     fetchState();
@@ -226,11 +245,13 @@ export default function GameRoom() {
 
   const handleAISplit = () => {
     if (!originHand.length) return;
+    setAiLoading(true);
     aiSplit(originHand, ({ head, main, tail }) => {
       setHead(head || []);
       setMain(main || []);
       setTail(tail || []);
       setHand([]);
+      setAiLoading(false);
     });
   };
 
@@ -239,36 +260,55 @@ export default function GameRoom() {
       setMessage("请完成理牌（头道3，中道5，尾道5）再出牌");
       return;
     }
-    const playCards = [...head, ...main, ...tail];
-    await fetch(API_BASE + "play_cards.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roomId, nickname, cards: playCards })
-    });
-    for (const p of players) {
-      if (p.nickname.startsWith("AI-") && !p.cards && Array.isArray(p.hand) && p.hand.length === 13) {
-        aiSplit(p.hand, aiResult => {
-          const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
-          fetch(API_BASE + "play_cards.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ roomId, nickname: p.nickname, cards: aiCards })
-          });
-        });
-      }
-    }
-    setTimeout(async () => {
-      const resp = await fetch(API_BASE + "compare_cards.php", {
+    setPlayLoading(true);
+    setMessage('');
+    try {
+      const playCards = [...head, ...main, ...tail];
+      const resp = await fetch(API_BASE + "play_cards.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomId })
+        body: JSON.stringify({ roomId, nickname, cards: playCards })
       });
-      const resData = await resp.json();
-      if (resData.success && resData.result) {
-        setCompareData(resData.result);
-        setShowCompare(true);
+      const data = await resp.json();
+      if (!data.success) {
+        setMessage(data.message || "出牌失败");
+        setPlayLoading(false);
+        return;
       }
-    }, 500);
+      // AI自动出牌
+      for (const p of players) {
+        if (p.nickname.startsWith("AI-") && !p.cards && Array.isArray(p.hand) && p.hand.length === 13) {
+          aiSplit(p.hand, aiResult => {
+            const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
+            fetch(API_BASE + "play_cards.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ roomId, nickname: p.nickname, cards: aiCards })
+            });
+          });
+        }
+      }
+      setTimeout(async () => {
+        try {
+          const resp2 = await fetch(API_BASE + "compare_cards.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ roomId })
+          });
+          const resData = await resp2.json();
+          if (resData.success && resData.result) {
+            setCompareData(resData.result);
+            setShowCompare(true);
+          }
+        } catch {
+          setMessage("比牌失败，请重试");
+        }
+        setPlayLoading(false);
+      }, 500);
+    } catch {
+      setMessage("网络错误，出牌失败");
+      setPlayLoading(false);
+    }
   };
 
   const renderPlayersBanner = () => (
@@ -569,6 +609,11 @@ export default function GameRoom() {
         <span style={{fontSize:15,color:'#888'}}>房间号: <b>{roomId || '正在创建房间...'}</b></span>
         <span style={{fontSize:15,color:'#888'}}>我的昵称: <b style={{color:'#2e91f7'}}>{nickname}</b></span>
       </div>
+      {loading && (
+        <div style={{color:'#2e91f7',margin:'12px 0',fontSize:17,fontWeight:600}}>
+          <span>正在同步房间信息...</span>
+        </div>
+      )}
       {renderPlayersBanner()}
       {renderLane("头道", "head", head, 3, onDropTo)}
       {renderMain()}
@@ -582,29 +627,32 @@ export default function GameRoom() {
             padding: '12px 36px',
             fontSize: 21,
             borderRadius: 8,
-            background: '#2e91f7',
+            background: playLoading ? '#ddd' : '#2e91f7',
             color: '#fff',
             border: 'none',
-            cursor: 'pointer',
+            cursor: playLoading ? 'not-allowed' : 'pointer',
             fontWeight: 700,
-            marginRight:8
+            marginRight:8,
+            opacity: playLoading ? 0.65 : 1
           }}
           onClick={handlePlay}
-          disabled={played}
-        >出牌</button>
+          disabled={played || playLoading || loading}
+        >{playLoading ? '出牌中...' : '出牌'}</button>
         <button
           style={{
             padding: '11px 30px',
             fontSize: 17,
             borderRadius: 7,
             border: '1.5px solid #43a047',
-            background: '#fff',
+            background: aiLoading ? '#eee' : '#fff',
             color: '#43a047',
-            cursor: 'pointer',
-            fontWeight: 600
+            cursor: aiLoading ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            opacity: aiLoading ? 0.6 : 1
           }}
           onClick={handleAISplit}
-        >AI智能分牌</button>
+          disabled={aiLoading || loading}
+        >{aiLoading ? 'AI分牌中...' : 'AI智能分牌'}</button>
         <button style={{
           padding: '9px 28px',
           fontSize: 18,
