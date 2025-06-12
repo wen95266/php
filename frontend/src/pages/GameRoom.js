@@ -162,14 +162,15 @@ export default function GameRoom() {
     // eslint-disable-next-line
   }, [head, tail, hand, main, originHand]);
 
-  // AI智能分牌
+  // AI智能分牌（异步回调！）
   const handleAISplit = () => {
     if (!originHand.length) return;
-    const aiResult = aiSplit(originHand);
-    setHead(aiResult.head);
-    setMain(aiResult.main);
-    setTail(aiResult.tail);
-    setHand([]);
+    aiSplit(originHand, ({ head, main, tail }) => {
+      setHead(head || []);
+      setMain(main || []);
+      setTail(tail || []);
+      setHand([]);
+    });
   };
 
   // 出牌并展示比牌界面
@@ -188,12 +189,13 @@ export default function GameRoom() {
     // AI自动分牌并出牌（用各自的hand字段！）
     for (const p of players) {
       if (p.nickname.startsWith("AI-") && !p.cards && Array.isArray(p.hand) && p.hand.length === 13) {
-        const aiResult = aiSplit(p.hand);
-        const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
-        await fetch(API_BASE + "play_cards.php", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roomId, nickname: p.nickname, cards: aiCards })
+        aiSplit(p.hand, aiResult => {
+          const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
+          fetch(API_BASE + "play_cards.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ roomId, nickname: p.nickname, cards: aiCards })
+          });
         });
       }
     }
@@ -213,6 +215,8 @@ export default function GameRoom() {
   };
 
   // ------- UI 渲染 ---------
+  // ...（下方所有UI渲染和你原版一致，未做删减）...
+
   const renderPlayersBanner = () => (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 36, marginBottom: 10, padding: '8px 0 0 0',
