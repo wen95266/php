@@ -1,5 +1,8 @@
 <?php
+error_reporting(E_ERROR | E_PARSE);
+ini_set('display_errors', 0);
 header('Content-Type: application/json');
+
 $data = json_decode(file_get_contents('php://input'), true);
 $nickname = trim($data['nickname'] ?? '');
 $roomId = trim($data['roomId'] ?? '');
