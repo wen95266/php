@@ -25,14 +25,25 @@ function sortCards(cards) {
 }
 
 export default function GameRoom() {
+  // 基础游戏状态
   const [roomId, setRoomId] = useState('');
   const [nickname, setNickname] = useState('');
   const [players, setPlayers] = useState([]);
-  const [myHand, setMyHand] = useState([]);
+  const [originHand, setOriginHand] = useState([]); // 原始牌，用于初始化理牌
   const [played, setPlayed] = useState(false);
   const [message, setMessage] = useState('');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // 理牌区状态
+  const [head, setHead] = useState([]);   // 头道 3张
+  const [middle, setMiddle] = useState([]); // 中道 5张
+  const [tail, setTail] = useState([]);   // 尾道 5张
+  const [hand, setHand] = useState([]);   // 剩余手牌
+
+  // 拖拽状态
+  const [dragCard, setDragCard] = useState(null);
+  const [dragFrom, setDragFrom] = useState(null);
 
   // 自动创建房间
   useEffect(() => {
@@ -79,23 +90,96 @@ export default function GameRoom() {
           setLoading(false);
           if (data.success) {
             setPlayers(data.players || []);
-            setMyHand(data.myHand || []);
+            // 只在未理牌时用原始手牌，理牌后不再重置
+            if (!originHand.length && Array.isArray(data.myHand)) {
+              setOriginHand(data.myHand);
+              setHand(data.myHand); // 初始全部在手牌
+              setHead([]); setMiddle([]); setTail([]);
+            }
             const me = data.players.find(p => p.nickname === nickname);
             setPlayed(me && me.cards ? true : false);
           }
-          timer = setTimeout(fetchState, 1200);
+          timer = setTimeout(fetchState, 1500);
         });
     };
     fetchState();
     return () => clearTimeout(timer);
-  }, [roomId, nickname]);
+    // eslint-disable-next-line
+  }, [roomId, nickname, originHand.length]);
+
+  // 拖拽实现
+  const onDragStart = (card, from) => {
+    setDragCard(card);
+    setDragFrom(from);
+  };
+  const onDragEnd = () => {
+    setDragCard(null);
+    setDragFrom(null);
+  };
+  const allowDrop = e => e.preventDefault();
+
+  // 拖放到理牌区
+  const onDropTo = (toZone) => {
+    if (!dragCard) return;
+    // 拖拽来源
+    let fromArr, setFromArr;
+    if (dragFrom === 'hand') { fromArr = hand; setFromArr = setHand; }
+    else if (dragFrom === 'head') { fromArr = head; setFromArr = setHead; }
+    else if (dragFrom === 'middle') { fromArr = middle; setFromArr = setMiddle; }
+    else if (dragFrom === 'tail') { fromArr = tail; setFromArr = setTail; }
+    else return;
+    // 目标
+    let toArr, setToArr, maxLen;
+    if (toZone === 'head') { toArr = head; setToArr = setHead; maxLen = 3; }
+    else if (toZone === 'middle') { toArr = middle; setToArr = setMiddle; maxLen = 5; }
+    else if (toZone === 'tail') { toArr = tail; setToArr = setTail; maxLen = 5; }
+    else if (toZone === 'hand') { toArr = hand; setToArr = setHand; maxLen = 13; }
+    else return;
+
+    // 不能超区容量，不能重复
+    if (toArr.includes(dragCard)) return onDragEnd();
+    if (toArr.length >= maxLen) return onDragEnd();
+
+    setFromArr(fromArr.filter(c => c !== dragCard));
+    setToArr([...toArr, dragCard]);
+    onDragEnd();
+  };
+  // 支持牌区内拖回手牌
+  const onDropToHand = () => onDropTo('hand');
+
+  // 自动识别中道
+  useEffect(() => {
+    // 理牌区变化后自动做中道判断
+    if (hand.length === 5 && head.length === 3 && tail.length === 5) {
+      setMiddle(hand);
+      setHand([]);
+    }
+    // 如果中道被手动拖空，恢复手牌
+    if (middle.length === 0 && !hand.length && originHand.length) {
+      // 头道尾道没变时
+      if (head.length === 3 && tail.length === 5) return;
+      setHand(originHand.filter(c => !head.includes(c) && !tail.includes(c)));
+    }
+    // 如果头道或尾道被手动拖空，自动把中道还原回手牌
+    if (middle.length && (head.length !== 3 || tail.length !== 5)) {
+      setHand([...middle]);
+      setMiddle([]);
+    }
+    // eslint-disable-next-line
+  }, [head, tail, hand, middle, originHand]);
 
   // 出牌
   const handlePlay = () => {
+    // 需头道3，中道5，尾道5
+    if (head.length !==3 || middle.length !==5 || tail.length !==5) {
+      setMessage("请完成理牌（头道3，中道5，尾道5）再出牌");
+      return;
+    }
+    const playCards = [...head, ...middle, ...tail];
     fetch(API_BASE + "play_cards.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roomId, nickname, cards: myHand })
+      body: JSON.stringify({ roomId, nickname, cards: playCards })
     })
       .then(res => res.json())
       .then(data => {
@@ -126,7 +210,7 @@ export default function GameRoom() {
   // 顶部横幅玩家状态
   const renderPlayersBanner = () => (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 32, marginBottom: 18, padding: '8px 0',
+      display: 'flex', alignItems: 'center', gap: 36, marginBottom: 10, padding: '8px 0 0 0',
       borderBottom: '1.5px solid #eee', background: '#fff', borderRadius: 8, boxShadow:'0 1px 6px #f4f4f8'
     }}>
       {players.map(p => {
@@ -138,17 +222,18 @@ export default function GameRoom() {
             minWidth:90, padding:'0 8px'
           }}>
             <div style={{
-              width: 30, height: 30, borderRadius: '50%', background: isSelf ? '#2e91f7' : '#eee',
+              width: 36, height: 36, borderRadius: '50%', background: isSelf ? '#2e91f7' : '#eee',
               display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',
               fontSize:20, fontWeight:700, marginBottom:2
-            }}>{isSelf ? '你' : p.nickname.substring(0,2)}</div>
+            }}>{isSelf ? '你' : <span style={{fontSize:17}}>AI</span>}</div>
             <div style={{
               fontWeight: isSelf ? 700 : 500, color: isSelf ? '#2e91f7' : '#222', fontSize:15,
+              marginBottom:2
             }}>
               {isSelf ? `${p.nickname}（你）` : p.nickname}
             </div>
             <div style={{
-              marginTop: 2, fontSize: 12,
+              fontSize: 13,
               color: isPlayed ? '#43a047' : '#e53935', fontWeight: 600,
               letterSpacing:1
             }}>
@@ -160,33 +245,102 @@ export default function GameRoom() {
     </div>
   );
 
-  // 头道/尾道静态区
-  const renderLane = (title) => (
-    <div style={{
-      minHeight: 110, background:'#f7faff', border:'1.5px dashed #cde6ff',
-      borderRadius:8, margin: '6px 0 12px 0', display: 'flex', alignItems:'center', paddingLeft:12
-    }}>
+  // 牌区渲染
+  const renderLane = (title, zone, cards, maxLen, dropFn) => (
+    <div
+      style={{
+        minHeight: 110, background:'#f8fbfd', border:'1.5px dashed #cde6ff',
+        borderRadius:8, margin: '6px 0 12px 0', display: 'flex', alignItems:'flex-start', paddingLeft:12
+      }}
+      onDragOver={allowDrop}
+      onDrop={e=>{e.preventDefault();dropFn(zone);}}
+    >
       <span style={{
-        fontWeight: 600, color: '#2e91f7', fontSize:16, marginRight: 16, minWidth:60
+        fontWeight: 600, color: '#2e91f7', fontSize:16, marginRight: 16, minWidth:60,paddingTop:18
       }}>{title}</span>
-      <span style={{color:'#bbb',fontSize:14}}>（拖动手牌到此处理牌，敬请期待...）</span>
+      <div style={{display:'flex',alignItems:'center',gap:10, flex:1, minHeight:92, paddingTop:12}}>
+        {cards.map(card =>
+          <div
+            key={card}
+            draggable
+            onDragStart={()=>onDragStart(card, zone)}
+            onDragEnd={onDragEnd}
+            style={{cursor:'grab'}}
+          >
+            <Card name={card} size={{width:92,height:140}} border={false} />
+          </div>
+        )}
+        {cards.length < maxLen &&
+          <span style={{color:'#bbb',fontSize:14,marginLeft:6}}>
+            （拖动手牌到此处理牌，最多{maxLen}张）
+          </span>
+        }
+      </div>
     </div>
   );
 
-  // 手牌样式更大
-  const cardSize = { width: 92, height: 140 }; // 比原来大
-  const handStyle = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 12,
-    background: '#fff',
-    borderRadius: 9,
-    padding: '18px 0',
-    minHeight: 160,
-    marginBottom: 8,
-    boxShadow: '0 1px 4px #eee',
-    justifyContent: 'flex-start'
-  };
+  // 手牌区
+  const renderHand = () => (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 10,
+        background: '#fff',
+        borderRadius: 10,
+        padding: '18px 0',
+        minHeight: 155,
+        margin: '0 0 6px 0',
+        boxShadow: '0 1px 4px #eee',
+        justifyContent: 'flex-start'
+      }}
+      onDragOver={allowDrop}
+      onDrop={e=>{e.preventDefault();onDropToHand();}}
+    >
+      {sortCards(hand).map(card =>
+        <div
+          key={card}
+          draggable
+          onDragStart={()=>onDragStart(card, 'hand')}
+          onDragEnd={onDragEnd}
+          style={{cursor:'grab'}}
+        >
+          <Card name={card} size={{width:92,height:140}} border={false} />
+        </div>
+      )}
+      {hand.length === 0 &&
+        <span style={{color:'#bbb',fontSize:14,marginLeft:6}}>
+          （已全部理牌）
+        </span>
+      }
+    </div>
+  );
+
+  // 中道区
+  const renderMiddle = () => (
+    middle.length > 0 &&
+      <div style={{
+        minHeight: 110, background:'#f8fbfd', border:'1.5px dashed #cde6ff',
+        borderRadius:8, margin: '6px 0 12px 0', display: 'flex', alignItems:'flex-start', paddingLeft:12
+      }}>
+        <span style={{
+          fontWeight: 600, color: '#2e91f7', fontSize:16, marginRight: 16, minWidth:60,paddingTop:18
+        }}>中道</span>
+        <div style={{display:'flex',alignItems:'center',gap:10, flex:1, minHeight:92, paddingTop:12}}>
+          {middle.map(card =>
+            <div
+              key={card}
+              draggable
+              onDragStart={()=>onDragStart(card, 'middle')}
+              onDragEnd={onDragEnd}
+              style={{cursor:'grab'}}
+            >
+              <Card name={card} size={{width:92,height:140}} border={false} />
+            </div>
+          )}
+        </div>
+      </div>
+  );
 
   return (
     <div style={{
@@ -210,46 +364,53 @@ export default function GameRoom() {
       {renderPlayersBanner()}
 
       {/* 头道理牌区 */}
-      {renderLane("头道")}
+      {renderLane("头道", "head", head, 3, onDropTo)}
+
+      {/* 中道自动显示 */}
+      {renderMiddle()}
 
       {/* 手牌区 */}
       <h3 style={{margin:'6px 0 4px 0',fontSize:17}}>我的手牌</h3>
-      <div style={handStyle}>
-        {!loading ?
-          sortCards(myHand).map(card => (
-            <div key={card} style={{width:cardSize.width, height:cardSize.height}}>
-              <Card name={card} size={cardSize} />
-            </div>
-          ))
-        :
-          <span style={{color:'#888'}}>正在获取手牌...</span>
-        }
-      </div>
-      <div>
+      {renderHand()}
+
+      {/* 尾道理牌区 */}
+      {renderLane("尾道", "tail", tail, 5, onDropTo)}
+
+      {/* 操作区 */}
+      <div style={{
+        display:'flex',alignItems:'center',marginTop:18,gap:24
+      }}>
         {!played && !loading && (
           <button
             style={{
-              padding: '10px 30px',
-              fontSize: 20,
-              borderRadius: 7,
+              padding: '12px 36px',
+              fontSize: 21,
+              borderRadius: 8,
               background: '#2e91f7',
               color: '#fff',
               border: 'none',
-              margin: '16px 0 0 0',
               cursor: 'pointer',
-              fontWeight: 600
+              fontWeight: 700,
+              marginRight:8
             }}
             onClick={handlePlay}
           >出牌</button>
         )}
+        <button style={{
+          padding: '9px 28px',
+          fontSize: 18,
+          borderRadius: 7,
+          border: '1.5px solid #2e91f7',
+          background: '#fff',
+          color: '#2e91f7',
+          cursor: 'pointer',
+          fontWeight: 600
+        }} onClick={() => window.location.reload()}>再来一局</button>
         {played && (
           <span style={{marginLeft:16, color:'#4caf50',fontSize:17,fontWeight:600}}>已出牌</span>
         )}
       </div>
       {message && <div style={{color:'#ff9800',fontWeight:500,margin:'10px 0'}}>{message}</div>}
-
-      {/* 尾道理牌区 */}
-      {renderLane("尾道")}
 
       {result && <div style={{
         margin: '20px 0 8px 0',
@@ -257,19 +418,6 @@ export default function GameRoom() {
         fontWeight: 700,
         fontSize: 20
       }}>{result}</div>}
-
-      <button style={{
-        padding: '8px 26px',
-        fontSize: 17,
-        borderRadius: 7,
-        border: '1.5px solid #2e91f7',
-        background: '#fff',
-        color: '#2e91f7',
-        marginLeft: 10,
-        marginTop: 5,
-        cursor: 'pointer',
-        fontWeight: 600
-      }} onClick={() => window.location.reload()}>再来一局</button>
     </div>
   );
 }
