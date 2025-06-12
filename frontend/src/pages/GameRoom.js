@@ -24,12 +24,22 @@ function sortCards(cards) {
   });
 }
 
+// 简单AI分牌（随机头道3，中道5，尾道5）
+function simpleAISplit(cards) {
+  const shuffled = sortCards([...cards]).sort(()=>Math.random()-0.5);
+  return {
+    head: shuffled.slice(0, 3),
+    main: shuffled.slice(3, 8),
+    tail: shuffled.slice(8, 13)
+  };
+}
+
 export default function GameRoom() {
   // 基础游戏状态
   const [roomId, setRoomId] = useState('');
   const [nickname, setNickname] = useState('');
   const [players, setPlayers] = useState([]);
-  const [originHand, setOriginHand] = useState([]); // 原始牌
+  const [originHand, setOriginHand] = useState([]);
   const [played, setPlayed] = useState(false);
   const [message, setMessage] = useState('');
   const [result, setResult] = useState('');
@@ -44,6 +54,10 @@ export default function GameRoom() {
   // 拖拽状态
   const [dragCard, setDragCard] = useState(null);
   const [dragFrom, setDragFrom] = useState(null);
+
+  // 比牌弹窗
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareData, setCompareData] = useState([]);
 
   // 自动创建房间
   useEffect(() => {
@@ -93,8 +107,7 @@ export default function GameRoom() {
             // 初始化理牌，仅一次
             if (!originHand.length && Array.isArray(data.myHand)) {
               setOriginHand(data.myHand);
-              setHand(data.myHand); // 初始全部在手牌
-              setHead([]); setTail([]); setMain([]);
+              setHand(data.myHand); setHead([]); setTail([]); setMain([]);
             }
             const me = data.players.find(p => p.nickname === nickname);
             setPlayed(me && me.cards ? true : false);
@@ -151,12 +164,10 @@ export default function GameRoom() {
       setMain(hand);
       setHand([]);
     }
-    // 拖回去后，如果main有牌但head或tail数量不对要恢复为手牌
     if (main.length && (head.length !== 3 || tail.length !== 5)) {
       setHand([...main]);
       setMain([]);
     }
-    // 若main被拖空，需要恢复为手牌
     if (main.length === 0 && !hand.length && originHand.length) {
       if (head.length === 3 && tail.length === 5) return;
       setHand(originHand.filter(c => !head.includes(c) && !tail.includes(c)));
@@ -164,45 +175,58 @@ export default function GameRoom() {
     // eslint-disable-next-line
   }, [head, tail, hand, main, originHand]);
 
-  // 出牌
-  const handlePlay = () => {
+  // AI智能分牌
+  const handleAISplit = () => {
+    if (!originHand.length) return;
+    const aiResult = simpleAISplit(originHand);
+    setHead(aiResult.head);
+    setMain(aiResult.main);
+    setTail(aiResult.tail);
+    setHand([]);
+  };
+
+  // 出牌并展示比牌界面
+  const handlePlay = async () => {
     if (head.length !==3 || main.length !==5 || tail.length !==5) {
       setMessage("请完成理牌（头道3，中道5，尾道5）再出牌");
       return;
     }
     const playCards = [...head, ...main, ...tail];
-    fetch(API_BASE + "play_cards.php", {
+    // 玩家出牌
+    await fetch(API_BASE + "play_cards.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId, nickname, cards: playCards })
-    })
-      .then(res => res.json())
-      .then(data => {
-        setMessage(data.message || (data.success ? "已出牌" : "出牌失败"));
-      });
-  };
-
-  // 自动比牌和显示胜者
-  useEffect(() => {
-    if (!roomId || !players.length) return;
-    const allPlayed = players.every(p => p.cards && p.cards.length === 13);
-    if (allPlayed) {
-      fetch(API_BASE + "compare_cards.php", {
+    });
+    // AI自动分牌并出牌
+    for (const p of players) {
+      if (p.nickname.startsWith("AI-") && !p.cards) {
+        // AI手牌
+        const aiResult = simpleAISplit(p.cards ? p.cards : originHand);
+        const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
+        await fetch(API_BASE + "play_cards.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roomId, nickname: p.nickname, cards: aiCards })
+        });
+      }
+    }
+    // 查询比牌数据
+    setTimeout(async () => {
+      const resp = await fetch(API_BASE + "compare_cards.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roomId })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.result) {
-            setResult("所有玩家已出牌，本局结束。");
-          }
-        });
-    }
-  }, [players, roomId]);
+      });
+      const resData = await resp.json();
+      if (resData.success && resData.result) {
+        setCompareData(resData.result);
+        setShowCompare(true);
+      }
+    }, 500); // 等待AI写入
+  };
 
-  // ------- UI 相关 ---------
-  // 顶部横幅玩家状态
+  // ------- UI 渲染 ---------
   const renderPlayersBanner = () => (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 36, marginBottom: 10, padding: '8px 0 0 0',
@@ -240,7 +264,6 @@ export default function GameRoom() {
     </div>
   );
 
-  // 牌区渲染
   const renderLane = (title, zone, cards, maxLen, dropFn) => (
     <div
       style={{
@@ -341,6 +364,63 @@ export default function GameRoom() {
       </div>
   );
 
+  // 比牌弹窗
+  const renderCompareModal = () => (
+    showCompare &&
+    <div style={{
+      position: "fixed", left: 0, top: 0, right: 0, bottom: 0,
+      background: "rgba(0,0,0,0.28)", zIndex: 99, display: "flex", alignItems: "center", justifyContent: "center"
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, boxShadow: "0 2px 22px #888", padding: 30, minWidth: 640
+      }}>
+        <h2 style={{textAlign:"center", margin:0, color:"#2e91f7"}}>比牌结果</h2>
+        <div style={{display:"flex",gap:16,margin:"30px 0 0 0",justifyContent:"center"}}>
+          {compareData.map(player => (
+            <div key={player.nickname} style={{minWidth:150, maxWidth:240, background:"#f8fbfd", borderRadius:10, padding:16}}>
+              <div style={{fontWeight:600, color:player.nickname===nickname?"#2e91f7":"#333",textAlign:"center"}}>
+                {player.nickname}
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:6,justifyContent:"center"}}>
+                {/* 头道 */}
+                <span style={{fontSize:13,color:"#2e91f7",marginRight:4}}>头道</span>
+                {(player.cards||[]).slice(0,3).map(c=>
+                  <Card key={c} name={c} size={{width:60,height:90}} />
+                )}
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5,margin:"6px 0 0 0",justifyContent:"center"}}>
+                {/* 中道 */}
+                <span style={{fontSize:13,color:"#2e91f7",marginRight:4}}>中道</span>
+                {(player.cards||[]).slice(3,8).map(c=>
+                  <Card key={c} name={c} size={{width:60,height:90}} />
+                )}
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5,margin:"6px 0 0 0",justifyContent:"center"}}>
+                {/* 尾道 */}
+                <span style={{fontSize:13,color:"#2e91f7",marginRight:4}}>尾道</span>
+                {(player.cards||[]).slice(8,13).map(c=>
+                  <Card key={c} name={c} size={{width:60,height:90}} />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{textAlign:"center",marginTop:32}}>
+          <button style={{
+            padding: '10px 32px',
+            fontSize: 18,
+            borderRadius: 7,
+            border: '1.5px solid #2e91f7',
+            background: '#fff',
+            color: '#2e91f7',
+            cursor: 'pointer',
+            fontWeight: 600
+          }} onClick={()=>setShowCompare(false)}>关闭</button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{
       fontFamily: 'system-ui, sans-serif',
@@ -358,42 +438,43 @@ export default function GameRoom() {
         <span style={{fontSize:15,color:'#888'}}>房间号: <b>{roomId || '正在创建房间...'}</b></span>
         <span style={{fontSize:15,color:'#888'}}>我的昵称: <b style={{color:'#2e91f7'}}>{nickname}</b></span>
       </div>
-
-      {/* 玩家状态横幅 */}
       {renderPlayersBanner()}
-
-      {/* 头道理牌区 */}
       {renderLane("头道", "head", head, 3, onDropTo)}
-
-      {/* 中道（main）区，仅5张时显示 */}
       {renderMain()}
-
-      {/* 手牌区，大于5张时显示（否则隐藏） */}
       {renderHand()}
-
-      {/* 尾道理牌区 */}
       {renderLane("尾道", "tail", tail, 5, onDropTo)}
 
-      {/* 操作区 */}
       <div style={{
         display:'flex',alignItems:'center',marginTop:18,gap:24
       }}>
-        {!played && !loading && (
-          <button
-            style={{
-              padding: '12px 36px',
-              fontSize: 21,
-              borderRadius: 8,
-              background: '#2e91f7',
-              color: '#fff',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 700,
-              marginRight:8
-            }}
-            onClick={handlePlay}
-          >出牌</button>
-        )}
+        <button
+          style={{
+            padding: '12px 36px',
+            fontSize: 21,
+            borderRadius: 8,
+            background: '#2e91f7',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 700,
+            marginRight:8
+          }}
+          onClick={handlePlay}
+          disabled={played}
+        >出牌</button>
+        <button
+          style={{
+            padding: '11px 30px',
+            fontSize: 17,
+            borderRadius: 7,
+            border: '1.5px solid #43a047',
+            background: '#fff',
+            color: '#43a047',
+            cursor: 'pointer',
+            fontWeight: 600
+          }}
+          onClick={handleAISplit}
+        >AI智能分牌</button>
         <button style={{
           padding: '9px 28px',
           fontSize: 18,
@@ -409,13 +490,13 @@ export default function GameRoom() {
         )}
       </div>
       {message && <div style={{color:'#ff9800',fontWeight:500,margin:'10px 0'}}>{message}</div>}
-
       {result && <div style={{
         margin: '20px 0 8px 0',
         color: '#43a047',
         fontWeight: 700,
         fontSize: 20
       }}>{result}</div>}
+      {renderCompareModal()}
     </div>
   );
 }
