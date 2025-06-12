@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../ui/Card';
-import { aiSplit } from '../ai/shisanshui'; // 引入AI模块
+import { aiSplit } from '../ai/shisanshui'; // AI分牌模块
 
 const API_BASE = "https://wenge.cloudns.ch/backend/api/";
 
@@ -39,7 +39,7 @@ export default function GameRoom() {
   // 理牌区状态
   const [head, setHead] = useState([]);   // 头道 3张
   const [tail, setTail] = useState([]);   // 尾道 5张
-  const [main, setMain] = useState([]);   // 中道/手牌 5张
+  const [main, setMain] = useState([]);   // 中道 5张
   const [hand, setHand] = useState([]);   // 临时手牌>5张时
 
   // 拖拽状态
@@ -125,24 +125,20 @@ export default function GameRoom() {
   // 拖放到理牌区
   const onDropTo = (toZone) => {
     if (!dragCard) return;
-    // 拖拽来源
     let fromArr, setFromArr;
     if (dragFrom === 'hand') { fromArr = hand; setFromArr = setHand; }
     else if (dragFrom === 'head') { fromArr = head; setFromArr = setHead; }
     else if (dragFrom === 'main') { fromArr = main; setFromArr = setMain; }
     else if (dragFrom === 'tail') { fromArr = tail; setFromArr = setTail; }
     else return;
-    // 目标
     let toArr, setToArr, maxLen;
     if (toZone === 'head') { toArr = head; setToArr = setHead; maxLen = 3; }
     else if (toZone === 'main') { toArr = main; setToArr = setMain; maxLen = 5; }
     else if (toZone === 'tail') { toArr = tail; setToArr = setTail; maxLen = 5; }
     else if (toZone === 'hand') { toArr = hand; setToArr = setHand; maxLen = 13; }
     else return;
-
     if (toArr.includes(dragCard)) return onDragEnd();
     if (toArr.length >= maxLen) return onDragEnd();
-
     setFromArr(fromArr.filter(c => c !== dragCard));
     setToArr([...toArr, dragCard]);
     onDragEnd();
@@ -169,7 +165,7 @@ export default function GameRoom() {
   // AI智能分牌
   const handleAISplit = () => {
     if (!originHand.length) return;
-    const aiResult = aiSplit(originHand); // 使用AI模块
+    const aiResult = aiSplit(originHand);
     setHead(aiResult.head);
     setMain(aiResult.main);
     setTail(aiResult.tail);
@@ -193,7 +189,7 @@ export default function GameRoom() {
     for (const p of players) {
       if (p.nickname.startsWith("AI-") && !p.cards) {
         // AI手牌
-        const aiResult = aiSplit(p.cards ? p.cards : originHand); // 用AI模块
+        const aiResult = aiSplit(p.cards ? p.cards : originHand);
         const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
         await fetch(API_BASE + "play_cards.php", {
           method: "POST",
@@ -214,7 +210,7 @@ export default function GameRoom() {
         setCompareData(resData.result);
         setShowCompare(true);
       }
-    }, 500); // 等待AI写入
+    }, 500);
   };
 
   // ------- UI 渲染 ---------
@@ -353,6 +349,7 @@ export default function GameRoom() {
       </div>
   );
 
+  // 田字型堆叠比牌弹窗
   const renderCompareModal = () => (
     showCompare &&
     <div style={{
@@ -360,38 +357,112 @@ export default function GameRoom() {
       background: "rgba(0,0,0,0.28)", zIndex: 99, display: "flex", alignItems: "center", justifyContent: "center"
     }}>
       <div style={{
-        background: "#fff", borderRadius: 16, boxShadow: "0 2px 22px #888", padding: 30, minWidth: 640
+        background: "#fff", borderRadius: 16, boxShadow: "0 2px 22px #888", padding: 30, minWidth: 720, minHeight: 470
       }}>
         <h2 style={{textAlign:"center", margin:0, color:"#2e91f7"}}>比牌结果</h2>
-        <div style={{display:"flex",gap:16,margin:"30px 0 0 0",justifyContent:"center"}}>
-          {compareData.map(player => (
-            <div key={player.nickname} style={{minWidth:150, maxWidth:240, background:"#f8fbfd", borderRadius:10, padding:16}}>
-              <div style={{fontWeight:600, color:player.nickname===nickname?"#2e91f7":"#333",textAlign:"center"}}>
-                {player.nickname}
-              </div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:6,justifyContent:"center"}}>
+        <div style={{
+          display:"flex",
+          flexWrap:"wrap",
+          gap:"32px 36px",
+          margin:"30px 0 0 0",
+          justifyContent:"center",
+          alignItems:"center",
+          width:"100%"
+        }}>
+          {[0,1,2,3].map(idx=>{
+            const player = compareData[idx];
+            if (!player) return null;
+            // 田字型排布
+            return (
+              <div key={player.nickname}
+                style={{
+                  width: 280,
+                  minHeight: 220,
+                  background:"#f8fbfd",
+                  borderRadius:10,
+                  padding:"16px 18px 18px 18px",
+                  boxSizing:"border-box",
+                  display:"flex",
+                  flexDirection:"column",
+                  alignItems:"center",
+                  justifyContent:"center",
+                  boxShadow: "0 2px 8px #f0f4ff"
+                }}>
+                <div style={{
+                  fontWeight:600,
+                  color:player.nickname===nickname?"#2e91f7":"#333",
+                  textAlign:"center",
+                  marginBottom:10,
+                  fontSize:18
+                }}>
+                  {player.nickname}
+                </div>
                 {/* 头道 */}
-                <span style={{fontSize:13,color:"#2e91f7",marginRight:4}}>头道</span>
-                {(player.cards||[]).slice(0,3).map(c=>
-                  <Card key={c} name={c} size={{width:60,height:90}} />
-                )}
-              </div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:5,margin:"6px 0 0 0",justifyContent:"center"}}>
+                <div style={{margin:"3px 0 0 0"}}>
+                  <div style={{fontSize:13,color:"#2e91f7",marginBottom:1}}>头道</div>
+                  <div style={{
+                    position:"relative",
+                    height: 95,
+                    width: 130
+                  }}>
+                    {(player.cards||[]).slice(0,3).map((c,i)=>
+                      <div key={c} style={{
+                        position:"absolute",
+                        left: `${i*32}px`,
+                        top: `${Math.abs(i-1)*8}px`,
+                        zIndex: i,
+                        boxShadow: "0 1px 3px #bbb"
+                      }}>
+                        <Card name={c} size={{width:60,height:90}} />
+                      </div>
+                    )}
+                  </div>
+                </div>
                 {/* 中道 */}
-                <span style={{fontSize:13,color:"#2e91f7",marginRight:4}}>中道</span>
-                {(player.cards||[]).slice(3,8).map(c=>
-                  <Card key={c} name={c} size={{width:60,height:90}} />
-                )}
-              </div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:5,margin:"6px 0 0 0",justifyContent:"center"}}>
+                <div style={{margin:"5px 0 0 0"}}>
+                  <div style={{fontSize:13,color:"#2e91f7",marginBottom:1}}>中道</div>
+                  <div style={{
+                    position:"relative",
+                    height: 95,
+                    width: 210
+                  }}>
+                    {(player.cards||[]).slice(3,8).map((c,i)=>
+                      <div key={c} style={{
+                        position:"absolute",
+                        left: `${i*32}px`,
+                        top: `${Math.abs(i-2)*7}px`,
+                        zIndex: i,
+                        boxShadow: "0 1px 3px #bbb"
+                      }}>
+                        <Card name={c} size={{width:60,height:90}} />
+                      </div>
+                    )}
+                  </div>
+                </div>
                 {/* 尾道 */}
-                <span style={{fontSize:13,color:"#2e91f7",marginRight:4}}>尾道</span>
-                {(player.cards||[]).slice(8,13).map(c=>
-                  <Card key={c} name={c} size={{width:60,height:90}} />
-                )}
+                <div style={{margin:"5px 0 0 0"}}>
+                  <div style={{fontSize:13,color:"#2e91f7",marginBottom:1}}>尾道</div>
+                  <div style={{
+                    position:"relative",
+                    height: 95,
+                    width: 210
+                  }}>
+                    {(player.cards||[]).slice(8,13).map((c,i)=>
+                      <div key={c} style={{
+                        position:"absolute",
+                        left: `${i*32}px`,
+                        top: `${Math.abs(i-2)*7}px`,
+                        zIndex: i,
+                        boxShadow: "0 1px 3px #bbb"
+                      }}>
+                        <Card name={c} size={{width:60,height:90}} />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div style={{textAlign:"center",marginTop:32}}>
           <button style={{
