@@ -240,7 +240,7 @@ export default function GameRoom() {
     }
   }, [head, tail, hand, main, originHand]);
 
-  // AI智能分牌：依次切换所有可行造型
+  // AI智能分牌：依次切换所有可行造型并允许手动拖拽
   const handleAISplit = () => {
     if (!originHand.length) return;
     setAiLoading(true);
@@ -258,10 +258,16 @@ export default function GameRoom() {
       setPatternIdx(idx);
     }
     const split = newPatterns[idx].split;
+
+    // AI分牌后，允许继续拖拽调整
+    const allAIcards = [...split.head, ...split.main, ...split.tail];
+    const handRest = originHand.filter(c =>
+      !allAIcards.includes(c)
+    );
     setHead(split.head);
     setMain(split.main);
     setTail(split.tail);
-    setHand([]);
+    setHand(handRest);
     setAiLoading(false);
   };
 
@@ -321,6 +327,7 @@ export default function GameRoom() {
     }
   };
 
+  // --- UI 渲染函数 ---
   const renderPlayersBanner = () => (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 36, marginBottom: 10, padding: '8px 0 0 0',
@@ -603,6 +610,7 @@ export default function GameRoom() {
     </div>
   );
 
+  // --- 页面结构 ---
   return (
     <div style={{
       fontFamily: 'system-ui, sans-serif',
