@@ -10,6 +10,25 @@ try {
       'jack'=>11,'queen'=>12,'king'=>13,'ace'=>14
     ];
 
+    // 花色顺序: 黑桃>红桃>梅花>方块
+    function suit_order($suit) {
+        switch ($suit) {
+            case 'spades': return 4;
+            case 'hearts': return 3;
+            case 'clubs': return 2;
+            case 'diamonds': return 1;
+        }
+        return 0;
+    }
+    function get_max_card($cs) {
+        $max = $cs[0];
+        foreach ($cs as $c) {
+            if ($c['value'] > $max['value']) $max = $c;
+            else if ($c['value'] === $max['value'] && suit_order($c['suit']) > suit_order($max['suit'])) $max = $c;
+        }
+        return $max;
+    }
+
     // 解析牌名为数组 ['rank'=>, 'suit'=>, 'name'=>, 'value'=>]
     function parse_cards($cards) {
       $res = [];
@@ -95,6 +114,20 @@ try {
         $vb = $sb[$i] ?? 0;
         if ($va > $vb) return 1;
         if ($va < $vb) return -1;
+      }
+      // 新增：同花型/同花顺/顺子时，最大牌点数相同再比最大牌花色
+      $typeA = hand_type($a);
+      $typeB = hand_type($b);
+      if (in_array($typeA, [5,8,4]) && $typeA === $typeB) {
+        $maxA = get_max_card($a);
+        $maxB = get_max_card($b);
+        if ($maxA['value'] > $maxB['value']) return 1;
+        if ($maxA['value'] < $maxB['value']) return -1;
+        // 点数相同时，比花色
+        $orderA = suit_order($maxA['suit']);
+        $orderB = suit_order($maxB['suit']);
+        if ($orderA > $orderB) return 1;
+        if ($orderA < $orderB) return -1;
       }
       return 0;
     }
