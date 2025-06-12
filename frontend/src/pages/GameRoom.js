@@ -116,111 +116,111 @@ export default function GameRoom() {
         .then(res => res.json())
         .then(data => {
           if (data.success && data.result) {
-            // 这里可做详细结果展示
             setResult("所有玩家已出牌，本局结束。");
           }
         });
     }
   }, [players, roomId]);
 
-  // 界面样式
-  const styles = {
-    container: {
-      fontFamily: 'system-ui, sans-serif',
-      maxWidth: 820,
-      margin: '30px auto 0 auto',
-      background: '#f9f9fa',
-      borderRadius: 12,
-      boxShadow: '0 2px 18px #ddd',
-      padding: 25,
-      minHeight: 460
-    },
-    hand: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: 8,
-      background: '#fff',
-      borderRadius: 7,
-      padding: '12px 0',
-      minHeight: 120,
-      marginBottom: 10,
-      boxShadow: '0 1px 4px #eee'
-    },
-    btn: {
-      padding: '8px 24px',
-      fontSize: 18,
-      borderRadius: 6,
-      background: '#2e91f7',
-      color: '#fff',
-      border: 'none',
-      margin: '12px 0 0 0',
-      cursor: 'pointer',
-      fontWeight: 600
-    },
-    btnDisabled: {
-      background: '#b2b6bb',
-      color: '#fff',
-      cursor: 'not-allowed'
-    },
-    playerList: {
-      margin: '10px 0 10px 0',
-      padding: 0,
-      listStyle: 'none'
-    },
-    playerLi: (isSelf, isPlayed) => ({
-      padding: '5px 0',
-      fontWeight: isSelf ? 700 : 400,
-      color: isSelf ? '#2e91f7' : (isPlayed ? '#4caf50' : '#333'),
-      background: isSelf ? '#eaf2ff' : 'transparent',
-      borderRadius: 5,
-      display: 'flex',
-      alignItems: 'center'
-    }),
-    dot: color => ({
-      display: 'inline-block',
-      width: 10,
-      height: 10,
-      borderRadius: '50%',
-      background: color,
-      marginRight: 7,
-      marginLeft: 2
-    }),
-    msg: {
-      color: '#ff9800',
-      fontWeight: 500,
-      margin: '10px 0'
-    },
-    result: {
-      margin: '18px 0 5px 0',
-      color: '#43a047',
-      fontWeight: 700,
-      fontSize: 18
-    },
-    again: {
-      padding: '7px 18px',
-      fontSize: 15,
-      borderRadius: 5,
-      border: '1px solid #2e91f7',
-      background: '#fff',
-      color: '#2e91f7',
-      marginLeft: 6,
-      cursor: 'pointer',
-      fontWeight: 600
-    }
+  // ------- UI 相关 ---------
+  // 顶部横幅玩家状态
+  const renderPlayersBanner = () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 32, marginBottom: 18, padding: '8px 0',
+      borderBottom: '1.5px solid #eee', background: '#fff', borderRadius: 8, boxShadow:'0 1px 6px #f4f4f8'
+    }}>
+      {players.map(p => {
+        const isSelf = p.nickname === nickname;
+        const isPlayed = p.cards && p.cards.length === 13;
+        return (
+          <div key={p.nickname} style={{
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+            minWidth:90, padding:'0 8px'
+          }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: '50%', background: isSelf ? '#2e91f7' : '#eee',
+              display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',
+              fontSize:20, fontWeight:700, marginBottom:2
+            }}>{isSelf ? '你' : p.nickname.substring(0,2)}</div>
+            <div style={{
+              fontWeight: isSelf ? 700 : 500, color: isSelf ? '#2e91f7' : '#222', fontSize:15,
+            }}>
+              {isSelf ? `${p.nickname}（你）` : p.nickname}
+            </div>
+            <div style={{
+              marginTop: 2, fontSize: 12,
+              color: isPlayed ? '#43a047' : '#e53935', fontWeight: 600,
+              letterSpacing:1
+            }}>
+              {isPlayed ? '已出牌' : '未出牌'}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // 头道/尾道静态区
+  const renderLane = (title) => (
+    <div style={{
+      minHeight: 110, background:'#f7faff', border:'1.5px dashed #cde6ff',
+      borderRadius:8, margin: '6px 0 12px 0', display: 'flex', alignItems:'center', paddingLeft:12
+    }}>
+      <span style={{
+        fontWeight: 600, color: '#2e91f7', fontSize:16, marginRight: 16, minWidth:60
+      }}>{title}</span>
+      <span style={{color:'#bbb',fontSize:14}}>（拖动手牌到此处理牌，敬请期待...）</span>
+    </div>
+  );
+
+  // 手牌样式更大
+  const cardSize = { width: 92, height: 140 }; // 比原来大
+  const handStyle = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 12,
+    background: '#fff',
+    borderRadius: 9,
+    padding: '18px 0',
+    minHeight: 160,
+    marginBottom: 8,
+    boxShadow: '0 1px 4px #eee',
+    justifyContent: 'flex-start'
   };
 
   return (
-    <div style={styles.container}>
-      <div style={{display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
-        <h2 style={{margin:0,fontSize:24,color:'#2e91f7',letterSpacing:1}}>十三水牌桌</h2>
-        <span style={{fontSize:14,color:'#888'}}>房间号: <b>{roomId || '正在创建房间...'}</b></span>
-        <span style={{fontSize:14,color:'#888'}}>我的昵称: <b style={{color:'#2e91f7'}}>{nickname}</b></span>
+    <div style={{
+      fontFamily: 'system-ui, sans-serif',
+      maxWidth: 990,
+      margin: '30px auto 0 auto',
+      background: '#f9f9fa',
+      borderRadius: 16,
+      boxShadow: '0 2px 22px #e8eaf0',
+      padding: 30,
+      minHeight: 520
+    }}>
+      {/* 顶部横幅 */}
+      <div style={{display:'flex',alignItems:'center',gap:24,marginBottom:4}}>
+        <h2 style={{margin:0,fontSize:26,color:'#2e91f7',letterSpacing:1}}>十三水牌桌</h2>
+        <span style={{fontSize:15,color:'#888'}}>房间号: <b>{roomId || '正在创建房间...'}</b></span>
+        <span style={{fontSize:15,color:'#888'}}>我的昵称: <b style={{color:'#2e91f7'}}>{nickname}</b></span>
       </div>
 
-      <h3 style={{margin:'18px 0 6px 0',fontSize:18}}>我的手牌</h3>
-      <div style={styles.hand}>
+      {/* 玩家状态横幅 */}
+      {renderPlayersBanner()}
+
+      {/* 头道理牌区 */}
+      {renderLane("头道")}
+
+      {/* 手牌区 */}
+      <h3 style={{margin:'6px 0 4px 0',fontSize:17}}>我的手牌</h3>
+      <div style={handStyle}>
         {!loading ?
-          sortCards(myHand).map(card => <Card key={card} name={card} />)
+          sortCards(myHand).map(card => (
+            <div key={card} style={{width:cardSize.width, height:cardSize.height}}>
+              <Card name={card} size={cardSize} />
+            </div>
+          ))
         :
           <span style={{color:'#888'}}>正在获取手牌...</span>
         }
@@ -228,36 +228,48 @@ export default function GameRoom() {
       <div>
         {!played && !loading && (
           <button
-            style={styles.btn}
+            style={{
+              padding: '10px 30px',
+              fontSize: 20,
+              borderRadius: 7,
+              background: '#2e91f7',
+              color: '#fff',
+              border: 'none',
+              margin: '16px 0 0 0',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
             onClick={handlePlay}
           >出牌</button>
         )}
         {played && (
-          <span style={{marginLeft:12, color:'#4caf50',fontSize:16,fontWeight:600}}>已出牌</span>
+          <span style={{marginLeft:16, color:'#4caf50',fontSize:17,fontWeight:600}}>已出牌</span>
         )}
       </div>
-      {message && <div style={styles.msg}>{message}</div>}
+      {message && <div style={{color:'#ff9800',fontWeight:500,margin:'10px 0'}}>{message}</div>}
 
-      <h3 style={{margin:'20px 0 8px 0',fontSize:17}}>玩家状态</h3>
-      <ul style={styles.playerList}>
-        {players.map(p => {
-          const isSelf = p.nickname === nickname;
-          const isPlayed = p.cards && p.cards.length === 13;
-          return (
-            <li key={p.nickname} style={styles.playerLi(isSelf, isPlayed)}>
-              <span style={styles.dot(isPlayed ? '#4caf50' : '#f44336')} />
-              <span>{p.nickname}</span>
-              <span style={{marginLeft:8,fontSize:13}}>
-                {isSelf ? '（你）' : ''}
-                {isPlayed ? <span style={{color:'#4caf50'}}>已出牌</span> : <span style={{color:'#f44336'}}>未出牌</span>}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-      {result && <div style={styles.result}>{result}</div>}
+      {/* 尾道理牌区 */}
+      {renderLane("尾道")}
 
-      <button style={styles.again} onClick={() => window.location.reload()}>再来一局</button>
+      {result && <div style={{
+        margin: '20px 0 8px 0',
+        color: '#43a047',
+        fontWeight: 700,
+        fontSize: 20
+      }}>{result}</div>}
+
+      <button style={{
+        padding: '8px 26px',
+        fontSize: 17,
+        borderRadius: 7,
+        border: '1.5px solid #2e91f7',
+        background: '#fff',
+        color: '#2e91f7',
+        marginLeft: 10,
+        marginTop: 5,
+        cursor: 'pointer',
+        fontWeight: 600
+      }} onClick={() => window.location.reload()}>再来一局</button>
     </div>
   );
 }
