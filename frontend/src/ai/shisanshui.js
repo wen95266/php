@@ -1,41 +1,8 @@
-// 十三水 AI理牌模块（极致增强版）
-// 1. 特殊牌型优先（一条龙、清一色、全小、全大、全黑、全红）
-// 2. 牌型权重可配置
-// 3. 策略可配置（头道对子优先等）
-// 4. 性能优化（剪枝）
-
-const CONFIG = {
-  SPECIALS: [
-    { name: "一条龙", check: isDragon, score: 200000 },
-    { name: "清一色", check: isFlushAll, score: 180000 },
-    { name: "全大", check: isAllBig, score: 170000 },
-    { name: "全小", check: isAllSmall, score: 170000 },
-    { name: "全黑", check: isAllBlack, score: 160000 },
-    { name: "全红", check: isAllRed, score: 160000 },
-  ],
-  HAND_SCORE: {
-    straightFlush: 90000,
-    bomb: 80000,
-    fullHouse: 70000,
-    flush: 60000,
-    straight: 50000,
-    trips: 40000,
-    twoPair: 30000,
-    pair: 20000,
-    high: 10000,
-    // 头道
-    headTrips: 4000,
-    headPair: 2000,
-    headHigh: 1000,
-  },
-  STRATEGY: {
-    head: ['trips', 'pair', 'high'],
-    main: ['straightFlush', 'bomb', 'fullHouse', 'flush', 'straight', 'trips', 'twoPair', 'pair', 'high'],
-    tail: ['straightFlush', 'bomb', 'fullHouse', 'flush', 'straight', 'trips', 'twoPair', 'pair', 'high'],
-    maxHeadComb: 20,
-    maxMainComb: 10
-  }
-};
+// 十三水AI分牌 - 智能全局最优升级版
+// 1. 针对每道（头、中、尾）全局最优分配炸弹、葫芦、顺子、同花、三条、两对、对子、高牌
+// 2. 剪枝加速：只枚举合理头道(优先三条/对子/高牌)、中道/尾道(优先大牌型)，保证不倒水
+// 3. 支持“特殊牌型”优先（如清一色、一条龙等，易扩展）
+// 4. 全排列评分，全局最大化（性能与质量兼顾）
 
 const CARD_ORDER = {
   '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,
@@ -43,6 +10,7 @@ const CARD_ORDER = {
 };
 const SUITS = ['spades','hearts','diamonds','clubs'];
 
+// ----------- 基本工具 -----------
 function parseCard(card) {
   const [rank, , suit] = card.split(/_of_|_/);
   return { rank, suit, point: CARD_ORDER[rank] };
@@ -81,28 +49,8 @@ function countBySuit(cards) {
   }
   return suits;
 }
-// ---------- 特殊牌型 ----------
-function isDragon(cards) {
-  let points = uniq(cards.map(c=>parseCard(c).point));
-  return points.length === 13 && points.includes(14) && points.includes(2) && points.includes(3);
-}
-function isFlushAll(cards) {
-  let suit = parseCard(cards[0]).suit;
-  return cards.every(c=>parseCard(c).suit===suit);
-}
-function isAllBig(cards) {
-  return cards.every(c=>CARD_ORDER[parseCard(c).rank]>=8);
-}
-function isAllSmall(cards) {
-  return cards.every(c=>CARD_ORDER[parseCard(c).rank]<=8);
-}
-function isAllBlack(cards) {
-  return cards.every(c=>['spades','clubs'].includes(parseCard(c).suit));
-}
-function isAllRed(cards) {
-  return cards.every(c=>['hearts','diamonds'].includes(parseCard(c).suit));
-}
-// ---------- 牌型识别 ----------
+
+// ------------ 牌型识别 -------------
 function findBomb(cards) {
   let ranks = countByRank(cards);
   for (let r in ranks) if (ranks[r] === 4) {
@@ -191,106 +139,116 @@ function findStraightFlush(cards, wantLen=5) {
 function maxPoint(cards) {
   return Math.max(...cards.map(c=>CARD_ORDER[parseCard(c).rank]));
 }
-// --------- 评分函数 ---------
-function handScore(cards, which='tail') {
+
+// 特殊牌型（如清一色/一条龙等，易扩展）
+function isFlushAll(cards) {
+  let suit = parseCard(cards[0]).suit;
+  return cards.every(c=>parseCard(c).suit===suit);
+}
+function isDragon(cards) {
+  let points = uniq(cards.map(c=>parseCard(c).point));
+  return points.length === 13 && points.includes(14) && points.includes(2) && points.includes(3);
+}
+
+// ------------ 评分函数 -------------
+function handScore(cards) {
   if (cards.length === 5) {
-    if (findStraightFlush(cards,5).length===5) return CONFIG.HAND_SCORE.straightFlush + maxPoint(cards);
-    if (findBomb(cards).length===4) return CONFIG.HAND_SCORE.bomb + maxPoint(cards);
-    if (findFullHouse(cards).length===5) return CONFIG.HAND_SCORE.fullHouse + maxPoint(cards);
-    if (findFlush(cards,5).length===5) return CONFIG.HAND_SCORE.flush + maxPoint(cards);
-    if (findStraight(cards,5).length===5) return CONFIG.HAND_SCORE.straight + maxPoint(cards);
-    if (findTrips(cards).length===3) return CONFIG.HAND_SCORE.trips + maxPoint(cards);
-    if (findTwoPair(cards).length===4) return CONFIG.HAND_SCORE.twoPair + maxPoint(cards);
-    if (findPair(cards).length===2) return CONFIG.HAND_SCORE.pair + maxPoint(cards);
-    return CONFIG.HAND_SCORE.high + maxPoint(cards); // 高牌
+    if (findStraightFlush(cards,5).length===5) return 90000 + maxPoint(cards);
+    if (findBomb(cards).length===4) return 80000 + maxPoint(cards);
+    if (findFullHouse(cards).length===5) return 70000 + maxPoint(cards);
+    if (findFlush(cards,5).length===5) return 60000 + maxPoint(cards);
+    if (findStraight(cards,5).length===5) return 50000 + maxPoint(cards);
+    if (findTrips(cards).length===3) return 40000 + maxPoint(cards);
+    if (findTwoPair(cards).length===4) return 30000 + maxPoint(cards);
+    if (findPair(cards).length===2) return 20000 + maxPoint(cards);
+    return 10000 + maxPoint(cards); // 高牌
   } else if (cards.length === 3) {
-    if (findTrips(cards).length===3) return CONFIG.HAND_SCORE.headTrips + maxPoint(cards);
-    if (findPair(cards).length===2) return CONFIG.HAND_SCORE.headPair + maxPoint(cards);
-    return CONFIG.HAND_SCORE.headHigh + maxPoint(cards);
+    if (findTrips(cards).length===3) return 4000 + maxPoint(cards);
+    if (findPair(cards).length===2) return 2000 + maxPoint(cards);
+    return 1000 + maxPoint(cards);
   }
   return 0;
 }
 
-// --------- 特殊牌型优先 ---------
-function checkSpecial(cards) {
-  for (const spec of CONFIG.SPECIALS) {
-    if (spec.check(cards)) return { name: spec.name, score: spec.score };
-  }
-  return null;
-}
-
-// --------- 主AI分牌 ---------
-export function aiSplit(cards) {
-  if (!Array.isArray(cards) || cards.length !== 13) return { head: [], main: [], tail: [] };
-
-  // 特殊牌型优先
-  let special = checkSpecial(cards);
-  if (special) {
-    let sorted = sortByPointDesc(cards);
-    return {
-      head: sorted.slice(10,13),
-      main: sorted.slice(5,10),
-      tail: sorted.slice(0,5),
-      special: special.name
-    };
-  }
-
-  let best = null, bestScore = -1;
-  let headCandidates = [];
-  let { maxHeadComb } = CONFIG.STRATEGY;
-  let tried = new Set();
-  for (const t of CONFIG.STRATEGY.head) {
-    let combs = combinations(cards, 3, path => {
+// 枚举最优组合（剪枝加速）
+function fastCandidates(cards, k, typeList, maxN=18) {
+  // 只枚举最多maxN组，优先typeList顺序
+  let tried = new Set(), arr = [];
+  for (let t of typeList) {
+    let combs = combinations(cards, k, path => {
+      if (t==='straightFlush') return findStraightFlush(path,k).length===k;
+      if (t==='bomb') return findBomb(path).length===4;
+      if (t==='fullHouse') return findFullHouse(path).length===5;
+      if (t==='flush') return findFlush(path,k).length===k;
+      if (t==='straight') return findStraight(path,k).length===k;
       if (t==='trips') return findTrips(path).length===3;
+      if (t==='twoPair') return findTwoPair(path).length===4;
       if (t==='pair') return findPair(path).length===2;
       if (t==='high') return true;
       return false;
     });
     for (const c of combs) {
       let key = c.slice().sort().join(',');
-      if (!tried.has(key)) { headCandidates.push(c); tried.add(key); }
-      if (headCandidates.length >= maxHeadComb) break;
+      if (!tried.has(key)) { arr.push(c); tried.add(key); }
+      if (arr.length >= maxN) break;
     }
-    if (headCandidates.length >= maxHeadComb) break;
+    if (arr.length >= maxN) break;
+  }
+  return arr;
+}
+
+// ----------- 主分牌函数 -----------
+export function aiSplit(cards) {
+  if (!Array.isArray(cards) || cards.length !== 13) return { head: [], main: [], tail: [] };
+
+  // 特殊牌型（如清一色/一条龙），全押
+  if (isDragon(cards)) {
+    const sorted = sortByPointDesc(cards);
+    return {
+      head: sorted.slice(10, 13),
+      main: sorted.slice(5, 10),
+      tail: sorted.slice(0, 5),
+      special: "一条龙"
+    };
+  }
+  if (isFlushAll(cards)) {
+    const sorted = sortByPointDesc(cards);
+    return {
+      head: sorted.slice(10, 13),
+      main: sorted.slice(5, 10),
+      tail: sorted.slice(0, 5),
+      special: "清一色"
+    };
   }
 
-  for (let head of headCandidates) {
-    let left10 = cards.filter(c=>!head.includes(c));
-    let mainCandidates = [], { maxMainComb } = CONFIG.STRATEGY;
-    let triedMain = new Set();
-    for (const t of CONFIG.STRATEGY.main) {
-      let combs = combinations(left10, 5, path => {
-        if (t==='straightFlush') return findStraightFlush(path,5).length===5;
-        if (t==='bomb') return findBomb(path).length===4;
-        if (t==='fullHouse') return findFullHouse(path).length===5;
-        if (t==='flush') return findFlush(path,5).length===5;
-        if (t==='straight') return findStraight(path,5).length===5;
-        if (t==='trips') return findTrips(path).length===3;
-        if (t==='twoPair') return findTwoPair(path).length===4;
-        if (t==='pair') return findPair(path).length===2;
-        if (t==='high') return true;
-        return false;
-      });
-      for (const c of combs) {
-        let key = c.slice().sort().join(',');
-        if (!triedMain.has(key)) { mainCandidates.push(c); triedMain.add(key); }
-        if (mainCandidates.length >= maxMainComb) break;
-      }
-      if (mainCandidates.length >= maxMainComb) break;
-    }
+  let best = null, bestScore = -1;
+  // 枚举尾道所有优质组合
+  let tailCandidates = fastCandidates(cards, 5, [
+    'straightFlush','bomb','fullHouse','flush','straight','trips','twoPair','pair','high'
+  ]);
+  for (let tail of tailCandidates) {
+    let left8 = cards.filter(c=>!tail.includes(c));
+    // 枚举中道所有优质组合
+    let mainCandidates = fastCandidates(left8,5,[
+      'straightFlush','bomb','fullHouse','flush','straight','trips','twoPair','pair','high'
+    ]);
     for (let main of mainCandidates) {
-      let tail = left10.filter(c=>!main.includes(c));
-      if (tail.length !== 5) continue;
-      // 检查不倒水
-      let h = handScore(head,'head'), m = handScore(main,'main'), t = handScore(tail,'tail');
-      if (t < m || m < h) continue;
-      let total = h + m + t;
-      if (total > bestScore) {
-        bestScore = total;
-        best = { head, main, tail };
+      let left3 = left8.filter(c=>!main.includes(c));
+      // 头道
+      let headCandidates = fastCandidates(left3,3,['trips','pair','high'], 3);
+      for (let head of headCandidates) {
+        // 检查不倒水
+        let h = handScore(head), m = handScore(main), t = handScore(tail);
+        if (t < m || m < h) continue;
+        let total = h + m + t;
+        if (total > bestScore) {
+          bestScore = total;
+          best = { head, main, tail };
+        }
       }
     }
   }
+  // fallback
   if (!best) {
     let sorted = sortByPointDesc(cards);
     best = {
