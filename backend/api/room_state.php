@@ -14,7 +14,11 @@ foreach($room['players'] as $p) if ($p['nickname']===$nickname) $myHand = $p['ca
 echo json_encode([
   'success'=>true,
   'players'=>array_map(function($p){
-    return ['nickname'=>$p['nickname'], 'cards'=>$p['played']?$p['cards']:null];
+    return [
+      'nickname'=>$p['nickname'],
+      'cards'=>$p['played'] ? $p['cards'] : null,
+      'hand'=> (!$p['played'] && is_array($p['cards']) && count($p['cards'])===13) ? $p['cards'] : null
+    ];
   }, $room['players']),
   'myHand'=>$myHand,
 ]);
