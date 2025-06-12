@@ -1,6 +1,4 @@
-// 十三水极致AI分牌：全排列+强力剪枝+牌型优先+高性能
-// 能自动识别炸弹、葫芦、顺子、同花、三条、两对、对子、最大牌型，输出最优不倒水组合。
-
+// 十三水极致智能分牌AI（高牌型优先+全排列剪枝+高效）
 const CARD_ORDER = {
   '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,
   'jack':11,'queen':12,'king':13,'ace':14
@@ -76,7 +74,7 @@ function findStraight(cards, want=5) {
   return [];
 }
 
-// 牌力评分（已分牌型优先级，点数补充）
+// 牌型评分函数（大牌型优先，点数为次）
 function handScore(cards){
   if(cards.length===5){
     if(findBombs(cards).length) return 800000 + Math.max(...cards.map(c=>parseCard(c).point));
@@ -96,72 +94,47 @@ function handScore(cards){
   return 0;
 }
 
-// 快速组合算法（n个元素的所有组合，最大数量剪枝）
-function k_combinations(set, k, limit=2000) {
-  if (k > set.length || k === 0) return [];
-  if (k === set.length) return [set];
-  let combs = [];
-  function helper(start, path) {
-    if (combs.length >= limit) return;
-    if (path.length === k) { combs.push(path.slice()); return; }
-    for (let i = start; i < set.length; i++) {
-      path.push(set[i]);
-      helper(i+1, path);
+// 枚举所有5张组合（前1000高分剪枝）
+function topKCombinations(cards, k, topN=1000) {
+  let res = [];
+  const n = cards.length;
+  function dfs(start, path) {
+    if (path.length === k) {
+      res.push(path.slice());
+      return;
+    }
+    for (let i = start; i < n; ++i) {
+      path.push(cards[i]);
+      dfs(i + 1, path);
       path.pop();
-      if (combs.length >= limit) break;
+      if (res.length >= topN) return;
     }
   }
-  helper(0, []);
-  return combs;
+  dfs(0, []);
+  // 按牌型分数降序，仅保留topN
+  return res.map(c => ({c, s: handScore(c)}))
+            .sort((a, b) => b.s - a.s)
+            .slice(0, topN)
+            .map(x => x.c);
 }
 
-// 优先提取所有大牌型（炸弹、同花顺、同花、顺子、葫芦、三条、两对、对子），并尝试分配到尾道/中道
-function extractAllCombos(cards) {
-  let combos = [];
-  // 炸弹
-  let bombs = findBombs(cards);
-  for(let bomb of bombs) combos.push({type:"bomb", cards:bomb});
-  // 同花顺
-  let flush = findFlush(cards,5);
-  let straight = findStraight(flush,5);
-  if(flush.length===5 && straight.length===5) combos.push({type:"straight_flush", cards:flush});
-  // 同花
-  if(flush.length===5) combos.push({type:"flush", cards:flush});
-  // 顺子
-  let str = findStraight(cards,5);
-  if(str.length===5) combos.push({type:"straight", cards:str});
-  // 葫芦
-  let fh = findFullHouse(cards);
-  if(fh.length===5) combos.push({type:"fullhouse", cards:fh});
-  // 三条
-  let trips = findTrips(cards);
-  for(let t of trips) combos.push({type:"trips", cards:t});
-  // 两对
-  let pairs = findPairs(cards);
-  if(pairs.length>=2) combos.push({type:"twopairs", cards:pairs[0].concat(pairs[1])});
-  // 对子
-  if(pairs.length) combos.push({type:"pair", cards:pairs[0]});
-  return combos;
-}
-
-// 极致AI分牌主函数
+// AI分牌主函数
 export function aiSplit(cards){
   if(!Array.isArray(cards)||cards.length!==13) return {head:[],main:[],tail:[]};
   let best = null, bestScore = -1;
-
-  // 第一轮，全排列剪枝法（尾、中道最多各2000种）
-  let tailCombs = k_combinations(cards, 5, 2000);
+  // 尾道所有高分5张组合（最多1000种）
+  let tailCombs = topKCombinations(cards, 5, 1000);
   for(let tail of tailCombs){
     let left8 = cards.filter(c=>!tail.includes(c));
-    let mainCombs = k_combinations(left8, 5, 100);
+    // 中道所有高分5张组合（最多100种）
+    let mainCombs = topKCombinations(left8, 5, 100);
     for(let main of mainCombs){
       let head = left8.filter(c=>!main.includes(c));
       if(head.length!==3) continue;
       // 不倒水
       let h = handScore(head), m = handScore(main), t = handScore(tail);
       if(t < m || m < h) continue;
-      // 极致评分：大牌型优先，点数次之
-      // 尾道权重最高
+      // 评分：尾道权重最高
       let total = h + m*1.5 + t*2 + t*0.01 + m*0.003 + h*0.0001;
       if(total > bestScore){
         best = {head, main, tail};
@@ -169,33 +142,14 @@ export function aiSplit(cards){
       }
     }
   }
-
-  // 第二轮，若未找到合规方案（极少数情况），用大牌型优先法兜底
+  // fallback
   if(!best){
-    // 优先炸弹/同花顺/同花/顺子/葫芦/三条/两对/对子分配到尾道>中道>头道
-    let c = [...cards];
-    let tail = [], main = [], head = [];
-    let combos = extractAllCombos(c);
-
-    // 尾道优先
-    for(let type of ["bomb","straight_flush","flush","straight","fullhouse","trips","twopairs","pair"]) {
-      let found = combos.find(x=>x.type===type && x.cards.length===5);
-      if(found) { tail = found.cards; c = c.filter(k=>!tail.includes(k)); break; }
-    }
-    if(tail.length<5) { tail = sortByPointDesc(c).slice(0,5); c = c.filter(k=>!tail.includes(k)); }
-
-    // 中道优先
-    combos = extractAllCombos(c);
-    for(let type of ["bomb","straight_flush","flush","straight","fullhouse","trips","twopairs","pair"]) {
-      let found = combos.find(x=>x.type===type && x.cards.length===5);
-      if(found) { main = found.cards; c = c.filter(k=>!main.includes(k)); break; }
-    }
-    if(main.length<5) { main = sortByPointDesc(c).slice(0,5); c = c.filter(k=>!main.includes(k)); }
-
-    // 头道
-    head = sortByPointDesc(c).slice(0,3);
-
-    best = {head, main, tail};
+    let sorted = sortByPointDesc(cards);
+    best = {
+      head: sorted.slice(10,13),
+      main: sorted.slice(5,10),
+      tail: sorted.slice(0,5)
+    };
   }
   return best;
 }
