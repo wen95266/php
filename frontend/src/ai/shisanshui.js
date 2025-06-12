@@ -1,27 +1,29 @@
-// 十三水 AI理牌模块（智能增强版：避免倒水、优先成牌型、对子优先头道、顺子优先中尾道）
-// 后续可继续增强牌型识别与分牌策略
+// 十三水 AI理牌模块（增强版）
+// 优先满足顺子、同花顺、炸弹、葫芦、同花、三条、两对、对子、最大高牌，且保证不倒水。
 
 const CARD_ORDER = {
   '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,
   'jack':11,'queen':12,'king':13,'ace':14
 };
-const SUIT_ORDER = ['spades','hearts','diamonds','clubs'];
+const SUITS = ['spades','hearts','diamonds','clubs'];
 
-/**
- * 解析卡牌
- * @param {string} card '10_of_spades'
- * @returns {{rank:string,suit:string,point:number}}
- */
+// 解析牌
 function parseCard(card) {
   const [rank, , suit] = card.split(/_of_|_/);
   return { rank, suit, point: CARD_ORDER[rank] };
 }
 
-/**
- * 统计手牌点数和花色
- * @param {string[]} cards 
- * @returns {{ranks: Object, suits: Object}}
- */
+// 按点数从大到小
+function sortByPointDesc(cards) {
+  return [...cards].sort((a, b) => CARD_ORDER[parseCard(b).rank] - CARD_ORDER[parseCard(a).rank]);
+}
+
+// 按点数从小到大
+function sortByPointAsc(cards) {
+  return [...cards].sort((a, b) => CARD_ORDER[parseCard(a).rank] - CARD_ORDER[parseCard(b).rank]);
+}
+
+// 统计点数和花色数量
 function analyze(cards) {
   const ranks = {}, suits = {};
   for (const c of cards) {
@@ -32,185 +34,182 @@ function analyze(cards) {
   return { ranks, suits };
 }
 
-/**
- * 按点数从大到小排序
- */
-function sortByPointDesc(cards) {
-  return [...cards].sort((a, b) => {
-    const pa = parseCard(a), pb = parseCard(b);
-    return pb.point - pa.point;
-  });
-}
-
-/**
- * 查找顺子
- * @param {string[]} cards 
- * @param {number} wantLen 
- * @returns {string[]|null}
- */
-function findStraight(cards, wantLen=5) {
-  // 仅按点数，不分花色
-  let uniquePoints = Array.from(new Set(cards.map(c=>parseCard(c).point))).sort((a,b)=>a-b);
-  for (let i=uniquePoints.length-wantLen; i>=0; i--) {
-    let seq = uniquePoints.slice(i,i+wantLen);
-    if (seq[wantLen-1] - seq[0] === wantLen-1) {
-      // 找到顺子
-      let straight = [];
-      let used = {};
-      for (let pt of seq) {
-        let card = cards.find(c => parseCard(c).point===pt && !used[c]);
-        straight.push(card);
-        used[card]=true;
-      }
-      if (straight.length===wantLen) return straight;
-    }
-  }
-  // 特例A2345
-  if (uniquePoints.includes(14) && uniquePoints.includes(2) && uniquePoints.includes(3) && uniquePoints.includes(4) && uniquePoints.includes(5)) {
-    let straight = [];
-    let used = {};
-    for (let pt of [14,5,4,3,2]) {
-      let card = cards.find(c => parseCard(c).point===pt && !used[c]);
-      straight.push(card);
-      used[card]=true;
-    }
-    if (straight.length===wantLen) return straight;
-  }
-  return null;
-}
-
-/**
- * 查对子/三条/炸弹
- * @param {string[]} cards 
- * @param {number} wantNum (对子2,三条3,炸弹4)
- * @returns {string[]} 返回指定点数的所有牌
- */
-function findOfAKind(cards, wantNum) {
-  const {ranks} = analyze(cards);
-  let found = Object.entries(ranks).find(([rank,count])=>count>=wantNum);
-  if (found) {
-    return cards.filter(c=>parseCard(c).rank===found[0]).slice(0,wantNum);
+// 查找炸弹
+function findBomb(cards) {
+  const { ranks } = analyze(cards);
+  for (let r in ranks) if (ranks[r] === 4) {
+    return cards.filter(c => parseCard(c).rank === r);
   }
   return [];
 }
 
+// 查找三条
+function findTrips(cards) {
+  const { ranks } = analyze(cards);
+  for (let r in ranks) if (ranks[r] === 3) {
+    return cards.filter(c => parseCard(c).rank === r).slice(0,3);
+  }
+  return [];
+}
+
+// 查找对子
+function findPair(cards) {
+  const { ranks } = analyze(cards);
+  for (let r in ranks) if (ranks[r] === 2) {
+    return cards.filter(c => parseCard(c).rank === r).slice(0,2);
+  }
+  return [];
+}
+
+// 查找两对
+function findTwoPair(cards) {
+  const { ranks } = analyze(cards);
+  let pairs = [];
+  for (let r in ranks) if (ranks[r] === 2) {
+    pairs.push(cards.filter(c => parseCard(c).rank === r).slice(0,2));
+  }
+  if (pairs.length >= 2) {
+    return pairs[0].concat(pairs[1]);
+  }
+  return [];
+}
+
+// 查找葫芦（三条+一对）
+function findFullHouse(cards) {
+  let trips = findTrips(cards);
+  if (!trips.length) return [];
+  let left = cards.filter(c => !trips.includes(c));
+  let pair = findPair(left);
+  if (pair.length === 2) {
+    return trips.concat(pair);
+  }
+  return [];
+}
+
+// 查找同花
+function findFlush(cards, wantLen = 5) {
+  const { suits } = analyze(cards);
+  for (let s of SUITS) {
+    if (suits[s] >= wantLen) {
+      return cards.filter(c => parseCard(c).suit === s).slice(0, wantLen);
+    }
+  }
+  return [];
+}
+
+// 查找顺子（最多找A2345、10JQKA）
+function findStraight(cards, wantLen = 5) {
+  let points = Array.from(new Set(cards.map(c=>parseCard(c).point))).sort((a,b)=>a-b);
+  for (let i = points.length-wantLen; i >= 0; i--) {
+    let seq = points.slice(i, i+wantLen);
+    if (seq[wantLen-1] - seq[0] === wantLen-1) {
+      let used = {};
+      let straight = seq.map(pt=>{
+        let card = cards.find(c=>parseCard(c).point===pt && !used[c]);
+        used[card]=true; return card;
+      });
+      if (straight.length===wantLen) return straight;
+    }
+  }
+  // 特殊顺子A2345
+  if (points.includes(14) && points.includes(2) && points.includes(3) && points.includes(4) && points.includes(5)) {
+    let used = {};
+    let straight = [14,5,4,3,2].map(pt=>{
+      let card = cards.find(c=>parseCard(c).point===pt && !used[c]);
+      used[card] = true; return card;
+    });
+    if (straight.length === wantLen) return straight;
+  }
+  return [];
+}
+
+// 查找同花顺
+function findStraightFlush(cards, wantLen = 5) {
+  for (let s of SUITS) {
+    let suited = cards.filter(c => parseCard(c).suit === s);
+    if (suited.length >= wantLen) {
+      let straight = findStraight(suited, wantLen);
+      if (straight.length === wantLen) return straight;
+    }
+  }
+  return [];
+}
+
+// 分配一组5张牌，优先同花顺>炸弹>葫芦>同花>顺子>三条>两对>对子>高牌
+function pickBestFive(cards) {
+  let straightFlush = findStraightFlush(cards, 5);
+  if (straightFlush.length === 5) return straightFlush;
+  let bomb = findBomb(cards);
+  if (bomb.length === 4) {
+    let left = cards.filter(c=>!bomb.includes(c));
+    return bomb.concat(sortByPointDesc(left).slice(0, 1));
+  }
+  let fullHouse = findFullHouse(cards);
+  if (fullHouse.length === 5) return fullHouse;
+  let flush = findFlush(cards, 5);
+  if (flush.length === 5) return flush;
+  let straight = findStraight(cards, 5);
+  if (straight.length === 5) return straight;
+  let trips = findTrips(cards);
+  if (trips.length === 3) {
+    let left = cards.filter(c=>!trips.includes(c));
+    return trips.concat(sortByPointDesc(left).slice(0,2));
+  }
+  let twoPair = findTwoPair(cards);
+  if (twoPair.length === 4) {
+    let left = cards.filter(c=>!twoPair.includes(c));
+    return twoPair.concat(sortByPointDesc(left).slice(0,1));
+  }
+  let pair = findPair(cards);
+  if (pair.length === 2) {
+    let left = cards.filter(c=>!pair.includes(c));
+    return pair.concat(sortByPointDesc(left).slice(0,3));
+  }
+  return sortByPointDesc(cards).slice(0,5);
+}
+
+// 分配头道（3张），优先三条>对子>高牌
+function pickBestThree(cards) {
+  let trips = findTrips(cards);
+  if (trips.length === 3) return trips;
+  let pair = findPair(cards);
+  if (pair.length === 2) {
+    let left = cards.filter(c=>!pair.includes(c));
+    return pair.concat(sortByPointDesc(left).slice(0,1));
+  }
+  return sortByPointDesc(cards).slice(0,3);
+}
+
+// 计算牌力和
+function power(arr) {
+  return arr.map(c=>CARD_ORDER[parseCard(c).rank]).reduce((a,b)=>a+b,0);
+}
+
 /**
- * 智能分牌
- * 1. 优先尾道找顺子/炸弹/三条/对子/高牌
- * 2. 中道找顺子/三条/对子/高牌
- * 3. 头道优先对子、次之高牌
- * 4. 保证尾≥中≥头，不倒水
+ * AI智能分牌
+ * @param {string[]} cards 13张牌名
  */
 export function aiSplit(cards) {
   if (!Array.isArray(cards) || cards.length !== 13) {
     return { head: [], main: [], tail: [] };
   }
-  let left = [...cards];
-  let tail = [], main = [], head = [];
+  let used = new Set();
 
-  // 1. 尾道优先顺子
-  let straight5 = findStraight(left,5);
-  if (straight5) {
-    tail = straight5;
-    left = left.filter(c=>!tail.includes(c));
-  } else {
-    // 尾道优先炸弹
-    let bomb = findOfAKind(left,4);
-    if (bomb.length===4) {
-      tail = bomb;
-      left = left.filter(c=>!tail.includes(c));
-      // 补最大单牌
-      tail = tail.concat(sortByPointDesc(left).slice(0,1));
-      left = left.filter(c=>!tail.includes(c));
-      // 再补最大二张
-      if (tail.length<5) {
-        let rest = sortByPointDesc(left).slice(0,5-tail.length);
-        tail = tail.concat(rest);
-        left = left.filter(c=>!tail.includes(c));
-      }
-    } else {
-      // 尾道优先三条
-      let trips = findOfAKind(left,3);
-      if (trips.length===3) {
-        tail = trips;
-        left = left.filter(c=>!tail.includes(c));
-        tail = tail.concat(sortByPointDesc(left).slice(0,2));
-        left = left.filter(c=>!tail.includes(c));
-      } else {
-        // 尾道优先两对
-        let pair1 = findOfAKind(left,2);
-        if (pair1.length===2) {
-          left = left.filter(c=>!pair1.includes(c));
-          let pair2 = findOfAKind(left,2);
-          if (pair2.length===2) {
-            tail = pair1.concat(pair2);
-            left = left.filter(c=>!pair2.includes(c));
-            tail = tail.concat(sortByPointDesc(left).slice(0,1));
-            left = left.filter(c=>!tail.includes(c));
-          } else {
-            tail = pair1.concat(sortByPointDesc(left).slice(0,3));
-            left = left.filter(c=>!tail.includes(c));
-          }
-        } else {
-          // 尾道高牌
-          tail = sortByPointDesc(left).slice(0,5);
-          left = left.filter(c=>!tail.includes(c));
-        }
-      }
-    }
-  }
-  // 2. 中道优先顺子
-  let straight5m = findStraight(left,5);
-  if (straight5m) {
-    main = straight5m;
-    left = left.filter(c=>!main.includes(c));
-  } else {
-    // 中道三条
-    let trips = findOfAKind(left,3);
-    if (trips.length===3) {
-      main = trips;
-      left = left.filter(c=>!main.includes(c));
-      main = main.concat(sortByPointDesc(left).slice(0,2));
-      left = left.filter(c=>!main.includes(c));
-    } else {
-      // 中道两对
-      let pair1 = findOfAKind(left,2);
-      if (pair1.length===2) {
-        left = left.filter(c=>!pair1.includes(c));
-        let pair2 = findOfAKind(left,2);
-        if (pair2.length===2) {
-          main = pair1.concat(pair2);
-          left = left.filter(c=>!pair2.includes(c));
-          main = main.concat(sortByPointDesc(left).slice(0,1));
-          left = left.filter(c=>!main.includes(c));
-        } else {
-          main = pair1.concat(sortByPointDesc(left).slice(0,3));
-          left = left.filter(c=>!main.includes(c));
-        }
-      } else {
-        main = sortByPointDesc(left).slice(0,5);
-        left = left.filter(c=>!main.includes(c));
-      }
-    }
-  }
-  // 3. 头道优先三条、对子
-  let headTrips = findOfAKind(left,3);
-  if (headTrips.length===3) {
-    head = headTrips;
-  } else {
-    let headPair = findOfAKind(left,2);
-    if (headPair.length===2) {
-      head = headPair.concat(sortByPointDesc(left.filter(c=>!headPair.includes(c))).slice(0,1));
-    } else {
-      head = sortByPointDesc(left).slice(0,3);
-    }
-  }
+  // 尾道优先最大牌型
+  let tail = pickBestFive(cards);
+  tail.forEach(c=>used.add(c));
+  // 中道优先最大牌型（去除已用牌）
+  let leftForMain = cards.filter(c=>!used.has(c));
+  let main = pickBestFive(leftForMain);
+  main.forEach(c=>used.add(c));
+  // 头道优先三条/对子/高牌
+  let leftForHead = cards.filter(c=>!used.has(c));
+  let head = pickBestThree(leftForHead);
 
-  // 4. 检查倒水（点数和），如有则交换头道与中道、尾道
-  const power = arr => arr.map(c=>CARD_ORDER[parseCard(c).rank]).reduce((a,b)=>a+b,0);
+  // 检查倒水，调整最小头道/中道与最大中道/尾道
   let tailPower = power(tail), mainPower = power(main), headPower = power(head);
   let tryCount = 0;
-  while ((tailPower < mainPower || mainPower < headPower) && tryCount < 8) {
+  while ((tailPower < mainPower || mainPower < headPower) && tryCount < 10) {
     // 尾道和中道倒水，交换最小尾道与最大中道
     if (tailPower < mainPower) {
       const tailMin = tail.reduce((min, c) => CARD_ORDER[parseCard(c).rank] < CARD_ORDER[parseCard(min).rank] ? c : min, tail[0]);
@@ -235,9 +234,5 @@ export function aiSplit(cards) {
     tryCount++;
   }
 
-  return {
-    head,
-    main,
-    tail
-  };
+  return { head, main, tail };
 }
