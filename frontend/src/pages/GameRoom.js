@@ -32,6 +32,7 @@ export default function GameRoom() {
   const [played, setPlayed] = useState(false);
   const [message, setMessage] = useState('');
   const [result, setResult] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // 自动创建房间
   useEffect(() => {
@@ -75,13 +76,14 @@ export default function GameRoom() {
       })
         .then(res => res.json())
         .then(data => {
+          setLoading(false);
           if (data.success) {
             setPlayers(data.players || []);
             setMyHand(data.myHand || []);
             const me = data.players.find(p => p.nickname === nickname);
             setPlayed(me && me.cards ? true : false);
           }
-          timer = setTimeout(fetchState, 2000);
+          timer = setTimeout(fetchState, 1200);
         });
     };
     fetchState();
@@ -114,34 +116,148 @@ export default function GameRoom() {
         .then(res => res.json())
         .then(data => {
           if (data.success && data.result) {
+            // 这里可做详细结果展示
             setResult("所有玩家已出牌，本局结束。");
           }
         });
     }
   }, [players, roomId]);
 
+  // 界面样式
+  const styles = {
+    container: {
+      fontFamily: 'system-ui, sans-serif',
+      maxWidth: 820,
+      margin: '30px auto 0 auto',
+      background: '#f9f9fa',
+      borderRadius: 12,
+      boxShadow: '0 2px 18px #ddd',
+      padding: 25,
+      minHeight: 460
+    },
+    hand: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 8,
+      background: '#fff',
+      borderRadius: 7,
+      padding: '12px 0',
+      minHeight: 120,
+      marginBottom: 10,
+      boxShadow: '0 1px 4px #eee'
+    },
+    btn: {
+      padding: '8px 24px',
+      fontSize: 18,
+      borderRadius: 6,
+      background: '#2e91f7',
+      color: '#fff',
+      border: 'none',
+      margin: '12px 0 0 0',
+      cursor: 'pointer',
+      fontWeight: 600
+    },
+    btnDisabled: {
+      background: '#b2b6bb',
+      color: '#fff',
+      cursor: 'not-allowed'
+    },
+    playerList: {
+      margin: '10px 0 10px 0',
+      padding: 0,
+      listStyle: 'none'
+    },
+    playerLi: (isSelf, isPlayed) => ({
+      padding: '5px 0',
+      fontWeight: isSelf ? 700 : 400,
+      color: isSelf ? '#2e91f7' : (isPlayed ? '#4caf50' : '#333'),
+      background: isSelf ? '#eaf2ff' : 'transparent',
+      borderRadius: 5,
+      display: 'flex',
+      alignItems: 'center'
+    }),
+    dot: color => ({
+      display: 'inline-block',
+      width: 10,
+      height: 10,
+      borderRadius: '50%',
+      background: color,
+      marginRight: 7,
+      marginLeft: 2
+    }),
+    msg: {
+      color: '#ff9800',
+      fontWeight: 500,
+      margin: '10px 0'
+    },
+    result: {
+      margin: '18px 0 5px 0',
+      color: '#43a047',
+      fontWeight: 700,
+      fontSize: 18
+    },
+    again: {
+      padding: '7px 18px',
+      fontSize: 15,
+      borderRadius: 5,
+      border: '1px solid #2e91f7',
+      background: '#fff',
+      color: '#2e91f7',
+      marginLeft: 6,
+      cursor: 'pointer',
+      fontWeight: 600
+    }
+  };
+
   return (
-    <div>
-      <h2>房间号: {roomId || '正在创建房间...'}</h2>
-      <div>我的昵称: {nickname}</div>
-      <div>
-        <h3>我的手牌</h3>
-        <div style={{display: 'flex', flexWrap: 'wrap'}}>
-          {sortCards(myHand).map(card => <Card key={card} name={card} />)}
-        </div>
-        {!played && <button onClick={handlePlay}>出牌</button>}
-        {message && <div>{message}</div>}
+    <div style={styles.container}>
+      <div style={{display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
+        <h2 style={{margin:0,fontSize:24,color:'#2e91f7',letterSpacing:1}}>十三水牌桌</h2>
+        <span style={{fontSize:14,color:'#888'}}>房间号: <b>{roomId || '正在创建房间...'}</b></span>
+        <span style={{fontSize:14,color:'#888'}}>我的昵称: <b style={{color:'#2e91f7'}}>{nickname}</b></span>
       </div>
-      <h3>玩家</h3>
-      <ul>
-        {players.map(p => (
-          <li key={p.nickname}>
-            {p.nickname}：{p.cards && p.cards.length === 13 ? "已出牌" : "未出牌"}
-          </li>
-        ))}
+
+      <h3 style={{margin:'18px 0 6px 0',fontSize:18}}>我的手牌</h3>
+      <div style={styles.hand}>
+        {!loading ?
+          sortCards(myHand).map(card => <Card key={card} name={card} />)
+        :
+          <span style={{color:'#888'}}>正在获取手牌...</span>
+        }
+      </div>
+      <div>
+        {!played && !loading && (
+          <button
+            style={styles.btn}
+            onClick={handlePlay}
+          >出牌</button>
+        )}
+        {played && (
+          <span style={{marginLeft:12, color:'#4caf50',fontSize:16,fontWeight:600}}>已出牌</span>
+        )}
+      </div>
+      {message && <div style={styles.msg}>{message}</div>}
+
+      <h3 style={{margin:'20px 0 8px 0',fontSize:17}}>玩家状态</h3>
+      <ul style={styles.playerList}>
+        {players.map(p => {
+          const isSelf = p.nickname === nickname;
+          const isPlayed = p.cards && p.cards.length === 13;
+          return (
+            <li key={p.nickname} style={styles.playerLi(isSelf, isPlayed)}>
+              <span style={styles.dot(isPlayed ? '#4caf50' : '#f44336')} />
+              <span>{p.nickname}</span>
+              <span style={{marginLeft:8,fontSize:13}}>
+                {isSelf ? '（你）' : ''}
+                {isPlayed ? <span style={{color:'#4caf50'}}>已出牌</span> : <span style={{color:'#f44336'}}>未出牌</span>}
+              </span>
+            </li>
+          );
+        })}
       </ul>
-      {result && <div style={{marginTop: 20, color: "green", fontWeight: "bold"}}>{result}</div>}
-      <button onClick={() => window.location.reload()}>再来一局</button>
+      {result && <div style={styles.result}>{result}</div>}
+
+      <button style={styles.again} onClick={() => window.location.reload()}>再来一局</button>
     </div>
   );
 }
