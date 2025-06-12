@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../ui/Card';
+import { aiSplit } from '../ai/shisanshui'; // 引入AI模块
 
 const API_BASE = "https://wenge.cloudns.ch/backend/api/";
 
@@ -22,16 +23,6 @@ function sortCards(cards) {
     }
     return CARD_ORDER[rankA] - CARD_ORDER[rankB];
   });
-}
-
-// 简单AI分牌（随机头道3，中道5，尾道5）
-function simpleAISplit(cards) {
-  const shuffled = sortCards([...cards]).sort(()=>Math.random()-0.5);
-  return {
-    head: shuffled.slice(0, 3),
-    main: shuffled.slice(3, 8),
-    tail: shuffled.slice(8, 13)
-  };
 }
 
 export default function GameRoom() {
@@ -178,7 +169,7 @@ export default function GameRoom() {
   // AI智能分牌
   const handleAISplit = () => {
     if (!originHand.length) return;
-    const aiResult = simpleAISplit(originHand);
+    const aiResult = aiSplit(originHand); // 使用AI模块
     setHead(aiResult.head);
     setMain(aiResult.main);
     setTail(aiResult.tail);
@@ -202,7 +193,7 @@ export default function GameRoom() {
     for (const p of players) {
       if (p.nickname.startsWith("AI-") && !p.cards) {
         // AI手牌
-        const aiResult = simpleAISplit(p.cards ? p.cards : originHand);
+        const aiResult = aiSplit(p.cards ? p.cards : originHand); // 用AI模块
         const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
         await fetch(API_BASE + "play_cards.php", {
           method: "POST",
@@ -297,7 +288,6 @@ export default function GameRoom() {
     </div>
   );
 
-  // 手牌区（仅剩5张时不显示）
   const renderHand = () => (
     hand.length > 0 &&
     <>
@@ -338,7 +328,6 @@ export default function GameRoom() {
     </>
   );
 
-  // 中道区：仅剩5张或已确定时显示
   const renderMain = () => (
     main.length > 0 &&
       <div style={{
@@ -364,7 +353,6 @@ export default function GameRoom() {
       </div>
   );
 
-  // 比牌弹窗
   const renderCompareModal = () => (
     showCompare &&
     <div style={{
