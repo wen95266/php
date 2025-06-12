@@ -29,7 +29,7 @@ export default function GameRoom() {
   const [roomId, setRoomId] = useState('');
   const [nickname, setNickname] = useState('');
   const [players, setPlayers] = useState([]);
-  const [originHand, setOriginHand] = useState([]); // 原始牌，用于初始化理牌
+  const [originHand, setOriginHand] = useState([]); // 原始牌
   const [played, setPlayed] = useState(false);
   const [message, setMessage] = useState('');
   const [result, setResult] = useState('');
@@ -37,9 +37,9 @@ export default function GameRoom() {
 
   // 理牌区状态
   const [head, setHead] = useState([]);   // 头道 3张
-  const [middle, setMiddle] = useState([]); // 中道 5张
   const [tail, setTail] = useState([]);   // 尾道 5张
-  const [hand, setHand] = useState([]);   // 剩余手牌
+  const [main, setMain] = useState([]);   // 中道/手牌 5张
+  const [hand, setHand] = useState([]);   // 临时手牌>5张时
 
   // 拖拽状态
   const [dragCard, setDragCard] = useState(null);
@@ -90,11 +90,11 @@ export default function GameRoom() {
           setLoading(false);
           if (data.success) {
             setPlayers(data.players || []);
-            // 只在未理牌时用原始手牌，理牌后不再重置
+            // 初始化理牌，仅一次
             if (!originHand.length && Array.isArray(data.myHand)) {
               setOriginHand(data.myHand);
               setHand(data.myHand); // 初始全部在手牌
-              setHead([]); setMiddle([]); setTail([]);
+              setHead([]); setTail([]); setMain([]);
             }
             const me = data.players.find(p => p.nickname === nickname);
             setPlayed(me && me.cards ? true : false);
@@ -125,18 +125,17 @@ export default function GameRoom() {
     let fromArr, setFromArr;
     if (dragFrom === 'hand') { fromArr = hand; setFromArr = setHand; }
     else if (dragFrom === 'head') { fromArr = head; setFromArr = setHead; }
-    else if (dragFrom === 'middle') { fromArr = middle; setFromArr = setMiddle; }
+    else if (dragFrom === 'main') { fromArr = main; setFromArr = setMain; }
     else if (dragFrom === 'tail') { fromArr = tail; setFromArr = setTail; }
     else return;
     // 目标
     let toArr, setToArr, maxLen;
     if (toZone === 'head') { toArr = head; setToArr = setHead; maxLen = 3; }
-    else if (toZone === 'middle') { toArr = middle; setToArr = setMiddle; maxLen = 5; }
+    else if (toZone === 'main') { toArr = main; setToArr = setMain; maxLen = 5; }
     else if (toZone === 'tail') { toArr = tail; setToArr = setTail; maxLen = 5; }
     else if (toZone === 'hand') { toArr = hand; setToArr = setHand; maxLen = 13; }
     else return;
 
-    // 不能超区容量，不能重复
     if (toArr.includes(dragCard)) return onDragEnd();
     if (toArr.length >= maxLen) return onDragEnd();
 
@@ -144,38 +143,34 @@ export default function GameRoom() {
     setToArr([...toArr, dragCard]);
     onDragEnd();
   };
-  // 支持牌区内拖回手牌
   const onDropToHand = () => onDropTo('hand');
 
-  // 自动识别中道
+  // 自动识别“手牌=5张”转“中道”
   useEffect(() => {
-    // 理牌区变化后自动做中道判断
     if (hand.length === 5 && head.length === 3 && tail.length === 5) {
-      setMiddle(hand);
+      setMain(hand);
       setHand([]);
     }
-    // 如果中道被手动拖空，恢复手牌
-    if (middle.length === 0 && !hand.length && originHand.length) {
-      // 头道尾道没变时
+    // 拖回去后，如果main有牌但head或tail数量不对要恢复为手牌
+    if (main.length && (head.length !== 3 || tail.length !== 5)) {
+      setHand([...main]);
+      setMain([]);
+    }
+    // 若main被拖空，需要恢复为手牌
+    if (main.length === 0 && !hand.length && originHand.length) {
       if (head.length === 3 && tail.length === 5) return;
       setHand(originHand.filter(c => !head.includes(c) && !tail.includes(c)));
     }
-    // 如果头道或尾道被手动拖空，自动把中道还原回手牌
-    if (middle.length && (head.length !== 3 || tail.length !== 5)) {
-      setHand([...middle]);
-      setMiddle([]);
-    }
     // eslint-disable-next-line
-  }, [head, tail, hand, middle, originHand]);
+  }, [head, tail, hand, main, originHand]);
 
   // 出牌
   const handlePlay = () => {
-    // 需头道3，中道5，尾道5
-    if (head.length !==3 || middle.length !==5 || tail.length !==5) {
+    if (head.length !==3 || main.length !==5 || tail.length !==5) {
       setMessage("请完成理牌（头道3，中道5，尾道5）再出牌");
       return;
     }
-    const playCards = [...head, ...middle, ...tail];
+    const playCards = [...head, ...main, ...tail];
     fetch(API_BASE + "play_cards.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -279,46 +274,50 @@ export default function GameRoom() {
     </div>
   );
 
-  // 手牌区
+  // 手牌区（仅剩5张时不显示）
   const renderHand = () => (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: 10,
-        background: '#fff',
-        borderRadius: 10,
-        padding: '18px 0',
-        minHeight: 155,
-        margin: '0 0 6px 0',
-        boxShadow: '0 1px 4px #eee',
-        justifyContent: 'flex-start'
-      }}
-      onDragOver={allowDrop}
-      onDrop={e=>{e.preventDefault();onDropToHand();}}
-    >
-      {sortCards(hand).map(card =>
-        <div
-          key={card}
-          draggable
-          onDragStart={()=>onDragStart(card, 'hand')}
-          onDragEnd={onDragEnd}
-          style={{cursor:'grab'}}
-        >
-          <Card name={card} size={{width:92,height:140}} border={false} />
-        </div>
-      )}
-      {hand.length === 0 &&
-        <span style={{color:'#bbb',fontSize:14,marginLeft:6}}>
-          （已全部理牌）
-        </span>
-      }
-    </div>
+    hand.length > 0 &&
+    <>
+      <h3 style={{margin:'6px 0 4px 0',fontSize:17}}>我的手牌</h3>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 10,
+          background: '#fff',
+          borderRadius: 10,
+          padding: '18px 0',
+          minHeight: 155,
+          margin: '0 0 6px 0',
+          boxShadow: '0 1px 4px #eee',
+          justifyContent: 'flex-start'
+        }}
+        onDragOver={allowDrop}
+        onDrop={e=>{e.preventDefault();onDropToHand();}}
+      >
+        {sortCards(hand).map(card =>
+          <div
+            key={card}
+            draggable
+            onDragStart={()=>onDragStart(card, 'hand')}
+            onDragEnd={onDragEnd}
+            style={{cursor:'grab'}}
+          >
+            <Card name={card} size={{width:92,height:140}} border={false} />
+          </div>
+        )}
+        {hand.length === 0 &&
+          <span style={{color:'#bbb',fontSize:14,marginLeft:6}}>
+            （已全部理牌）
+          </span>
+        }
+      </div>
+    </>
   );
 
-  // 中道区
-  const renderMiddle = () => (
-    middle.length > 0 &&
+  // 中道区：仅剩5张或已确定时显示
+  const renderMain = () => (
+    main.length > 0 &&
       <div style={{
         minHeight: 110, background:'#f8fbfd', border:'1.5px dashed #cde6ff',
         borderRadius:8, margin: '6px 0 12px 0', display: 'flex', alignItems:'flex-start', paddingLeft:12
@@ -327,11 +326,11 @@ export default function GameRoom() {
           fontWeight: 600, color: '#2e91f7', fontSize:16, marginRight: 16, minWidth:60,paddingTop:18
         }}>中道</span>
         <div style={{display:'flex',alignItems:'center',gap:10, flex:1, minHeight:92, paddingTop:12}}>
-          {middle.map(card =>
+          {sortCards(main).map(card =>
             <div
               key={card}
               draggable
-              onDragStart={()=>onDragStart(card, 'middle')}
+              onDragStart={()=>onDragStart(card, 'main')}
               onDragEnd={onDragEnd}
               style={{cursor:'grab'}}
             >
@@ -366,11 +365,10 @@ export default function GameRoom() {
       {/* 头道理牌区 */}
       {renderLane("头道", "head", head, 3, onDropTo)}
 
-      {/* 中道自动显示 */}
-      {renderMiddle()}
+      {/* 中道（main）区，仅5张时显示 */}
+      {renderMain()}
 
-      {/* 手牌区 */}
-      <h3 style={{margin:'6px 0 4px 0',fontSize:17}}>我的手牌</h3>
+      {/* 手牌区，大于5张时显示（否则隐藏） */}
       {renderHand()}
 
       {/* 尾道理牌区 */}
