@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../ui/Card';
-import { aiSplitVariants } from '../ai/shisanshui';
+import { detectAllPatterns } from '../ai/shisanshui';
 
 const API_BASE = "https://wenge.cloudns.ch/backend/api/";
 
@@ -122,8 +122,9 @@ export default function GameRoom() {
   const [aiLoading, setAiLoading] = useState(false);
   const [playLoading, setPlayLoading] = useState(false);
 
-  // 新增：ai策略索引
-  const [aiIdx, setAiIdx] = useState(0);
+  // 造型策略
+  const [patterns, setPatterns] = useState([]);
+  const [patternIdx, setPatternIdx] = useState(0);
 
   useEffect(() => {
     const nick = randomNickname();
@@ -178,6 +179,8 @@ export default function GameRoom() {
             if (!originHand.length && Array.isArray(data.myHand)) {
               setOriginHand(data.myHand);
               setHand(data.myHand); setHead([]); setTail([]); setMain([]);
+              setPatterns([]);
+              setPatternIdx(0);
             }
             const me = data.players.find(p => p.nickname === nickname);
             setPlayed(me && me.cards ? true : false);
@@ -196,14 +199,8 @@ export default function GameRoom() {
     return () => clearTimeout(timer);
   }, [roomId, nickname, originHand.length]);
 
-  const onDragStart = (card, from) => {
-    setDragCard(card);
-    setDragFrom(from);
-  };
-  const onDragEnd = () => {
-    setDragCard(null);
-    setDragFrom(null);
-  };
+  const onDragStart = (card, from) => { setDragCard(card); setDragFrom(from); };
+  const onDragEnd = () => { setDragCard(null); setDragFrom(null); };
   const allowDrop = e => e.preventDefault();
 
   const onDropTo = (toZone) => {
@@ -243,19 +240,29 @@ export default function GameRoom() {
     }
   }, [head, tail, hand, main, originHand]);
 
-  // 新实现：AI智能分牌按钮每次点击切换策略
+  // AI智能分牌：依次切换所有可行造型
   const handleAISplit = () => {
     if (!originHand.length) return;
     setAiLoading(true);
-    const nextIdx = (aiIdx + 1) % aiSplitVariants.length;
-    setAiIdx(nextIdx);
-    aiSplitVariants[nextIdx].fn(originHand, ({ head, main, tail }) => {
-      setHead(head || []);
-      setMain(main || []);
-      setTail(tail || []);
-      setHand([]);
-      setAiLoading(false);
-    });
+
+    let newPatterns = patterns;
+    if (!newPatterns.length) {
+      newPatterns = detectAllPatterns(originHand);
+      setPatterns(newPatterns);
+      setPatternIdx(0);
+    }
+
+    let idx = patternIdx;
+    if (newPatterns.length > 1) {
+      idx = (patternIdx + 1) % newPatterns.length;
+      setPatternIdx(idx);
+    }
+    const split = newPatterns[idx].split;
+    setHead(split.head);
+    setMain(split.main);
+    setTail(split.tail);
+    setHand([]);
+    setAiLoading(false);
   };
 
   const handlePlay = async () => {
@@ -281,13 +288,13 @@ export default function GameRoom() {
       // AI自动出牌
       for (const p of players) {
         if (p.nickname.startsWith("AI-") && !p.cards && Array.isArray(p.hand) && p.hand.length === 13) {
-          aiSplitVariants[aiIdx].fn(p.hand, aiResult => {
-            const aiCards = [...aiResult.head, ...aiResult.main, ...aiResult.tail];
-            fetch(API_BASE + "play_cards.php", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ roomId, nickname: p.nickname, cards: aiCards })
-            });
+          const aiPatterns = detectAllPatterns(p.hand);
+          const aiSplit = aiPatterns[0].split;
+          const aiCards = [...aiSplit.head, ...aiSplit.main, ...aiSplit.tail];
+          fetch(API_BASE + "play_cards.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ roomId, nickname: p.nickname, cards: aiCards })
           });
         }
       }
@@ -658,7 +665,7 @@ export default function GameRoom() {
         >
           {aiLoading
             ? 'AI分牌中...'
-            : `AI智能分牌（${aiSplitVariants[aiIdx].name}）`}
+            : 'AI智能分牌'}
         </button>
         <button style={{
           padding: '9px 28px',
