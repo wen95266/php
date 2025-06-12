@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ERROR | E_PARSE);
+ini_set('display_errors', 0);
 header('Content-Type: application/json');
 
 // 获取原始 POST 数据（JSON 格式）
