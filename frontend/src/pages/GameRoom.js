@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../ui/Card';
-import { aiSplit } from '../ai/shisanshui'; // 必须是极致AI算法
+import { aiSplit } from '../ai/shisanshui'; // AI分牌模块
+
 const API_BASE = "https://wenge.cloudns.ch/backend/api/";
 
 function randomNickname() {
@@ -25,26 +26,29 @@ function sortCards(cards) {
 }
 
 export default function GameRoom() {
-  // 基础状态
+  // 基础游戏状态
   const [roomId, setRoomId] = useState('');
   const [nickname, setNickname] = useState('');
   const [players, setPlayers] = useState([]);
   const [originHand, setOriginHand] = useState([]);
   const [played, setPlayed] = useState(false);
   const [message, setMessage] = useState('');
+  const [result, setResult] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showCompare, setShowCompare] = useState(false);
-  const [compareData, setCompareData] = useState([]);
 
-  // 理牌区
+  // 理牌区状态
   const [head, setHead] = useState([]);   // 头道 3张
-  const [main, setMain] = useState([]);   // 中道 5张
   const [tail, setTail] = useState([]);   // 尾道 5张
-  const [hand, setHand] = useState([]);   // 剩余手牌
+  const [main, setMain] = useState([]);   // 中道 5张
+  const [hand, setHand] = useState([]);   // 临时手牌>5张时
 
   // 拖拽状态
   const [dragCard, setDragCard] = useState(null);
   const [dragFrom, setDragFrom] = useState(null);
+
+  // 比牌弹窗
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareData, setCompareData] = useState([]);
 
   // 自动创建房间
   useEffect(() => {
@@ -76,7 +80,7 @@ export default function GameRoom() {
     }
   }, [roomId]);
 
-  // 长轮询拉取状态
+  // 长轮询获取状态
   useEffect(() => {
     if (!roomId || !nickname) return;
     let timer;
@@ -91,10 +95,10 @@ export default function GameRoom() {
           setLoading(false);
           if (data.success) {
             setPlayers(data.players || []);
+            // 初始化理牌，仅一次
             if (!originHand.length && Array.isArray(data.myHand)) {
               setOriginHand(data.myHand);
-              setHand(data.myHand);
-              setHead([]); setMain([]); setTail([]);
+              setHand(data.myHand); setHead([]); setTail([]); setMain([]);
             }
             const me = data.players.find(p => p.nickname === nickname);
             setPlayed(me && me.cards ? true : false);
@@ -118,6 +122,7 @@ export default function GameRoom() {
   };
   const allowDrop = e => e.preventDefault();
 
+  // 拖放到理牌区
   const onDropTo = (toZone) => {
     if (!dragCard) return;
     let fromArr, setFromArr;
@@ -167,20 +172,20 @@ export default function GameRoom() {
     setHand([]);
   };
 
-  // 出牌并比牌
+  // 出牌并展示比牌界面
   const handlePlay = async () => {
-    if (head.length !== 3 || main.length !== 5 || tail.length !== 5) {
+    if (head.length !==3 || main.length !==5 || tail.length !==5) {
       setMessage("请完成理牌（头道3，中道5，尾道5）再出牌");
       return;
     }
     const playCards = [...head, ...main, ...tail];
+    // 玩家出牌
     await fetch(API_BASE + "play_cards.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roomId, nickname, cards: playCards })
     });
-
-    // AI自动分牌并出牌
+    // AI自动分牌并出牌（用各自的hand字段！）
     for (const p of players) {
       if (p.nickname.startsWith("AI-") && !p.cards && Array.isArray(p.hand) && p.hand.length === 13) {
         const aiResult = aiSplit(p.hand);
@@ -192,7 +197,7 @@ export default function GameRoom() {
         });
       }
     }
-
+    // 查询比牌数据
     setTimeout(async () => {
       const resp = await fetch(API_BASE + "compare_cards.php", {
         method: "POST",
@@ -207,131 +212,349 @@ export default function GameRoom() {
     }, 500);
   };
 
-  // UI渲染部分
-  return (
-    <div style={{padding: 18, fontFamily: 'system-ui'}}>
-      <h2 style={{ color: "#1677ff" }}>十三水牌桌</h2>
-      <div style={{marginBottom: 10, fontSize: 15}}>
-        房间号：<b>{roomId}</b> &nbsp; 我的昵称：<b>{nickname}</b>
-      </div>
-      <div style={{marginBottom: 12}}>
-        {players.map(p =>
-          <span key={p.nickname} style={{
-            display: 'inline-block', minWidth: 80, marginRight: 30,
-            color: p.nickname === nickname ? '#1677ff' : '#888',
-            fontWeight: p.nickname === nickname ? 'bold' : 'normal'
+  // ------- UI 渲染 ---------
+  const renderPlayersBanner = () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 36, marginBottom: 10, padding: '8px 0 0 0',
+      borderBottom: '1.5px solid #eee', background: '#fff', borderRadius: 8, boxShadow:'0 1px 6px #f4f4f8'
+    }}>
+      {players.map(p => {
+        const isSelf = p.nickname === nickname;
+        const isPlayed = p.cards && p.cards.length === 13;
+        return (
+          <div key={p.nickname} style={{
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+            minWidth:90, padding:'0 8px'
           }}>
-            {p.nickname === nickname ? '你' : p.nickname}
-            <br />
-            {p.cards ? '已出牌' : '未出牌'}
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%', background: isSelf ? '#2e91f7' : '#eee',
+              display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',
+              fontSize:20, fontWeight:700, marginBottom:2
+            }}>{isSelf ? '你' : <span style={{fontSize:17}}>AI</span>}</div>
+            <div style={{
+              fontWeight: isSelf ? 700 : 500, color: isSelf ? '#2e91f7' : '#222', fontSize:15,
+              marginBottom:2
+            }}>
+              {isSelf ? `${p.nickname}（你）` : p.nickname}
+            </div>
+            <div style={{
+              fontSize: 13,
+              color: isPlayed ? '#43a047' : '#e53935', fontWeight: 600,
+              letterSpacing:1
+            }}>
+              {isPlayed ? '已出牌' : '未出牌'}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderLane = (title, zone, cards, maxLen, dropFn) => (
+    <div
+      style={{
+        minHeight: 110, background:'#f8fbfd', border:'1.5px dashed #cde6ff',
+        borderRadius:8, margin: '6px 0 12px 0', display: 'flex', alignItems:'flex-start', paddingLeft:12
+      }}
+      onDragOver={allowDrop}
+      onDrop={e=>{e.preventDefault();dropFn(zone);}}
+    >
+      <span style={{
+        fontWeight: 600, color: '#2e91f7', fontSize:16, marginRight: 16, minWidth:60,paddingTop:18
+      }}>{title}</span>
+      <div style={{display:'flex',alignItems:'center',gap:10, flex:1, minHeight:92, paddingTop:12}}>
+        {cards.map(card =>
+          <div
+            key={card}
+            draggable
+            onDragStart={()=>onDragStart(card, zone)}
+            onDragEnd={onDragEnd}
+            style={{cursor:'grab'}}
+          >
+            <Card name={card} size={{width:92,height:140}} border={false} />
+          </div>
+        )}
+        {cards.length < maxLen &&
+          <span style={{color:'#bbb',fontSize:14,marginLeft:6}}>
+            （拖动手牌到此处理牌，最多{maxLen}张）
           </span>
+        }
+      </div>
+    </div>
+  );
+
+  const renderHand = () => (
+    hand.length > 0 &&
+    <>
+      <h3 style={{margin:'6px 0 4px 0',fontSize:17}}>我的手牌</h3>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 10,
+          background: '#fff',
+          borderRadius: 10,
+          padding: '18px 0',
+          minHeight: 155,
+          margin: '0 0 6px 0',
+          boxShadow: '0 1px 4px #eee',
+          justifyContent: 'flex-start'
+        }}
+        onDragOver={allowDrop}
+        onDrop={e=>{e.preventDefault();onDropToHand();}}
+      >
+        {sortCards(hand).map(card =>
+          <div
+            key={card}
+            draggable
+            onDragStart={()=>onDragStart(card, 'hand')}
+            onDragEnd={onDragEnd}
+            style={{cursor:'grab'}}
+          >
+            <Card name={card} size={{width:92,height:140}} border={false} />
+          </div>
+        )}
+        {hand.length === 0 &&
+          <span style={{color:'#bbb',fontSize:14,marginLeft:6}}>
+            （已全部理牌）
+          </span>
+        }
+      </div>
+    </>
+  );
+
+  const renderMain = () => (
+    main.length > 0 &&
+      <div style={{
+        minHeight: 110, background:'#f8fbfd', border:'1.5px dashed #cde6ff',
+        borderRadius:8, margin: '6px 0 12px 0', display: 'flex', alignItems:'flex-start', paddingLeft:12
+      }}>
+        <span style={{
+          fontWeight: 600, color: '#2e91f7', fontSize:16, marginRight: 16, minWidth:60,paddingTop:18
+        }}>中道</span>
+        <div style={{display:'flex',alignItems:'center',gap:10, flex:1, minHeight:92, paddingTop:12}}>
+          {sortCards(main).map(card =>
+            <div
+              key={card}
+              draggable
+              onDragStart={()=>onDragStart(card, 'main')}
+              onDragEnd={onDragEnd}
+              style={{cursor:'grab'}}
+            >
+              <Card name={card} size={{width:92,height:140}} border={false} />
+            </div>
+          )}
+        </div>
+      </div>
+  );
+
+  // 田字型堆叠比牌弹窗
+  const renderCompareModal = () => (
+    showCompare &&
+    <div style={{
+      position: "fixed", left: 0, top: 0, right: 0, bottom: 0,
+      background: "rgba(0,0,0,0.28)", zIndex: 99, display: "flex", alignItems: "center", justifyContent: "center"
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, boxShadow: "0 2px 22px #888", padding: 30, minWidth: 720, minHeight: 470
+      }}>
+        <h2 style={{textAlign:"center", margin:0, color:"#2e91f7"}}>比牌结果</h2>
+        <div style={{
+          display:"flex",
+          flexWrap:"wrap",
+          gap:"32px 36px",
+          margin:"30px 0 0 0",
+          justifyContent:"center",
+          alignItems:"center",
+          width:"100%"
+        }}>
+          {[0,1,2,3].map(idx=>{
+            const player = compareData[idx];
+            if (!player) return null;
+            // 田字型排布
+            return (
+              <div key={player.nickname}
+                style={{
+                  width: 280,
+                  minHeight: 220,
+                  background:"#f8fbfd",
+                  borderRadius:10,
+                  padding:"16px 18px 18px 18px",
+                  boxSizing:"border-box",
+                  display:"flex",
+                  flexDirection:"column",
+                  alignItems:"center",
+                  justifyContent:"center",
+                  boxShadow: "0 2px 8px #f0f4ff"
+                }}>
+                <div style={{
+                  fontWeight:600,
+                  color:player.nickname===nickname?"#2e91f7":"#333",
+                  textAlign:"center",
+                  marginBottom:10,
+                  fontSize:18
+                }}>
+                  {player.nickname}
+                </div>
+                {/* 头道 */}
+                <div style={{margin:"3px 0 0 0"}}>
+                  <div style={{fontSize:13,color:"#2e91f7",marginBottom:1}}>头道</div>
+                  <div style={{
+                    position:"relative",
+                    height: 95,
+                    width: 130
+                  }}>
+                    {(player.cards||[]).slice(0,3).map((c,i)=>
+                      <div key={c} style={{
+                        position:"absolute",
+                        left: `${i*32}px`,
+                        top: `${Math.abs(i-1)*8}px`,
+                        zIndex: i,
+                        boxShadow: "0 1px 3px #bbb"
+                      }}>
+                        <Card name={c} size={{width:60,height:90}} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* 中道 */}
+                <div style={{margin:"5px 0 0 0"}}>
+                  <div style={{fontSize:13,color:"#2e91f7",marginBottom:1}}>中道</div>
+                  <div style={{
+                    position:"relative",
+                    height: 95,
+                    width: 210
+                  }}>
+                    {(player.cards||[]).slice(3,8).map((c,i)=>
+                      <div key={c} style={{
+                        position:"absolute",
+                        left: `${i*32}px`,
+                        top: `${Math.abs(i-2)*7}px`,
+                        zIndex: i,
+                        boxShadow: "0 1px 3px #bbb"
+                      }}>
+                        <Card name={c} size={{width:60,height:90}} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* 尾道 */}
+                <div style={{margin:"5px 0 0 0"}}>
+                  <div style={{fontSize:13,color:"#2e91f7",marginBottom:1}}>尾道</div>
+                  <div style={{
+                    position:"relative",
+                    height: 95,
+                    width: 210
+                  }}>
+                    {(player.cards||[]).slice(8,13).map((c,i)=>
+                      <div key={c} style={{
+                        position:"absolute",
+                        left: `${i*32}px`,
+                        top: `${Math.abs(i-2)*7}px`,
+                        zIndex: i,
+                        boxShadow: "0 1px 3px #bbb"
+                      }}>
+                        <Card name={c} size={{width:60,height:90}} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{textAlign:"center",marginTop:32}}>
+          <button style={{
+            padding: '10px 32px',
+            fontSize: 18,
+            borderRadius: 7,
+            border: '1.5px solid #2e91f7',
+            background: '#fff',
+            color: '#2e91f7',
+            cursor: 'pointer',
+            fontWeight: 600
+          }} onClick={()=>setShowCompare(false)}>关闭</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{
+      fontFamily: 'system-ui, sans-serif',
+      maxWidth: 990,
+      margin: '30px auto 0 auto',
+      background: '#f9f9fa',
+      borderRadius: 16,
+      boxShadow: '0 2px 22px #e8eaf0',
+      padding: 30,
+      minHeight: 520
+    }}>
+      {/* 顶部横幅 */}
+      <div style={{display:'flex',alignItems:'center',gap:24,marginBottom:4}}>
+        <h2 style={{margin:0,fontSize:26,color:'#2e91f7',letterSpacing:1}}>十三水牌桌</h2>
+        <span style={{fontSize:15,color:'#888'}}>房间号: <b>{roomId || '正在创建房间...'}</b></span>
+        <span style={{fontSize:15,color:'#888'}}>我的昵称: <b style={{color:'#2e91f7'}}>{nickname}</b></span>
+      </div>
+      {renderPlayersBanner()}
+      {renderLane("头道", "head", head, 3, onDropTo)}
+      {renderMain()}
+      {renderHand()}
+      {renderLane("尾道", "tail", tail, 5, onDropTo)}
+
+      <div style={{
+        display:'flex',alignItems:'center',marginTop:18,gap:24
+      }}>
+        <button
+          style={{
+            padding: '12px 36px',
+            fontSize: 21,
+            borderRadius: 8,
+            background: '#2e91f7',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 700,
+            marginRight:8
+          }}
+          onClick={handlePlay}
+          disabled={played}
+        >出牌</button>
+        <button
+          style={{
+            padding: '11px 30px',
+            fontSize: 17,
+            borderRadius: 7,
+            border: '1.5px solid #43a047',
+            background: '#fff',
+            color: '#43a047',
+            cursor: 'pointer',
+            fontWeight: 600
+          }}
+          onClick={handleAISplit}
+        >AI智能分牌</button>
+        <button style={{
+          padding: '9px 28px',
+          fontSize: 18,
+          borderRadius: 7,
+          border: '1.5px solid #2e91f7',
+          background: '#fff',
+          color: '#2e91f7',
+          cursor: 'pointer',
+          fontWeight: 600
+        }} onClick={() => window.location.reload()}>再来一局</button>
+        {played && (
+          <span style={{marginLeft:16, color:'#4caf50',fontSize:17,fontWeight:600}}>已出牌</span>
         )}
       </div>
-      <div style={{marginBottom: 16, padding: 8, background: '#f8fafc', borderRadius: 8}}>
-        <div>
-          <b>头道</b>
-          <div
-            style={{ minHeight: 56, border: '1.5px dashed #e3e8f0', borderRadius: 8, margin: '8px 0', display: 'flex' }}
-            onDragOver={allowDrop}
-            onDrop={() => onDropTo('head')}
-          >
-            {head.map(card => (
-              <div key={card}
-                draggable
-                onDragStart={() => onDragStart(card, 'head')}
-                onDragEnd={onDragEnd}
-              >
-                <Card name={card} border />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <b>中道</b>
-          <div
-            style={{ minHeight: 56, border: '1.5px dashed #e3e8f0', borderRadius: 8, margin: '8px 0', display: 'flex' }}
-            onDragOver={allowDrop}
-            onDrop={() => onDropTo('main')}
-          >
-            {main.map(card => (
-              <div key={card}
-                draggable
-                onDragStart={() => onDragStart(card, 'main')}
-                onDragEnd={onDragEnd}
-              >
-                <Card name={card} border />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <b>尾道</b>
-          <div
-            style={{ minHeight: 56, border: '1.5px dashed #e3e8f0', borderRadius: 8, margin: '8px 0', display: 'flex' }}
-            onDragOver={allowDrop}
-            onDrop={() => onDropTo('tail')}
-          >
-            {tail.map(card => (
-              <div key={card}
-                draggable
-                onDragStart={() => onDragStart(card, 'tail')}
-                onDragEnd={onDragEnd}
-              >
-                <Card name={card} border />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <b>手牌</b>
-          <div
-            style={{ minHeight: 56, border: '1.5px dashed #e3e8f0', borderRadius: 8, margin: '8px 0', display: 'flex' }}
-            onDragOver={allowDrop}
-            onDrop={onDropToHand}
-          >
-            {hand.map(card => (
-              <div key={card}
-                draggable
-                onDragStart={() => onDragStart(card, 'hand')}
-                onDragEnd={onDragEnd}
-              >
-                <Card name={card} border />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div style={{marginBottom: 10}}>
-        <button onClick={handlePlay} disabled={played} style={{marginRight: 10}}>出牌</button>
-        <button onClick={handleAISplit} disabled={played} style={{marginRight: 10}}>AI智能分牌</button>
-        <button onClick={() => window.location.reload()}>再来一局</button>
-      </div>
-      {message && <div style={{ color: 'red', marginTop: 8 }}>{message}</div>}
-
-      {showCompare && (
-        <div style={{
-          position: 'fixed', left: 0, top: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.08)', zIndex: 99
-        }}>
-          <div style={{
-            background: '#fff', width: 700, margin: '60px auto', borderRadius: 12, padding: 18
-          }}>
-            <h3>比牌结果</h3>
-            <div>
-              {compareData.map(p => (
-                <div key={p.nickname} style={{ marginBottom: 16 }}>
-                  <b>{p.nickname}</b>
-                  <div>头道: {p.headResult.join(', ')}（{p.headScore}分）</div>
-                  <div>中道: {p.mainResult.join(', ')}（{p.mainScore}分）</div>
-                  <div>尾道: {p.tailResult.join(', ')}（{p.tailScore}分）</div>
-                  <div>总分: {p.totalScore}</div>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => setShowCompare(false)}>关闭</button>
-          </div>
-        </div>
-      )}
+      {message && <div style={{color:'#ff9800',fontWeight:500,margin:'10px 0'}}>{message}</div>}
+      {result && <div style={{
+        margin: '20px 0 8px 0',
+        color: '#43a047',
+        fontWeight: 700,
+        fontSize: 20
+      }}>{result}</div>}
+      {renderCompareModal()}
     </div>
   );
 }
