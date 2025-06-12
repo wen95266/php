@@ -1,17 +1,16 @@
-// 十三水AI分牌 - 进阶优化版
-// 优先识别炸弹、葫芦、同花、顺子、三条、两对、对子，确保不倒水，搜索多种组合评分选最优
+// 十三水极致AI分牌：全排列+强力剪枝+牌型优先+高性能
+// 能自动识别炸弹、葫芦、顺子、同花、三条、两对、对子、最大牌型，输出最优不倒水组合。
 
 const CARD_ORDER = {
   '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,
   'jack':11,'queen':12,'king':13,'ace':14
 };
-const SUITS = ['spades','hearts','diamonds','clubs'];
+
 function parseCard(card) {
   const [rank, , suit] = card.split(/_of_|_/);
   return { rank, suit, point: CARD_ORDER[rank] };
 }
 function uniq(arr) { return Array.from(new Set(arr)); }
-
 function countByRank(cards) {
   const c = {};
   for (const x of cards) {
@@ -19,6 +18,9 @@ function countByRank(cards) {
     c[r] = (c[r]||0)+1;
   }
   return c;
+}
+function sortByPointDesc(cards) {
+  return [...cards].sort((a, b) => parseCard(b).point - parseCard(a).point);
 }
 function findNOfAKind(cards, n) {
   let counts = countByRank(cards);
@@ -28,15 +30,9 @@ function findNOfAKind(cards, n) {
   }
   return result;
 }
-function findPairs(cards) {
-  return findNOfAKind(cards, 2);
-}
-function findTrips(cards) {
-  return findNOfAKind(cards, 3);
-}
-function findBombs(cards) {
-  return findNOfAKind(cards, 4);
-}
+function findPairs(cards) { return findNOfAKind(cards, 2); }
+function findTrips(cards) { return findNOfAKind(cards, 3); }
+function findBombs(cards) { return findNOfAKind(cards, 4); }
 function findFullHouse(cards) {
   let trips = findTrips(cards);
   for (let t of trips) {
@@ -79,21 +75,19 @@ function findStraight(cards, want=5) {
   }
   return [];
 }
-function sortByPointDesc(cards) {
-  return [...cards].sort((a, b) => parseCard(b).point - parseCard(a).point);
-}
 
-// 综合牌力打分（可根据需要调整权重）
+// 牌力评分（已分牌型优先级，点数补充）
 function handScore(cards){
   if(cards.length===5){
-    if(findBombs(cards).length) return 80000 + Math.max(...cards.map(c=>parseCard(c).point));
-    if(findFullHouse(cards).length===5) return 70000 + Math.max(...cards.map(c=>parseCard(c).point));
-    if(findFlush(cards,5).length===5) return 60000 + Math.max(...cards.map(c=>parseCard(c).point));
-    if(findStraight(cards,5).length===5) return 50000 + Math.max(...cards.map(c=>parseCard(c).point));
-    if(findTrips(cards).length) return 40000 + Math.max(...cards.map(c=>parseCard(c).point));
-    if(findPairs(cards).length>=2) return 30000 + Math.max(...cards.map(c=>parseCard(c).point));
-    if(findPairs(cards).length===1) return 20000 + Math.max(...cards.map(c=>parseCard(c).point));
-    return 10000 + Math.max(...cards.map(c=>parseCard(c).point));
+    if(findBombs(cards).length) return 800000 + Math.max(...cards.map(c=>parseCard(c).point));
+    if(findFullHouse(cards).length===5) return 700000 + Math.max(...cards.map(c=>parseCard(c).point));
+    if(findFlush(cards,5).length===5 && findStraight(cards,5).length===5) return 650000 + Math.max(...cards.map(c=>parseCard(c).point)); //同花顺
+    if(findFlush(cards,5).length===5) return 600000 + Math.max(...cards.map(c=>parseCard(c).point));
+    if(findStraight(cards,5).length===5) return 500000 + Math.max(...cards.map(c=>parseCard(c).point));
+    if(findTrips(cards).length) return 400000 + Math.max(...cards.map(c=>parseCard(c).point));
+    if(findPairs(cards).length>=2) return 300000 + Math.max(...cards.map(c=>parseCard(c).point));
+    if(findPairs(cards).length===1) return 200000 + Math.max(...cards.map(c=>parseCard(c).point));
+    return 100000 + Math.max(...cards.map(c=>parseCard(c).point));
   }else if(cards.length===3){
     if(findTrips(cards).length) return 4000 + Math.max(...cards.map(c=>parseCard(c).point));
     if(findPairs(cards).length) return 2000 + Math.max(...cards.map(c=>parseCard(c).point));
@@ -102,95 +96,73 @@ function handScore(cards){
   return 0;
 }
 
-// 多种分法全排列尝试，选最优
-function combine(arr, n) {
-  if (n === 0) return [[]];
-  if (arr.length < n) return [];
-  if (arr.length === n) return [arr];
-  let res = [];
-  for (let i = 0; i <= arr.length - n; i++) {
-    let head = arr[i];
-    let tailComb = combine(arr.slice(i+1), n-1);
-    for (let t of tailComb) res.push([head, ...t]);
+// 快速组合算法（n个元素的所有组合，最大数量剪枝）
+function k_combinations(set, k, limit=2000) {
+  if (k > set.length || k === 0) return [];
+  if (k === set.length) return [set];
+  let combs = [];
+  function helper(start, path) {
+    if (combs.length >= limit) return;
+    if (path.length === k) { combs.push(path.slice()); return; }
+    for (let i = start; i < set.length; i++) {
+      path.push(set[i]);
+      helper(i+1, path);
+      path.pop();
+      if (combs.length >= limit) break;
+    }
   }
-  return res;
+  helper(0, []);
+  return combs;
 }
 
+// 优先提取所有大牌型（炸弹、同花顺、同花、顺子、葫芦、三条、两对、对子），并尝试分配到尾道/中道
+function extractAllCombos(cards) {
+  let combos = [];
+  // 炸弹
+  let bombs = findBombs(cards);
+  for(let bomb of bombs) combos.push({type:"bomb", cards:bomb});
+  // 同花顺
+  let flush = findFlush(cards,5);
+  let straight = findStraight(flush,5);
+  if(flush.length===5 && straight.length===5) combos.push({type:"straight_flush", cards:flush});
+  // 同花
+  if(flush.length===5) combos.push({type:"flush", cards:flush});
+  // 顺子
+  let str = findStraight(cards,5);
+  if(str.length===5) combos.push({type:"straight", cards:str});
+  // 葫芦
+  let fh = findFullHouse(cards);
+  if(fh.length===5) combos.push({type:"fullhouse", cards:fh});
+  // 三条
+  let trips = findTrips(cards);
+  for(let t of trips) combos.push({type:"trips", cards:t});
+  // 两对
+  let pairs = findPairs(cards);
+  if(pairs.length>=2) combos.push({type:"twopairs", cards:pairs[0].concat(pairs[1])});
+  // 对子
+  if(pairs.length) combos.push({type:"pair", cards:pairs[0]});
+  return combos;
+}
+
+// 极致AI分牌主函数
 export function aiSplit(cards){
   if(!Array.isArray(cards)||cards.length!==13) return {head:[],main:[],tail:[]};
   let best = null, bestScore = -1;
 
-  // Step1: 枚举所有尾道的合理5张组合（优先炸弹>葫芦>同花>顺>三条>两对>对子>高牌）
-  let triedTail = new Set();
-  let tailCandidates = [];
-  let bomb = findBombs(cards);
-  if(bomb.length) tailCandidates.push(bomb[0]);
-  else {
-    let fh = findFullHouse(cards);
-    if(fh.length) tailCandidates.push(fh);
-    let flush = findFlush(cards,5);
-    if(flush.length) tailCandidates.push(flush);
-    let straight = findStraight(cards,5);
-    if(straight.length) tailCandidates.push(straight);
-    let trips = findTrips(cards);
-    if(trips.length) tailCandidates.push(trips[0].concat(combine(cards.filter(c=>!trips[0].includes(c)),2)[0]));
-    let pairs = findPairs(cards);
-    if(pairs.length>=2) tailCandidates.push(pairs[0].concat(pairs[1]).concat(combine(cards.filter(c=>!pairs[0].includes(c)&&!pairs[1].includes(c)),1)[0]));
-    if(pairs.length===1) tailCandidates.push(pairs[0].concat(combine(cards.filter(c=>!pairs[0].includes(c)),3)[0]));
-  }
-  tailCandidates.push(sortByPointDesc(cards).slice(0,5));
-
-  // 尾道候选去重
-  let uniqTail = [];
-  for(let t of tailCandidates) {
-    if(t && t.length===5){
-      let key = t.slice().sort().join(',');
-      if(!triedTail.has(key)) { uniqTail.push(t); triedTail.add(key);}
-    }
-  }
-
-  // Step2: 对每个尾道，枚举所有可能的中道
-  for(let tail of uniqTail){
+  // 第一轮，全排列剪枝法（尾、中道最多各2000种）
+  let tailCombs = k_combinations(cards, 5, 2000);
+  for(let tail of tailCombs){
     let left8 = cards.filter(c=>!tail.includes(c));
-    let mainCandidates = [];
-    let bombM = findBombs(left8);
-    if(bombM.length) mainCandidates.push(bombM[0]);
-    else {
-      let fhM = findFullHouse(left8);
-      if(fhM.length) mainCandidates.push(fhM);
-      let flushM = findFlush(left8,5);
-      if(flushM.length) mainCandidates.push(flushM);
-      let straightM = findStraight(left8,5);
-      if(straightM.length) mainCandidates.push(straightM);
-      let tripsM = findTrips(left8);
-      if(tripsM.length) mainCandidates.push(tripsM[0].concat(combine(left8.filter(c=>!tripsM[0].includes(c)),2)[0]));
-      let pairsM = findPairs(left8);
-      if(pairsM.length>=2) mainCandidates.push(pairsM[0].concat(pairsM[1]).concat(combine(left8.filter(c=>!pairsM[0].includes(c)&&!pairsM[1].includes(c)),1)[0]));
-      if(pairsM.length===1) mainCandidates.push(pairsM[0].concat(combine(left8.filter(c=>!pairsM[0].includes(c)),3)[0]));
-    }
-    mainCandidates.push(sortByPointDesc(left8).slice(0,5));
-
-    // 中道去重
-    let triedMain = new Set();
-    let uniqMain = [];
-    for(let m of mainCandidates){
-      if(m && m.length===5){
-        let key = m.slice().sort().join(',');
-        if(!triedMain.has(key)) { uniqMain.push(m); triedMain.add(key);}
-      }
-    }
-
-    // Step3: 对头道所有分法
-    for(let main of uniqMain){
-      let left3 = left8.filter(c=>!main.includes(c));
-      if(left3.length!==3) continue;
-      let head = findTrips(left3)[0] || findPairs(left3)[0] || sortByPointDesc(left3);
-      head = head.slice(0,3);
-
-      // 不倒水约束
-      let h = handScore(head), msc = handScore(main), t = handScore(tail);
-      if(t < msc || msc < h) continue;
-      let total = h + msc + t + t*0.01 + msc*0.002 + h*0.0001; // 保证权重大牌优先
+    let mainCombs = k_combinations(left8, 5, 100);
+    for(let main of mainCombs){
+      let head = left8.filter(c=>!main.includes(c));
+      if(head.length!==3) continue;
+      // 不倒水
+      let h = handScore(head), m = handScore(main), t = handScore(tail);
+      if(t < m || m < h) continue;
+      // 极致评分：大牌型优先，点数次之
+      // 尾道权重最高
+      let total = h + m*1.5 + t*2 + t*0.01 + m*0.003 + h*0.0001;
       if(total > bestScore){
         best = {head, main, tail};
         bestScore = total;
@@ -198,14 +170,32 @@ export function aiSplit(cards){
     }
   }
 
-  // fallback
+  // 第二轮，若未找到合规方案（极少数情况），用大牌型优先法兜底
   if(!best){
-    let sorted = sortByPointDesc(cards);
-    best = {
-      head: sorted.slice(10,13),
-      main: sorted.slice(5,10),
-      tail: sorted.slice(0,5)
-    };
+    // 优先炸弹/同花顺/同花/顺子/葫芦/三条/两对/对子分配到尾道>中道>头道
+    let c = [...cards];
+    let tail = [], main = [], head = [];
+    let combos = extractAllCombos(c);
+
+    // 尾道优先
+    for(let type of ["bomb","straight_flush","flush","straight","fullhouse","trips","twopairs","pair"]) {
+      let found = combos.find(x=>x.type===type && x.cards.length===5);
+      if(found) { tail = found.cards; c = c.filter(k=>!tail.includes(k)); break; }
+    }
+    if(tail.length<5) { tail = sortByPointDesc(c).slice(0,5); c = c.filter(k=>!tail.includes(k)); }
+
+    // 中道优先
+    combos = extractAllCombos(c);
+    for(let type of ["bomb","straight_flush","flush","straight","fullhouse","trips","twopairs","pair"]) {
+      let found = combos.find(x=>x.type===type && x.cards.length===5);
+      if(found) { main = found.cards; c = c.filter(k=>!main.includes(k)); break; }
+    }
+    if(main.length<5) { main = sortByPointDesc(c).slice(0,5); c = c.filter(k=>!main.includes(k)); }
+
+    // 头道
+    head = sortByPointDesc(c).slice(0,3);
+
+    best = {head, main, tail};
   }
   return best;
 }
