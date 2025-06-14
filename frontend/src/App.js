@@ -68,7 +68,7 @@ export default function App() {
     }
     setAiSplits(splits);
     setAiSubmitted(submitted);
-    alert("AI已自动分牌并提交");
+    alert("AI已自动智能分牌并提交");
   };
 
   // 玩家分牌辅助
@@ -76,7 +76,7 @@ export default function App() {
     if (!myHand || myHand.length !== 13) return;
     const split = advancedAiSplit(myHand);
     setMySplit(split);
-    alert("已为你自动分牌，请点提交牌型");
+    alert("已为你智能分牌，请点提交牌型");
   };
 
   // 玩家提交
@@ -112,7 +112,7 @@ export default function App() {
             )}
           </div>
           <div>
-            <button onClick={handleMyAiSplit}>AI帮我分牌</button>
+            <button onClick={handleMyAiSplit}>AI智能分牌</button>
             <button onClick={handleSubmit} disabled={!mySplit}>提交牌型</button>
           </div>
           {mySplit && (
@@ -124,7 +124,7 @@ export default function App() {
             </div>
           )}
           <div style={{ marginTop: 16 }}>
-            <button onClick={handleAiSplit}>让AI立即自动分牌并提交</button>
+            <button onClick={handleAiSplit}>让AI立即智能分牌并提交</button>
           </div>
         </>
       )}
