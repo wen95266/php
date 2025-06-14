@@ -1,5 +1,5 @@
 // API通信
-const API_BASE = "https://9525.ip-ddns.com/backend/api.php";
+const API_BASE = "https://9526.ip-ddns.com/backend/api.php";
 
 export async function createRoom(playerName) {
   const res = await fetch(`${API_BASE}?action=create_room&player=${encodeURIComponent(playerName)}`);
