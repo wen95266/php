@@ -10,17 +10,19 @@ function cardImg(card) {
   return `/cards/${v}_of_${card.suit}.svg`;
 }
 
-// 计算最大牌高（自动缩放高度，横向排满且不溢出横幅）
-function calcCardSize(cardCount, areaWidth, maxHeight, gap = 12, aspect = 0.725) {
-  // gap为牌与牌的间距，aspect为牌面宽高比
-  // 计算在areaWidth范围内排满cardCount张扑克牌的最大高度
+// 只自适应最大宽高，保证13张牌不溢出横幅，尽量放大宽高
+function calcCardSize(cardCount, areaWidth, areaHeight, gap = 12, aspect = 0.725) {
+  // 在areaWidth范围内排满cardCount张扑克牌的最大宽高
+  // aspect为牌面宽高比，gap为间距
   const totalGap = gap * (cardCount - 1);
+  // 先按宽限制
   let cardW = (areaWidth - totalGap) / cardCount;
   let cardH = cardW / aspect;
-  if (cardH > maxHeight) {
-    cardH = maxHeight;
+  // 再按高限制
+  if (cardH > areaHeight) {
+    cardH = areaHeight;
     cardW = cardH * aspect;
-    // 重新计算gap使整体不溢出
+    // 此时需要重新计算gap
     if (cardCount > 1) {
       gap = (areaWidth - cardCount * cardW) / (cardCount - 1);
       if (gap < 0) gap = 0;
@@ -40,20 +42,21 @@ export default function CardZone({
   style,
   fullArea = false,
   fixedCardHeight,
-  stacked // 新增堆叠模式
+  stacked // 堆叠模式
 }) {
   // 横向自适应布局
-  // 目标：最大化显示高度，在宽度100vw下，13张牌不溢出
   const containerRef = React.useRef(null);
   const [containerW, setContainerW] = React.useState(window.innerWidth);
+  const [containerH, setContainerH] = React.useState(120);
 
-  // 跟踪宽度变化自适应
   React.useEffect(() => {
     function update() {
       if (containerRef.current) {
         setContainerW(containerRef.current.offsetWidth);
+        setContainerH(containerRef.current.offsetHeight);
       } else {
         setContainerW(window.innerWidth);
+        setContainerH(120);
       }
     }
     update();
@@ -61,30 +64,29 @@ export default function CardZone({
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // 计算最大牌高和gap
   const cardCount = cards.length;
   const areaW = containerW;
   // 允许自定义区域高度或使用默认
   let areaH = 120;
   if (fixedCardHeight && typeof fixedCardHeight === "number") {
-    if (typeof fixedCardHeight === "string" && fixedCardHeight.endsWith("px")) {
-      areaH = parseInt(fixedCardHeight, 10);
-    } else if (typeof fixedCardHeight === "string" && fixedCardHeight.endsWith("vh")) {
-      areaH = window.innerHeight * parseFloat(fixedCardHeight) / 100;
-    } else {
-      areaH = fixedCardHeight;
-    }
+    areaH = fixedCardHeight;
+  } else if (typeof fixedCardHeight === "string" && fixedCardHeight.endsWith("px")) {
+    areaH = parseInt(fixedCardHeight, 10);
+  } else if (typeof fixedCardHeight === "string" && fixedCardHeight.endsWith("vh")) {
+    areaH = window.innerHeight * parseFloat(fixedCardHeight) / 100;
+  } else if (containerH) {
+    areaH = containerH;
   }
 
   let cardW = 0, cardH = 0, gap = 12;
   if (cardCount > 0) {
-    const { cardW: w, cardH: h, gap: g } = calcCardSize(cardCount, areaW - 34, areaH * 0.98, 12, 0.725);
+    const { cardW: w, cardH: h, gap: g } = calcCardSize(cardCount, areaW - 34, areaH * 0.97, 12, 0.725);
     cardW = w;
     cardH = h;
     gap = g;
   }
 
-  // 堆叠模式
+  // 堆叠模式不变
   if (stacked && cards.length > 1) {
     let overlap = 18;
     return (
@@ -119,7 +121,7 @@ export default function CardZone({
     );
   }
 
-  // 常规平铺
+  // 平铺模式：只调大牌宽高
   return (
     <div
       ref={containerRef}
@@ -162,7 +164,6 @@ export default function CardZone({
         onDragOver={(zone !== "mid" && cards.length < maxCards) ? e => { e.preventDefault(); } : undefined}
         onDrop={(zone !== "mid" && cards.length < maxCards) ? () => onDrop(zone) : undefined}
       >
-        {/* 说明文字 */}
         <div className="cardzone-label"
           style={{
             position: "absolute",
