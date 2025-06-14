@@ -1,4 +1,4 @@
-// AI分牌与策略模块
+// AI分牌与策略模块（增强智能版）
 
 import { VALUES, SUITS } from "./cardUtils";
 
@@ -170,10 +170,89 @@ function getHighCards(cards, n=5) {
   return sortByValueDesc(cards).slice(0, n);
 }
 
-// --- 新增：全排列分牌 (智能+穷举) ---
+// --- 增强AI分牌：优先大牌道，合理分配头道 ---
+// 优先保证尾道为最大牌型（如同花顺、炸弹、葫芦、同花、顺子等），头道尽量大一对或散牌，避免头道被鸡蛋。
+function enhancedAiSplit(hand) {
+  let remain = hand.slice();
+  // 1. 优先取同花顺
+  let straightFlush = getStraightFlush(remain);
+  if (straightFlush) {
+    remain = remain.filter(c => !straightFlush.includes(c));
+    // 再取尾道最大，头道最大
+    let tail = straightFlush;
+    let mid = getHighCards(remain, 5);
+    let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
+    if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+  }
+  // 2. 四条
+  let four = getFourOfKind(remain);
+  if (four) {
+    remain = remain.filter(c => !four.includes(c));
+    let tail = four;
+    let mid = getFullHouse(remain) || getHighCards(remain, 5);
+    if (mid) {
+      let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
+      if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+    }
+  }
+  // 3. 葫芦
+  let fullhouse = getFullHouse(remain);
+  if (fullhouse) {
+    remain = remain.filter(c => !fullhouse.includes(c));
+    let tail = fullhouse;
+    let mid = getFullHouse(remain) || getHighCards(remain, 5);
+    if (mid) {
+      let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
+      if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+    }
+  }
+  // 4. 同花
+  let flush = getFlush(remain);
+  if (flush) {
+    remain = remain.filter(c => !flush.includes(c));
+    let tail = flush;
+    let mid = getStraight(remain) ? getHighCards(remain, 5) : getHighCards(remain, 5);
+    let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
+    if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+  }
+  // 5. 顺子
+  let straight = getStraight(remain);
+  if (straight) {
+    let tail = [];
+    for (let v of straight) {
+      let idx = remain.findIndex(c => valueNum(c.value) === v && !tail.includes(c));
+      if (idx !== -1) tail.push(remain[idx]);
+    }
+    remain = remain.filter(c => !tail.includes(c));
+    let mid = getHighCards(remain, 5);
+    let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
+    if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+  }
+  // 6. 普通高牌分配（优先头道一对，避免鸡蛋）
+  let sorted = sortByValueDesc(hand);
+  // 尝试给头道留一对
+  let { valueCount } = getCounts(sorted);
+  let headPairValue = Object.keys(valueCount).find(v => valueCount[v] === 2);
+  if (headPairValue) {
+    let head = sorted.filter(c => valueNum(c.value) == headPairValue).slice(0, 2);
+    let others = sorted.filter(c => valueNum(c.value) != headPairValue);
+    head.push(others[0]);
+    // 余下10张分中、尾
+    let mid = others.slice(1, 6);
+    let tail = others.slice(6, 11);
+    if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+  }
+  // 最后暴力均分
+  return [
+    sorted.slice(0, 3),
+    sorted.slice(3, 8),
+    sorted.slice(8, 13)
+  ];
+}
+
+// --- 原来的智能遍历接口，允许多种分法 ---
 // 生成所有可能的[5,5,3]分牌
 function* splitHandAllWays(cards) {
-  // 13张牌中选5张为尾道
   for (let i = 0; i < (1 << 13); ++i) {
     if (countBits(i) !== 5) continue;
     let tail = [];
@@ -182,7 +261,6 @@ function* splitHandAllWays(cards) {
       if (i & (1 << j)) tail.push(cards[j]);
       else restIdx.push(j);
     }
-    // 剩下8张中选5张为中道
     for (let k = 0; k < (1 << 8); ++k) {
       if (countBits(k) !== 5) continue;
       let mid = [];
@@ -197,18 +275,15 @@ function* splitHandAllWays(cards) {
   }
 }
 
-// 计算二进制中1的个数
 function countBits(x) {
   let cnt = 0;
   while (x) { cnt += x & 1; x >>= 1; }
   return cnt;
 }
 
-// 评估单个分牌（简单评估：尾>中>头，且每道牌型越大越好，和牌力分数相关）
 function evalSplit([head, mid, tail]) {
-  // 牌型权重: 四条9 葫芦8 同花6 顺子5 三条4 两对3 一对2 散牌1
   function getScore(cards) {
-    let v = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // 0-9
+    let v = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     if (getStraightFlush(cards)) v[9] = 1;
     else if (getFourOfKind(cards)) v[8] = 1;
     else if (getFullHouse(cards)) v[7] = 1;
@@ -221,39 +296,10 @@ function evalSplit([head, mid, tail]) {
     return v.findIndex(x => x === 1);
   }
   let t = getScore(tail), m = getScore(mid), h = getScore(head);
-  // 尾道分权重大于中道，中道大于头道
   return t * 100 + m * 10 + h;
 }
 
-// --- AI智能分牌主函数 ---
-// 支持“第n种分牌”，用于每次点击变换不同牌型
-let aiSplitCache = {};
-export function advancedAiSplit(hand, nth = 0) {
-  // 缓存（保证同一手牌遍历时不重复大量运算）
-  const key = hand.map(c => c.value + c.suit).sort().join(",") + ":" + nth;
-  if (aiSplitCache[key]) return aiSplitCache[key];
-
-  // 生成所有合法分牌，并排序
-  let allSplits = [];
-  let idx = 0;
-  for (let split of splitHandAllWays(hand)) {
-    // 检查头<=中<=尾
-    if (!isLegalOrder(split)) continue;
-    allSplits.push(split);
-    // 限制最大枚举数量，防止太慢
-    if (allSplits.length > 6000) break;
-  }
-  // 按“最优”优先（评分高的在前）
-  allSplits.sort((a, b) => evalSplit(b) - evalSplit(a));
-  // 支持变换：取第 nth 种
-  let pick = allSplits[nth % allSplits.length] || allSplits[0];
-  aiSplitCache[key] = pick;
-  return pick;
-}
-
-// 判断分牌顺序是否合法（头<=中<=尾）
 function isLegalOrder([head, mid, tail]) {
-  // 牌型权重: 四条9 葫芦8 同花6 顺子5 三条4 两对3 一对2 散牌1
   function getScore(cards) {
     if (getStraightFlush(cards)) return 9;
     if (getFourOfKind(cards)) return 8;
@@ -270,17 +316,27 @@ function isLegalOrder([head, mid, tail]) {
   return true;
 }
 
-// 仍保留简单分牌
-export function simpleAiSplit(hand) {
-  const sorted = sortByValueDesc(hand);
-  return [
-    sorted.slice(0, 3),
-    sorted.slice(3, 8),
-    sorted.slice(8, 13)
-  ];
+// 允许“第n种”分牌（智能增强+遍历最优/次优）
+let aiSplitCache = {};
+export function advancedAiSplit(hand, nth = 0) {
+  // 先用增强AI分一次
+  if (nth === 0) return enhancedAiSplit(hand);
+  // 缓存
+  const key = hand.map(c => c.value + c.suit).sort().join(",") + ":" + nth;
+  if (aiSplitCache[key]) return aiSplitCache[key];
+  let allSplits = [];
+  for (let split of splitHandAllWays(hand)) {
+    if (!isLegalOrder(split)) continue;
+    allSplits.push(split);
+    if (allSplits.length > 6000) break;
+  }
+  allSplits.sort((a, b) => evalSplit(b) - evalSplit(a));
+  let pick = allSplits[nth % allSplits.length] || allSplits[0];
+  aiSplitCache[key] = pick;
+  return pick;
 }
 
-// AI分牌“变换”接口：每次调用返回不同分牌（最优、次优、再次优...循环）
+// 可多次点击切换分牌
 let splitIndexMap = {};
 export function cycleAiSplit(hand, uniqueKey = "default") {
   if (!splitIndexMap[uniqueKey]) splitIndexMap[uniqueKey] = 0;
@@ -288,4 +344,14 @@ export function cycleAiSplit(hand, uniqueKey = "default") {
   const result = advancedAiSplit(hand, idx);
   splitIndexMap[uniqueKey]++;
   return result;
+}
+
+// 简单分牌
+export function simpleAiSplit(hand) {
+  const sorted = sortByValueDesc(hand);
+  return [
+    sorted.slice(0, 3),
+    sorted.slice(3, 8),
+    sorted.slice(8, 13)
+  ];
 }
