@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React from "react";
 
 // 卡牌图片路径
 function cardImg(card) {
@@ -19,52 +19,31 @@ export default function CardZone({
   onDrop,
   draggingCard,
   style,
-  fullArea = false
+  fullArea = false,
+  fixedCardHeight // 新增，要求外部传入
 }) {
-  // 响应式判定
-  const [isNarrow, setIsNarrow] = useState(window.innerWidth < 700);
-  const zoneRef = useRef();
-  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
-
-  useEffect(() => {
-    function handleResize() {
-      setIsNarrow(window.innerWidth < 700);
-      if (zoneRef.current) {
-        setContainerWidth(zoneRef.current.offsetWidth);
-      } else {
-        setContainerWidth(window.innerWidth);
-      }
+  // 固定扑克牌高度，宽度按比例
+  const CARD_RATIO = 0.725; // 扑克牌宽/高
+  let heightPx = 120;
+  if (fixedCardHeight && typeof fixedCardHeight === "string" && fixedCardHeight.startsWith("calc")) {
+    // calc((100vh - 90px - 120px) / 3) 简单估算
+    const match = fixedCardHeight.match(/100vh - (\d+)px - (\d+)px/);
+    if (match) {
+      heightPx = (window.innerHeight - parseInt(match[1]) - parseInt(match[2])) / 3;
     }
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // 卡牌宽度算法：保证所有牌完整显示，且最大不超过180px
-  const gap = 12;
-  let cardCount = cards.length || 1;
-  let availWidth = Math.max(containerWidth - 28, 320); // 28=左右padding
-  let cardWidth = Math.min(
-    180,
-    Math.floor((availWidth - gap * (cardCount - 1)) / cardCount)
-  );
-  if (isNarrow) {
-    cardWidth = Math.min(
-      90,
-      Math.floor((availWidth - gap * (cardCount - 1)) / cardCount)
-    );
+  } else if (typeof fixedCardHeight === "number") {
+    heightPx = fixedCardHeight;
   }
-  let cardHeight = Math.round(cardWidth * 1.36);
+  const cardWidth = Math.round(heightPx * CARD_RATIO);
 
   return (
     <div
       className="cardzone-outer"
-      ref={zoneRef}
       style={{
         width: "100vw",
         minWidth: "100vw",
         maxWidth: "100vw",
-        height: style?.height || "16vh",
+        height: style?.height || heightPx,
         borderBottom: style?.borderBottom || "1px solid #eee",
         display: "flex",
         alignItems: "center",
@@ -92,7 +71,6 @@ export default function CardZone({
           position: "relative",
           boxSizing: "border-box",
           boxShadow: "0 2px 6px #fafafa",
-          opacity: (cards.length >= maxCards && zone !== "hand" && zone !== "mid") ? 0.7 : 1,
           overflow: "hidden",
           padding: 0,
         }}
@@ -126,11 +104,11 @@ export default function CardZone({
             display: "flex",
             flexDirection: "row",
             flexWrap: "nowrap",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "flex-start",
             boxSizing: "border-box",
             overflowX: "auto",
-            gap: `${gap}px`,
+            gap: "12px",
             padding: "0 14px",
             position: "relative",
             background: "none"
@@ -142,9 +120,9 @@ export default function CardZone({
               className="cardzone-card"
               style={{
                 width: cardWidth,
-                minWidth: 24,
-                maxWidth: 240,
-                height: cardHeight,
+                minWidth: cardWidth,
+                maxWidth: cardWidth,
+                height: heightPx * 0.97,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
