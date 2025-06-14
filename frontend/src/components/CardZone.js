@@ -13,7 +13,6 @@ function cardImg(card) {
 export default function CardZone({
   zone,
   label,
-  maxCards,
   cards,
   selectedCard,
   onSelectCard,
@@ -70,7 +69,7 @@ export default function CardZone({
         if (e.target === e.currentTarget) onZoneClick(zone);
       }}
     >
-      {/* 右上角半透明说明 */}
+      {/* 右上角半透明说明，只显示头道/中道/尾道 */}
       <div
         className="cardzone-label"
         style={{
@@ -85,7 +84,7 @@ export default function CardZone({
           pointerEvents: "none",
           userSelect: "none"
         }}>
-        {label} ({cards.length}/{maxCards})
+        {label}
       </div>
       {/* 卡牌区域 */}
       <div
