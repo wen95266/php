@@ -41,32 +41,13 @@ function CardRow({ cards, size = 38 }) {
   );
 }
 
-// 田字格布局（2x2）
-function Grid2x2({ children }) {
-  return (
-    <div style={{
-      width: "100%",
-      height: "100%",
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gridTemplateRows: "1fr 1fr",
-      gap: "36px 36px",
-      alignItems: "center",
-      justifyItems: "center"
-    }}>
-      {children}
-    </div>
-  );
-}
-
-// 每个玩家的比牌结果卡片
+// 玩家卡片 横排三道
 function PlayerResultCard({ player, splits, details, scores }) {
-  if (!splits || !splits[player]) return null;
+  if (!player || !splits || !splits[player]) return null;
   return (
     <div style={{
-      minWidth: 350,
-      minHeight: 210,
-      maxWidth: 410,
+      minWidth: 370,
+      minHeight: 185,
       background: "#f8faff",
       borderRadius: 16,
       boxShadow: "0 1px 10px #0001",
@@ -80,19 +61,19 @@ function PlayerResultCard({ player, splits, details, scores }) {
       <div style={{
         display: "flex",
         flexDirection: "column",
-        gap: 7,
+        gap: 9,
         alignItems: "flex-start",
         marginBottom: 8
       }}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
           <CardRow cards={splits[player][0]} size={38} />
           <span style={{ fontSize: 15, color: "#666" }}>{details && details[player] ? details[player]["牌型"][0] : ""}</span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
           <CardRow cards={splits[player][1]} size={38} />
           <span style={{ fontSize: 15, color: "#666" }}>{details && details[player] ? details[player]["牌型"][1] : ""}</span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
           <CardRow cards={splits[player][2]} size={38} />
           <span style={{ fontSize: 15, color: "#666" }}>{details && details[player] ? details[player]["牌型"][2] : ""}</span>
         </div>
@@ -108,65 +89,69 @@ function PlayerResultCard({ player, splits, details, scores }) {
 }
 
 export default function CompareDialog({ players, splits, scores, details, onRestart }) {
-  // 按田字格分布前4人（不足补空）
+  // 田字型玩家分布，4个角：0左上，1右上，2左下，3右下
   let gridPlayers = [...players];
   while (gridPlayers.length < 4) gridPlayers.push("");
+
   return (
     <div style={{
       position: "fixed",
       left: 0, top: 0, right: 0, bottom: 0,
       width: "100vw", height: "100vh",
-      background: "rgba(0,0,0,0.47)",
+      background: "#fff",  // 直接全白
       zIndex: 9999,
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
       justifyContent: "center"
     }}>
       <div style={{
-        width: "min(98vw, 1100px)",
-        height: "min(97vh, 670px)",
-        maxWidth: 1100,
-        maxHeight: 670,
-        minWidth: 730,
-        minHeight: 470,
-        background: "#fff",
-        borderRadius: 28,
-        boxShadow: "0 16px 48px #0003",
+        width: "100vw",
+        height: "100vh",
+        position: "relative",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        position: "relative",
-        padding: "0 0 32px 0",
-        justifyContent: "space-between"
+        alignItems: "center"
       }}>
         <div style={{
-          fontSize: 30,
+          fontSize: 32,
           fontWeight: 700,
-          marginTop: 42,
-          marginBottom: 32,
+          marginTop: 38,
+          marginBottom: 28,
           color: "#3869f6",
           textAlign: "center",
-          userSelect: "none"
+          userSelect: "none",
+          letterSpacing: 1.5
         }}>
           比牌结果
         </div>
+        {/* 田字格布局 */}
         <div style={{
-          width: "96%",
-          height: "100%",
           flex: 1,
-          display: "flex",
+          width: "100%",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gridTemplateRows: "1fr 1fr",
+          gap: "0",
           alignItems: "center",
-          justifyContent: "center"
+          justifyItems: "center",
+          minHeight: 0,
+          minWidth: 0
         }}>
-          <Grid2x2>
-            {gridPlayers.map((p, idx) => (
-              p
-                ? <PlayerResultCard key={p} player={p} splits={splits} details={details} scores={scores} />
-                : <div key={"empty"+idx} />
-            ))}
-          </Grid2x2>
+          <div style={{display:"flex",justifyContent:"flex-start",alignItems:"flex-start",width:"100%",height:"100%",padding:"2vw"}}>
+            <PlayerResultCard player={gridPlayers[0]} splits={splits} details={details} scores={scores}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"flex-end",alignItems:"flex-start",width:"100%",height:"100%",padding:"2vw"}}>
+            <PlayerResultCard player={gridPlayers[1]} splits={splits} details={details} scores={scores}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"flex-start",alignItems:"flex-end",width:"100%",height:"100%",padding:"2vw"}}>
+            <PlayerResultCard player={gridPlayers[2]} splits={splits} details={details} scores={scores}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"flex-end",alignItems:"flex-end",width:"100%",height:"100%",padding:"2vw"}}>
+            <PlayerResultCard player={gridPlayers[3]} splits={splits} details={details} scores={scores}/>
+          </div>
         </div>
-        <div style={{textAlign:"center", marginTop: 24}}>
+        <div style={{width:"100%",display:"flex",justifyContent:"center",margin:"32px 0 0 0"}}>
           <button onClick={onRestart}
             style={{
               background: "#3869f6",
