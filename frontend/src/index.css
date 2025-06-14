@@ -1,0 +1,88 @@
+html, body, #root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden !important;
+  background: #f2f6fa;
+  font-family: "PingFang SC", "Microsoft YaHei", Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  outline: none;
+  border: 1px solid #cdd3db;
+  background: #fff;
+  color: #222;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  font-family: inherit;
+}
+button:disabled {
+  background: #f3f4f6 !important;
+  color: #b1b1b1 !important;
+  cursor: not-allowed;
+  border: 1px solid #e5e7eb;
+}
+
+::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* 彻底禁用滚动条 */
+body, #root, .App, .main-content {
+  overflow: hidden !important;
+}
+
+/* 兼容移动端防止拖动弹性滚动 */
+html, body {
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+/* 让所有置牌区和卡牌区无边距无滚动，完全自适应 */
+.CardZone-main,
+.CardZone-main > div,
+.CardZone-cards-row {
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  background: none !important;
+}
+
+/* 图片自适应无边框 */
+.CardZone-cards-row img,
+.CardZone-main img {
+  display: block;
+  margin: 0 auto;
+  background: none;
+  border: none;
+  box-shadow: none;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* 禁止文本选中避免误触 */
+.CardZone-main,
+.CardZone-main * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 700px) {
+  button {
+    font-size: 16px;
+    padding: 8px 18px;
+  }
+}
