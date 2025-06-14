@@ -6,17 +6,7 @@ import ControlBar from "./components/ControlBar";
 import CompareDialog from "./components/CompareDialog";
 import { cycleAiSplit } from "./utils/ai";
 
-// 匹配API
-const API_BASE = "https://9525.ip-ddns.com/backend/api.php";
-async function joinMatchApi(playerName) {
-  const res = await fetch(`${API_BASE}?action=join_match&player=${encodeURIComponent(playerName)}`);
-  return res.json();
-}
-async function cancelMatchApi(playerName) {
-  const res = await fetch(`${API_BASE}?action=cancel_match&player=${encodeURIComponent(playerName)}`);
-  return res.json();
-}
-
+// AI与匹配部分同旧版
 const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
 const MY_NAME = localStorage.getItem("playerName") || "玩家" + Math.floor(Math.random()*10000);
 
@@ -30,8 +20,8 @@ export default function App() {
   const [status, setStatus] = useState("loading");
   const [results, setResults] = useState(null);
 
-  // 统一管理所有分区，保证每张牌只在一个区域
-  const [zones, setZones] = useState({ hand: [], head: [], mid: [], tail: [] });
+  // 只保留三道，不再有手牌区
+  const [zones, setZones] = useState({ head: [], mid: [], tail: [] });
   const [draggingCard, setDraggingCard] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -39,8 +29,8 @@ export default function App() {
   const [showCompare, setShowCompare] = useState(false);
   const [compareData, setCompareData] = useState(null);
 
-  // 本地记忆（只在发牌后更新），否则拖拽会被服务端状态重置
-  const [localHandInited, setLocalHandInited] = useState(false);
+  // 控制AI只自动分一次
+  const [autoAISplit, setAutoAISplit] = useState(false);
 
   // AI初始化
   useEffect(() => {
@@ -57,21 +47,7 @@ export default function App() {
     setup();
   }, [mode]);
 
-  // 匹配模式
-  useEffect(() => {
-    if (mode !== "match" || !isMatching) return;
-    let timer = setInterval(async () => {
-      const res = await joinMatchApi(MY_NAME);
-      if (res.status === "matched" && res.roomId) {
-        setRoomId(res.roomId);
-        setIsMatching(false);
-        setJoined(true);
-      }
-    }, 1500);
-    return () => clearInterval(timer);
-  }, [mode, isMatching]);
-
-  // 核心：只在发牌时同步后端手牌，其余操作均用本地zones
+  // 房间轮询
   useEffect(() => {
     if (!roomId) return;
     let timer = setInterval(async () => {
@@ -80,12 +56,13 @@ export default function App() {
       setStatus(state.status);
       setResults(state.results || null);
 
-      // 只在发牌后同步一次手牌，后续完全本地管理，避免拖拽后被重置
-      if (state.status === "playing" && !localHandInited && state.myHand && state.myHand.length === 13) {
-        setZones({ hand: state.myHand, head: [], mid: [], tail: [] });
-        setLocalHandInited(true);
+      // 发牌就自动AI分牌（只执行一次）
+      if (state.status === "playing" && state.myHand && state.myHand.length === 13 && !autoAISplit) {
+        const [newHead, newMid, newTail] = cycleAiSplit(state.myHand, roomId || "myAI");
+        setZones({ head: newHead, mid: newMid, tail: newTail });
+        setAutoAISplit(true);
       }
-      // 结束后比牌弹窗
+      // 结果弹窗
       if (state.status === "finished" && state.results && !showCompare) {
         setCompareData({
           players: state.players,
@@ -98,45 +75,38 @@ export default function App() {
     }, 1200);
     return () => clearInterval(timer);
     // eslint-disable-next-line
-  }, [roomId, showCompare, localHandInited]);
+  }, [roomId, showCompare, autoAISplit]);
 
-  // 拖拽：只允许每张牌出现在一个区域
+  // 拖拽逻辑：三道之间拖拽
   const onDragStart = (card, from) => setDraggingCard({ card, from });
   const onDrop = (to) => {
     if (!draggingCard) return;
-    const { card } = draggingCard;
+    const { card, from } = draggingCard;
     const cardKey = c => c.value + "-" + c.suit;
-    // 移除所有区域该牌
-    let zoneKeys = ["hand", "head", "mid", "tail"];
-    let newZones = { hand: [], head: [], mid: [], tail: [] };
+    let zoneKeys = ["head", "mid", "tail"];
+    let newZones = { head: [], mid: [], tail: [] };
     for (let z of zoneKeys) {
       newZones[z] = zones[z].filter(c => cardKey(c) !== cardKey(card));
     }
     // 放入新区域
-    if (to === "hand" && newZones.hand.length < 13) newZones.hand.push(card);
     if (to === "head" && newZones.head.length < 3) newZones.head.push(card);
     if (to === "mid" && newZones.mid.length < 5) newZones.mid.push(card);
     if (to === "tail" && newZones.tail.length < 5) newZones.tail.push(card);
     setZones(newZones);
     setDraggingCard(null);
   };
-  const onReturnToHand = (zone, idx) => {
-    const zlist = zones[zone].slice();
-    const card = zlist[idx];
-    zlist.splice(idx, 1);
-    setZones(z => ({
-      ...z,
-      [zone]: zlist,
-      hand: [...z.hand, card]
-    }));
+
+  // 允许双击移回头道/中道/尾道之间（如需可扩展）
+  const onReturnToOther = (zone, idx) => {
+    // 可选：实现为回到未满的其他区，或不实现
   };
 
-  // AI分牌
+  // AI分牌按钮
   const handleAiSplit = () => {
-    const { hand, head, mid, tail } = zones;
-    if (hand.length + head.length + mid.length + tail.length !== 13) return;
-    const [newHead, newMid, newTail] = cycleAiSplit([...hand, ...head, ...mid, ...tail], roomId || "myAI");
-    setZones({ hand: [], head: newHead, mid: newMid, tail: newTail });
+    const allCards = [...zones.head, ...zones.mid, ...zones.tail];
+    if (allCards.length !== 13) return;
+    const [newHead, newMid, newTail] = cycleAiSplit(allCards, roomId || "myAI");
+    setZones({ head: newHead, mid: newMid, tail: newTail });
   };
 
   // 提交
@@ -158,207 +128,163 @@ export default function App() {
     setJoined(false);
     setAllPlayers([]);
     setResults(null);
-    setZones({ hand: [], head: [], mid: [], tail: [] });
+    setZones({ head: [], mid: [], tail: [] });
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
-    setLocalHandInited(false);
+    setAutoAISplit(false);
   };
 
-  // 取消匹配
+  // 取消匹配/返回AI
   const cancelMatch = async () => {
-    await cancelMatchApi(MY_NAME);
     setIsMatching(false);
     setMode("ai");
     window.location.reload();
   };
 
-  // 回到AI
-  const backToAiMode = () => {
-    setMode("ai");
-    setIsMatching(false);
-    setRoomId("");
-    setJoined(false);
-    setAllPlayers([]);
-    setResults(null);
-    setZones({ hand: [], head: [], mid: [], tail: [] });
-    setSubmitted(false);
-    setShowCompare(false);
-    setCompareData(null);
-    setLocalHandInited(false);
-  };
-
   // 继续游戏
   const handleRestartGame = async () => {
     await startGame(roomId);
-    setZones({ hand: [], head: [], mid: [], tail: [] });
+    setZones({ head: [], mid: [], tail: [] });
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
-    setLocalHandInited(false);
+    setAutoAISplit(false);
   };
+
+  // 布局高度百分比
+  const H1 = "10vh";
+  const H2 = "25vh";
+  const H3 = "25vh";
+  const H4 = "25vh";
+  const H5 = "15vh";
 
   if (mode === "match" && isMatching) {
     return (
-      <div style={{
-        width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f2f6fa", flexDirection: "column"
-      }}>
-        <div style={{ fontSize: 28, color: "#3869f6", fontWeight: 600, marginBottom: 40 }}>正在匹配真实玩家，请稍候...</div>
-        <button style={{ padding: "10px 40px", fontSize: 20, borderRadius: 8, background: "#fff", border: "1.5px solid #3869f6" }} onClick={cancelMatch}>取消匹配</button>
+      <div className="game-full-outer">
+        <div className="matching-text">正在匹配真实玩家，请稍候...</div>
+        <button className="matching-btn" onClick={cancelMatch}>取消匹配</button>
       </div>
     );
   }
 
   if (!joined || !roomId) {
     return (
-      <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f6fa",flexDirection:"column"}}>
-        <div style={{fontSize:26,marginBottom:40}}>多人十三水</div>
-        <button style={{
-          padding: "12px 44px",
-          fontSize: 21,
-          borderRadius: 8,
-          background: "#3869f6",
-          color: "#fff",
-          fontWeight: 500,
-          border: "none",
-          marginBottom: 18
-        }} onClick={startMatchMode}>自动匹配真实玩家</button>
-        <div style={{color:"#888",fontSize:15,marginTop:10}}>或体验AI对战（默认）</div>
+      <div className="game-full-outer">
+        <div className="welcome-title">多人十三水</div>
+        <button className="matching-btn" onClick={startMatchMode}>自动匹配真实玩家</button>
+        <div className="welcome-tip">或体验AI对战（默认）</div>
       </div>
     );
   }
-  const statusH = 90;
-  const buttonH = 120;
-  const threeZoneH = `calc((100vh - ${statusH}px - ${buttonH}px) / 4)`;
 
   return (
-    <div style={{
-      width: "100vw",
-      height: "100vh",
-      overflow: "hidden",
-      background: "#f2f6fa",
-      position: "relative"
-    }}>
-      <PlayerStatusBanner
-        status={status}
-        results={results}
-        myName={MY_NAME}
-        allPlayers={allPlayers}
-        style={{
-          height: statusH,
-          minHeight: statusH,
-          maxHeight: statusH,
-        }}
-      />
-      <div style={{
-        position: "absolute", top: 16, right: 24, zIndex: 20
-      }}>
-        {mode === "ai" && (
-          <button onClick={startMatchMode}
-            style={{
-              background: "#fff",
-              color: "#3869f6",
-              fontWeight: 500,
-              border: "1.5px solid #3869f6",
-              borderRadius: 8,
-              padding: "5px 18px",
-              fontSize: 16,
-              marginRight: 12
-            }}>切换到自动匹配</button>
-        )}
-        {mode === "match" && (
-          <button onClick={backToAiMode}
-            style={{
-              background: "#fff",
-              color: "#3869f6",
-              fontWeight: 500,
-              border: "1.5px solid #3869f6",
-              borderRadius: 8,
-              padding: "5px 18px",
-              fontSize: 16,
-            }}>切回AI对战</button>
-        )}
+    <div className="main-layout">
+      {/* 1. 状态栏 */}
+      <div className="zone-status" style={{ height: H1 }}>
+        <PlayerStatusBanner
+          status={status}
+          results={results}
+          myName={MY_NAME}
+          allPlayers={allPlayers}
+          style={{
+            height: "100%",
+            minHeight: "100%",
+            maxHeight: "100%",
+            fontSize: 22,
+          }}
+        />
+        <div className="top-right-btns">
+          {mode === "ai" && (
+            <button onClick={startMatchMode} className="top-btn">切换到自动匹配</button>
+          )}
+          {mode === "match" && (
+            <button onClick={cancelMatch} className="top-btn">切回AI对战</button>
+          )}
+        </div>
       </div>
-      <CardZone
-        zone="head"
-        label="头道"
-        maxCards={3}
-        cards={zones.head}
-        onDragStart={onDragStart}
-        onDrop={onDrop}
-        onReturnToHand={onReturnToHand}
-        draggingCard={draggingCard}
-        style={{
-          height: threeZoneH,
-          borderBottom: "1px solid #ededed",
-        }}
-        fullArea
-        fixedCardHeight={threeZoneH}
-      />
-      <CardZone
-        zone="mid"
-        label="中道"
-        maxCards={5}
-        cards={zones.mid}
-        onDragStart={onDragStart}
-        onDrop={onDrop}
-        onReturnToHand={onReturnToHand}
-        draggingCard={draggingCard}
-        style={{
-          height: threeZoneH,
-          borderBottom: "1px solid #ededed",
-        }}
-        fullArea
-        fixedCardHeight={threeZoneH}
-      />
-      <CardZone
-        zone="tail"
-        label="尾道"
-        maxCards={5}
-        cards={zones.tail}
-        onDragStart={onDragStart}
-        onDrop={onDrop}
-        onReturnToHand={onReturnToHand}
-        draggingCard={draggingCard}
-        style={{
-          height: threeZoneH,
-          borderBottom: "1px solid #ededed",
-        }}
-        fullArea
-        fixedCardHeight={threeZoneH}
-      />
-      <CardZone
-        zone="hand"
-        label="手牌区"
-        maxCards={13}
-        cards={zones.hand}
-        onDragStart={onDragStart}
-        onDrop={onDrop}
-        onReturnToHand={() => {}}
-        draggingCard={draggingCard}
-        style={{
-          height: threeZoneH,
-          borderBottom: "1px solid #ededed",
-        }}
-        fullArea
-        fixedCardHeight={threeZoneH}
-      />
-      <ControlBar
-        handleAiSplit={handleAiSplit}
-        handleSubmit={handleSubmit}
-        aiDisabled={zones.head.length > 0 || zones.tail.length > 0 || zones.mid.length > 0}
-        submitDisabled={submitted || !(zones.head.length === 3 && zones.mid.length === 5 && zones.tail.length === 5)}
-        submitted={submitted}
-        style={{
-          position: "absolute",
-          left: 0,
-          bottom: 0,
-          width: "100vw",
-          minHeight: buttonH,
-          background: "#f2f6fa",
-          border: "none"
-        }}
-      />
+      {/* 2. 头道 */}
+      <div className="zone-head" style={{ height: H2 }}>
+        <CardZone
+          zone="head"
+          label="头道"
+          maxCards={3}
+          cards={zones.head}
+          onDragStart={onDragStart}
+          onDrop={onDrop}
+          onReturnToHand={onReturnToOther}
+          draggingCard={draggingCard}
+          style={{
+            height: "100%",
+            borderBottom: "1px solid #ededed",
+            background: "#fcfcff",
+            alignItems: "center",
+            justifyContent: "flex-start"
+          }}
+          fullArea
+          fixedCardHeight="100%"
+        />
+      </div>
+      {/* 3. 中道 */}
+      <div className="zone-mid" style={{ height: H3 }}>
+        <CardZone
+          zone="mid"
+          label="中道"
+          maxCards={5}
+          cards={zones.mid}
+          onDragStart={onDragStart}
+          onDrop={onDrop}
+          onReturnToHand={onReturnToOther}
+          draggingCard={draggingCard}
+          style={{
+            height: "100%",
+            borderBottom: "1px solid #ededed",
+            background: "#fcfcff",
+            alignItems: "center",
+            justifyContent: "flex-start"
+          }}
+          fullArea
+          fixedCardHeight="100%"
+        />
+      </div>
+      {/* 4. 尾道 */}
+      <div className="zone-tail" style={{ height: H4 }}>
+        <CardZone
+          zone="tail"
+          label="尾道"
+          maxCards={5}
+          cards={zones.tail}
+          onDragStart={onDragStart}
+          onDrop={onDrop}
+          onReturnToHand={onReturnToOther}
+          draggingCard={draggingCard}
+          style={{
+            height: "100%",
+            borderBottom: "1px solid #ededed",
+            background: "#fcfcff",
+            alignItems: "center",
+            justifyContent: "flex-start"
+          }}
+          fullArea
+          fixedCardHeight="100%"
+        />
+      </div>
+      {/* 5. 按钮区 */}
+      <div className="zone-buttons" style={{ height: H5 }}>
+        <ControlBar
+          handleAiSplit={handleAiSplit}
+          handleSubmit={handleSubmit}
+          aiDisabled={false}
+          submitDisabled={submitted || !(zones.head.length === 3 && zones.mid.length === 5 && zones.tail.length === 5)}
+          submitted={submitted}
+          style={{
+            width: "100vw",
+            minHeight: "100%",
+            background: "#f2f6fa",
+            border: "none"
+          }}
+        />
+      </div>
       {showCompare && compareData && (
         <CompareDialog
           players={compareData.players}
