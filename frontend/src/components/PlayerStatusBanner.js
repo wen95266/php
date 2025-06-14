@@ -31,8 +31,8 @@ export default function PlayerStatusBanner({ status, results, myName, allPlayers
       alignItems: "center",
       justifyContent: "center",
       borderBottom: "1px solid #eee",
-      background: "#3869f6",
-      color: "#fff",
+      background: "#fcfcff", // 统一颜色
+      color: "#3869f6",
       fontWeight: 500,
       fontSize: 22,
       ...(style || {})
