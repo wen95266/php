@@ -137,61 +137,42 @@ export default function App() {
   const threeZoneH = `calc((100vh - ${statusH}px - ${buttonH}px) / 3)`;
 
   return (
-    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#f2f6fa", position: "relative" }}>
-      {/* 1. 玩家状态横幅 */}
-      <PlayerStatusBanner
-        status={status}
-        results={results}
-        myName={MY_NAME}
-        allPlayers={allPlayers}
-        style={{
-          height: statusH,
-          minHeight: statusH,
-          maxHeight: statusH,
-        }}
-      />
-      {/* 2. 头道置牌区 */}
-      <CardZone
-        zone="head"
-        label="头道"
-        maxCards={3}
-        cards={head}
-        onDragStart={onDragStart}
-        onDrop={onDrop}
-        onReturnToHand={onReturnToHand}
-        draggingCard={draggingCard}
-        style={{
-          height: threeZoneH,
-          borderBottom: "1px solid #ededed",
-        }}
-        fullArea
-      />
-      {/* 3. 中道/手牌区 */}
-      {mid.length === 5 ? (
-        <CardZone
-          zone="mid"
-          label="中道"
-          maxCards={5}
-          cards={mid}
-          onDragStart={() => {}}
-          onDrop={() => {}}
-          onReturnToHand={() => {}}
-          draggingCard={null}
+    <div style={{
+      width: "100vw",
+      height: "100vh",
+      overflow: "hidden",
+      background: "#f2f6fa",
+      position: "relative"
+    }}>
+      {/* 整体缩放90% */}
+      <div style={{
+        width: "100vw",
+        height: "100vh",
+        transform: "scale(0.9)",
+        transformOrigin: "top left",
+        overflow: "hidden"
+      }}>
+        {/* 1. 玩家状态横幅 */}
+        <PlayerStatusBanner
+          status={status}
+          results={results}
+          myName={MY_NAME}
+          allPlayers={allPlayers}
           style={{
-            height: threeZoneH,
-            borderBottom: "1px solid #ededed",
+            height: statusH,
+            minHeight: statusH,
+            maxHeight: statusH,
           }}
-          fullArea
         />
-      ) : (
+        {/* 2. 头道置牌区 */}
         <CardZone
-          zone="hand"
-          label="手牌区"
-          maxCards={13}
-          cards={hand}
+          zone="head"
+          label="头道"
+          maxCards={3}
+          cards={head}
           onDragStart={onDragStart}
           onDrop={onDrop}
-          onReturnToHand={() => {}}
+          onReturnToHand={onReturnToHand}
           draggingCard={draggingCard}
           style={{
             height: threeZoneH,
@@ -199,40 +180,74 @@ export default function App() {
           }}
           fullArea
         />
-      )}
-      {/* 4. 尾道置牌区 */}
-      <CardZone
-        zone="tail"
-        label="尾道"
-        maxCards={5}
-        cards={tail}
-        onDragStart={onDragStart}
-        onDrop={onDrop}
-        onReturnToHand={onReturnToHand}
-        draggingCard={draggingCard}
-        style={{
-          height: threeZoneH,
-          borderBottom: "1px solid #ededed",
-        }}
-        fullArea
-      />
-      {/* 5. 按钮横幅贴底 */}
-      <ControlBar
-        handleAiSplit={handleAiSplit}
-        handleSubmit={handleSubmit}
-        aiDisabled={head.length > 0 || tail.length > 0 || mid.length > 0}
-        submitDisabled={submitted || !(head.length === 3 && mid.length === 5 && tail.length === 5)}
-        submitted={submitted}
-        style={{
-          position: "absolute",
-          left: 0,
-          bottom: 0,
-          width: "100vw",
-          minHeight: buttonH,
-          background: "#f2f6fa",
-          border: "none"
-        }}
-      />
+        {/* 3. 中道/手牌区 */}
+        {mid.length === 5 ? (
+          <CardZone
+            zone="mid"
+            label="中道"
+            maxCards={5}
+            cards={mid}
+            onDragStart={() => {}}
+            onDrop={() => {}}
+            onReturnToHand={() => {}}
+            draggingCard={null}
+            style={{
+              height: threeZoneH,
+              borderBottom: "1px solid #ededed",
+            }}
+            fullArea
+          />
+        ) : (
+          <CardZone
+            zone="hand"
+            label="手牌区"
+            maxCards={13}
+            cards={hand}
+            onDragStart={onDragStart}
+            onDrop={onDrop}
+            onReturnToHand={() => {}}
+            draggingCard={draggingCard}
+            style={{
+              height: threeZoneH,
+              borderBottom: "1px solid #ededed",
+            }}
+            fullArea
+          />
+        )}
+        {/* 4. 尾道置牌区 */}
+        <CardZone
+          zone="tail"
+          label="尾道"
+          maxCards={5}
+          cards={tail}
+          onDragStart={onDragStart}
+          onDrop={onDrop}
+          onReturnToHand={onReturnToHand}
+          draggingCard={draggingCard}
+          style={{
+            height: threeZoneH,
+            borderBottom: "1px solid #ededed",
+          }}
+          fullArea
+        />
+        {/* 5. 按钮横幅贴底 */}
+        <ControlBar
+          handleAiSplit={handleAiSplit}
+          handleSubmit={handleSubmit}
+          aiDisabled={head.length > 0 || tail.length > 0 || mid.length > 0}
+          submitDisabled={submitted || !(head.length === 3 && mid.length === 5 && tail.length === 5)}
+          submitted={submitted}
+          style={{
+            position: "absolute",
+            left: 0,
+            bottom: 0,
+            width: "100vw",
+            minHeight: buttonH,
+            background: "#f2f6fa",
+            border: "none"
+          }}
+        />
+      </div>
     </div>
   );
 }
