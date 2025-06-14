@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React from "react";
 
 // 卡牌图片路径
 function cardImg(card) {
@@ -18,45 +18,63 @@ export default function CardZone({
   onDragStart,
   onDrop,
   draggingCard,
-  style = {},
+  style,
   fullArea = false,
   fixedCardHeight,
-  stacked
+  stacked // 新增堆叠模式
 }) {
   const CARD_RATIO = 0.725;
-  const containerRef = useRef();
-  const [dim, setDim] = useState({ width: 1200, height: 120 });
+  let heightPx = 120;
+  if (fixedCardHeight && typeof fixedCardHeight === "number") {
+    heightPx = fixedCardHeight;
+  }
+  const cardWidth = Math.round(heightPx * CARD_RATIO);
 
-  // 动态获取实际宽度和高度
-  useEffect(() => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setDim({ width: rect.width, height: rect.height });
-    }
-  }, [cards.length]);
-
-  // 计算最大牌宽度
-  let maxCardsCount = maxCards || 13;
-  let gapPx = 16;
-  let availW = dim.width - (cards.length - 1) * gapPx;
-  let cardW = Math.floor(availW / Math.max(cards.length, 1));
-  // 限制最大不能超过区域高度
-  let maxH = dim.height ? Math.floor(dim.height * 0.94) : 120;
-  let cardH = Math.floor(cardW / CARD_RATIO);
-  if (cardH > maxH) {
-    cardH = maxH;
-    cardW = Math.floor(cardH * CARD_RATIO);
+  // 堆叠模式
+  let overlap = 18;
+  if (stacked && cards.length > 1) {
+    // 只显示部分重叠
+    return (
+      <div style={{
+        position: "relative",
+        height: heightPx,
+        width: (cardWidth + overlap * (cards.length - 1)),
+        minWidth: cardWidth,
+        ...style
+      }}>
+        {cards.map((card, idx) => (
+          <img
+            key={idx}
+            src={cardImg(card)}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              left: idx * overlap,
+              top: 0,
+              width: cardWidth,
+              height: heightPx,
+              borderRadius: 4,
+              background: "#fff",
+              border: "1px solid #ccc",
+              zIndex: idx,
+              boxShadow: "0 1px 6px #0001"
+            }}
+          />
+        ))}
+      </div>
+    );
   }
 
+  // 常规平铺
   return (
     <div
       className="cardzone-outer"
-      ref={containerRef}
       style={{
         width: "100vw",
         minWidth: "100vw",
         maxWidth: "100vw",
-        height: style?.height || 120,
+        height: style?.height || heightPx,
         borderBottom: style?.borderBottom || "1px solid #eee",
         display: "flex",
         alignItems: "center",
@@ -120,7 +138,7 @@ export default function CardZone({
             justifyContent: "flex-start",
             boxSizing: "border-box",
             overflowX: "visible",
-            gap: gapPx,
+            gap: "12px",
             padding: "0 14px",
             position: "relative",
             background: "none"
@@ -128,20 +146,20 @@ export default function CardZone({
         >
           {cards.map((card, idx) => (
             <div
-              key={card.suit + card.value}
+              key={idx}
               className="cardzone-card"
               style={{
-                width: cardW,
-                minWidth: cardW,
-                maxWidth: cardW,
-                height: cardH,
+                width: cardWidth,
+                minWidth: cardWidth,
+                maxWidth: cardWidth,
+                height: heightPx * 0.97,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 boxSizing: "border-box",
                 margin: 0,
                 padding: 0,
-                overflow: "visible",
+                overflow: "hidden",
                 background: "transparent",
                 zIndex: idx
               }}
@@ -152,6 +170,7 @@ export default function CardZone({
                 draggable={zone !== "mid"}
                 onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
                 style={{
+                  borderRadius: 4,
                   width: "100%",
                   height: "100%",
                   objectFit: "contain",
