@@ -5,7 +5,7 @@ import CardZone from "./components/CardZone";
 import ControlBar from "./components/ControlBar";
 import GameRoom from "./components/GameRoom";
 import CompareDialog from "./components/CompareDialog";
-import { cycleAiSplit } from "./utils/ai"; // 只需引入cycleAiSplit
+import { cycleAiSplit } from "./utils/ai";
 
 const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
 const MY_NAME = "玩家";
@@ -43,7 +43,7 @@ export default function App() {
     setup();
   }, []);
 
-  // 轮询房间状态
+  // 轮询房间状态（只依赖 roomId, showCompare，保证轮询不断）
   useEffect(() => {
     if (!roomId) return;
     let timer = setInterval(async () => {
@@ -55,11 +55,7 @@ export default function App() {
         setHand(state.myHand);
       }
       // 自动弹出比牌界面
-      // 增加调试日志
-      //console.log("state in polling:", state, showCompare);
       if (state.status === "finished" && state.results && !showCompare) {
-        // 比牌弹窗数据
-        //console.log("准备比牌弹窗", state);
         setCompareData({
           players: state.players,
           splits: state.submits || {},
@@ -70,8 +66,7 @@ export default function App() {
       }
     }, 1200);
     return () => clearInterval(timer);
-    // eslint-disable-next-line
-  }, [roomId, hand.length, showCompare]);
+  }, [roomId, showCompare]);
 
   // 拖拽事件
   const onDragStart = (card, from) => {
