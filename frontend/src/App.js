@@ -6,7 +6,7 @@ import ControlBar from "./components/ControlBar";
 import CompareDialog from "./components/CompareDialog";
 import { cycleAiSplit } from "./utils/ai";
 
-// 自动匹配API
+// 匹配API
 const API_BASE = "https://9525.ip-ddns.com/backend/api.php";
 async function joinMatchApi(playerName) {
   const res = await fetch(`${API_BASE}?action=join_match&player=${encodeURIComponent(playerName)}`);
@@ -21,7 +21,7 @@ const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
 const MY_NAME = localStorage.getItem("playerName") || "玩家" + Math.floor(Math.random()*10000);
 
 export default function App() {
-  const [mode, setMode] = useState("ai"); // "ai" | "match"
+  const [mode, setMode] = useState("ai");
   const [isMatching, setIsMatching] = useState(false);
 
   const [roomId, setRoomId] = useState("");
@@ -30,10 +30,8 @@ export default function App() {
   const [status, setStatus] = useState("loading");
   const [results, setResults] = useState(null);
 
-  const [hand, setHand] = useState([]);
-  const [head, setHead] = useState([]);
-  const [tail, setTail] = useState([]);
-  const [mid, setMid] = useState([]);
+  // 统一管理所有分区，保证每张牌只在一个区域
+  const [zones, setZones] = useState({ hand: [], head: [], mid: [], tail: [] });
   const [draggingCard, setDraggingCard] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -70,7 +68,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [mode, isMatching]);
 
-  // 关键：轮询只依赖roomId和showCompare，绝不依赖hand等
   useEffect(() => {
     if (!roomId) return;
     let timer = setInterval(async () => {
@@ -78,8 +75,8 @@ export default function App() {
       setAllPlayers(state.players || []);
       setStatus(state.status);
       setResults(state.results || null);
-      if (state.status === "playing" && hand.length === 0 && state.myHand) {
-        setHand(state.myHand);
+      if (state.status === "playing" && zones.hand.length === 0 && state.myHand) {
+        setZones({ hand: state.myHand, head: [], mid: [], tail: [] });
       }
       if (state.status === "finished" && state.results && !showCompare) {
         setCompareData({
@@ -95,76 +92,62 @@ export default function App() {
     // eslint-disable-next-line
   }, [roomId, showCompare]);
 
-  // 拖拽
+  // 拖拽，只允许每张牌出现在一个区域
   const onDragStart = (card, from) => setDraggingCard({ card, from });
   const onDrop = (to) => {
     if (!draggingCard) return;
-    const { card, from } = draggingCard;
-    // 统一去重，确保只有一张牌出现在所有区域
-    const match = (a, b) => a.value === b.value && a.suit === b.suit;
-    // 合并所有牌，移除正在拖拽的牌
-    let allCards = [...hand, ...head, ...mid, ...tail].filter(c => !match(c, card));
-    let newHand = hand.filter(c => !match(c, card));
-    let newHead = head.filter(c => !match(c, card));
-    let newMid = mid.filter(c => !match(c, card));
-    let newTail = tail.filter(c => !match(c, card));
-
-    if (to === "hand") {
-      newHand.push(card);
-    } else if (to === "head" && newHead.length < 3) {
-      newHead.push(card);
-    } else if (to === "mid" && newMid.length < 5) {
-      newMid.push(card);
-    } else if (to === "tail" && newTail.length < 5) {
-      newTail.push(card);
+    const { card } = draggingCard;
+    const cardKey = c => c.value + "-" + c.suit;
+    // 移除所有区域该牌
+    let allCards = [...zones.hand, ...zones.head, ...zones.mid, ...zones.tail]
+      .filter(c => cardKey(c) !== cardKey(card));
+    let zoneKeys = ["hand", "head", "mid", "tail"];
+    let newZones = { hand: [], head: [], mid: [], tail: [] };
+    for (let z of zoneKeys) {
+      newZones[z] = zones[z].filter(c => cardKey(c) !== cardKey(card));
     }
-    setHand(newHand);
-    setHead(newHead);
-    setMid(newMid);
-    setTail(newTail);
+    // 放入新区域
+    if (to === "hand" && newZones.hand.length < 13) newZones.hand.push(card);
+    if (to === "head" && newZones.head.length < 3) newZones.head.push(card);
+    if (to === "mid" && newZones.mid.length < 5) newZones.mid.push(card);
+    if (to === "tail" && newZones.tail.length < 5) newZones.tail.push(card);
+    setZones(newZones);
     setDraggingCard(null);
   };
   const onReturnToHand = (zone, idx) => {
-    let card;
-    let newHead = head.slice();
-    let newTail = tail.slice();
-    if (zone === "head") {
-      card = newHead[idx];
-      newHead.splice(idx, 1);
-      setHead(newHead);
-      setHand([...hand, card]);
-    } else if (zone === "tail") {
-      card = newTail[idx];
-      newTail.splice(idx, 1);
-      setTail(newTail);
-      setHand([...hand, card]);
-    }
+    const zlist = zones[zone].slice();
+    const card = zlist[idx];
+    zlist.splice(idx, 1);
+    setZones(z => ({
+      ...z,
+      [zone]: zlist,
+      hand: [...z.hand, card]
+    }));
   };
 
   // 自动中道
   useEffect(() => {
+    const { head, tail, hand, mid } = zones;
     if (head.length === 3 && tail.length === 5 && hand.length === 5) {
-      setMid(hand);
-      setHand([]);
+      setZones(z => ({ ...z, mid: hand, hand: [] }));
     }
     if ((head.length < 3 || tail.length < 5) && mid.length > 0) {
-      setHand([...hand, ...mid]);
-      setMid([]);
+      setZones(z => ({ ...z, hand: [...hand, ...mid], mid: [] }));
     }
-  }, [head.length, tail.length, hand.length]);
+    // eslint-disable-next-line
+  }, [zones.head.length, zones.tail.length, zones.hand.length]);
 
   // AI分牌
   const handleAiSplit = () => {
+    const { hand, head, mid, tail } = zones;
     if (hand.length + head.length + tail.length !== 13) return;
     const [newHead, newMid, newTail] = cycleAiSplit([...hand, ...head, ...tail], roomId || "myAI");
-    setHead(newHead);
-    setMid(newMid);
-    setTail(newTail);
-    setHand([]);
+    setZones({ hand: [], head: newHead, mid: newMid, tail: newTail });
   };
 
   // 提交
   const handleSubmit = async () => {
+    const { head, mid, tail } = zones;
     if (head.length !== 3 || mid.length !== 5 || tail.length !== 5) {
       alert("请完成头道3张，中道5张，尾道5张！");
       return;
@@ -181,10 +164,7 @@ export default function App() {
     setJoined(false);
     setAllPlayers([]);
     setResults(null);
-    setHand([]);
-    setHead([]);
-    setTail([]);
-    setMid([]);
+    setZones({ hand: [], head: [], mid: [], tail: [] });
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
@@ -206,22 +186,16 @@ export default function App() {
     setJoined(false);
     setAllPlayers([]);
     setResults(null);
-    setHand([]);
-    setHead([]);
-    setTail([]);
-    setMid([]);
+    setZones({ hand: [], head: [], mid: [], tail: [] });
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
   };
 
-  // 继续游戏（新一轮发牌）
+  // 继续游戏
   const handleRestartGame = async () => {
     await startGame(roomId);
-    setHand([]);
-    setHead([]);
-    setMid([]);
-    setTail([]);
+    setZones({ hand: [], head: [], mid: [], tail: [] });
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
@@ -230,27 +204,10 @@ export default function App() {
   if (mode === "match" && isMatching) {
     return (
       <div style={{
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#f2f6fa",
-        flexDirection: "column"
+        width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f2f6fa", flexDirection: "column"
       }}>
-        <div style={{
-          fontSize: 28,
-          color: "#3869f6",
-          fontWeight: 600,
-          marginBottom: 40
-        }}>正在匹配真实玩家，请稍候...</div>
-        <button style={{
-          padding: "10px 40px",
-          fontSize: 20,
-          borderRadius: 8,
-          background: "#fff",
-          border: "1.5px solid #3869f6"
-        }} onClick={cancelMatch}>取消匹配</button>
+        <div style={{ fontSize: 28, color: "#3869f6", fontWeight: 600, marginBottom: 40 }}>正在匹配真实玩家，请稍候...</div>
+        <button style={{ padding: "10px 40px", fontSize: 20, borderRadius: 8, background: "#fff", border: "1.5px solid #3869f6" }} onClick={cancelMatch}>取消匹配</button>
       </div>
     );
   }
@@ -329,7 +286,7 @@ export default function App() {
         zone="head"
         label="头道"
         maxCards={3}
-        cards={head}
+        cards={zones.head}
         onDragStart={onDragStart}
         onDrop={onDrop}
         onReturnToHand={onReturnToHand}
@@ -341,12 +298,12 @@ export default function App() {
         fullArea
         fixedCardHeight={threeZoneH}
       />
-      {mid.length === 5 ? (
+      {zones.mid.length === 5 ? (
         <CardZone
           zone="mid"
           label="中道"
           maxCards={5}
-          cards={mid}
+          cards={zones.mid}
           onDragStart={() => {}}
           onDrop={() => {}}
           onReturnToHand={() => {}}
@@ -363,7 +320,7 @@ export default function App() {
           zone="hand"
           label="手牌区"
           maxCards={13}
-          cards={hand}
+          cards={zones.hand}
           onDragStart={onDragStart}
           onDrop={onDrop}
           onReturnToHand={() => {}}
@@ -380,7 +337,7 @@ export default function App() {
         zone="tail"
         label="尾道"
         maxCards={5}
-        cards={tail}
+        cards={zones.tail}
         onDragStart={onDragStart}
         onDrop={onDrop}
         onReturnToHand={onReturnToHand}
@@ -395,8 +352,8 @@ export default function App() {
       <ControlBar
         handleAiSplit={handleAiSplit}
         handleSubmit={handleSubmit}
-        aiDisabled={head.length > 0 || tail.length > 0 || mid.length > 0}
-        submitDisabled={submitted || !(head.length === 3 && mid.length === 5 && tail.length === 5)}
+        aiDisabled={zones.head.length > 0 || zones.tail.length > 0 || zones.mid.length > 0}
+        submitDisabled={submitted || !(zones.head.length === 3 && zones.mid.length === 5 && zones.tail.length === 5)}
         submitted={submitted}
         style={{
           position: "absolute",
