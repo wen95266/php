@@ -1,103 +1,101 @@
 import React from "react";
-import CardZone from "./CardZone";
 
-function gridPosition(idx) {
-  // 0 1
-  // 2 3
-  return [
-    { gridRow: 1, gridColumn: 1 },
-    { gridRow: 1, gridColumn: 2 },
-    { gridRow: 2, gridColumn: 1 },
-    { gridRow: 2, gridColumn: 2 },
-  ][idx] || {};
-}
-
+// 简单美观的比牌弹窗
 export default function CompareDialog({ players, splits, scores, details, onClose }) {
-  // details: { 玩家: { 每道得分: [x,x,x], 牌型: [头,中,尾], 打枪: x } }
   return (
     <div style={{
       position: "fixed",
-      top: 0, left: 0, right: 0, bottom: 0,
+      left: 0, top: 0, right: 0, bottom: 0,
+      background: "rgba(0,0,0,0.32)",
       zIndex: 9999,
-      background: "rgba(44,48,60,0.91)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center"
     }}>
       <div style={{
-        width: "90vw", height: "90vh",
         background: "#fff",
-        borderRadius: 16,
-        boxShadow: "0 12px 48px #3336",
-        display: "grid",
-        gridTemplateRows: "1fr 1fr",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "32px",
-        padding: "32px",
+        borderRadius: 10,
+        minWidth: 340,
+        maxWidth: 540,
+        padding: "32px 28px 18px 28px",
+        boxShadow: "0 8px 32px #0003",
         position: "relative"
       }}>
-        {players.map((name, i) => (
-          <div key={name}
+        <div style={{
+          fontSize: 22,
+          fontWeight: 600,
+          marginBottom: 20,
+          color: "#3869f6",
+          textAlign: "center"
+        }}>
+          比牌结果
+        </div>
+        <table style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          marginBottom: 18
+        }}>
+          <thead>
+            <tr style={{background:"#f6f8fa"}}>
+              <th style={{padding: "5px 8px"}}>玩家</th>
+              <th style={{padding: "5px 8px"}}>头道</th>
+              <th style={{padding: "5px 8px"}}>中道</th>
+              <th style={{padding: "5px 8px"}}>尾道</th>
+              <th style={{padding: "5px 8px"}}>总分</th>
+              <th style={{padding: "5px 8px"}}>打枪</th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((p, idx) => (
+              <tr key={p} style={{background: idx%2===0 ? "#fff" : "#f8faff"}}>
+                <td style={{padding: "6px 8px", fontWeight: 500, color: "#222"}}>{p}</td>
+                <td style={{padding: "6px 8px", color: "#444"}}>
+                  {(details && details[p] && details[p]["牌型"]) ? details[p]["牌型"][0] : ""}
+                  {splits && splits[p] ? (
+                    <div style={{fontSize:12, color:"#888"}}>
+                      {splits[p][0].map(c => c.value + c.suit[0].toUpperCase()).join(" ")}
+                    </div>
+                  ) : ""}
+                </td>
+                <td style={{padding: "6px 8px", color: "#444"}}>
+                  {(details && details[p] && details[p]["牌型"]) ? details[p]["牌型"][1] : ""}
+                  {splits && splits[p] ? (
+                    <div style={{fontSize:12, color:"#888"}}>
+                      {splits[p][1].map(c => c.value + c.suit[0].toUpperCase()).join(" ")}
+                    </div>
+                  ) : ""}
+                </td>
+                <td style={{padding: "6px 8px", color: "#444"}}>
+                  {(details && details[p] && details[p]["牌型"]) ? details[p]["牌型"][2] : ""}
+                  {splits && splits[p] ? (
+                    <div style={{fontSize:12, color:"#888"}}>
+                      {splits[p][2].map(c => c.value + c.suit[0].toUpperCase()).join(" ")}
+                    </div>
+                  ) : ""}
+                </td>
+                <td style={{padding: "6px 8px", fontWeight: 600, color: "#3869f6"}}>{scores && scores[p]}</td>
+                <td style={{padding: "6px 8px", color: "#e67e22"}}>
+                  {(details && details[p] && details[p]["打枪"]) ? details[p]["打枪"] : 0}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div style={{textAlign:"center", marginBottom:8}}>
+          <button onClick={onClose}
             style={{
-              ...gridPosition(i),
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              border: "2px solid #3869f6",
-              borderRadius: 10,
-              background: "#f9fafb",
-              boxShadow: "0 1px 6px #3869f61a",
-              padding: "12px"
+              background: "#3869f6",
+              color: "#fff",
+              fontSize: 18,
+              border: "none",
+              borderRadius: 6,
+              padding: "8px 40px",
+              fontWeight: 500,
+              cursor: "pointer"
             }}>
-            <div style={{ fontWeight: 700, fontSize: 21, color: "#3869f6", marginBottom: 6 }}>
-              {name}
-              <span style={{ fontWeight: 400, fontSize: 16, marginLeft: 14, color: "#444" }}>
-                分数: {scores?.[name] ?? 0}
-              </span>
-              {details?.[name]?.打枪 > 0 &&
-                <span style={{ color: "#e11d48", fontWeight: 600, marginLeft: 12 }}>
-                  打枪 × {details[name].打枪}
-                </span>
-              }
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", alignItems: "center" }}>
-              <div style={{width: "100%", display: "flex", alignItems: "center"}}>
-                <CardZone cards={splits[name]?.[0] || []} maxCards={3} stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }}/>
-                <span style={{
-                  marginLeft: 10, fontSize: 15, color: "#333", minWidth: 52, fontWeight: 500
-                }}>{details?.[name]?.牌型?.[0] || ""}</span>
-                <span style={{
-                  marginLeft: 6, color: "#15803d", fontWeight: 600
-                }}>{details?.[name]?.每道得分?.[0] ? `+${details[name].每道得分[0]}` : ""}</span>
-              </div>
-              <div style={{width: "100%", display: "flex", alignItems: "center"}}>
-                <CardZone cards={splits[name]?.[1] || []} maxCards={5} stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }}/>
-                <span style={{
-                  marginLeft: 10, fontSize: 15, color: "#333", minWidth: 52, fontWeight: 500
-                }}>{details?.[name]?.牌型?.[1] || ""}</span>
-                <span style={{
-                  marginLeft: 6, color: "#15803d", fontWeight: 600
-                }}>{details?.[name]?.每道得分?.[1] ? `+${details[name].每道得分[1]}` : ""}</span>
-              </div>
-              <div style={{width: "100%", display: "flex", alignItems: "center"}}>
-                <CardZone cards={splits[name]?.[2] || []} maxCards={5} stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }}/>
-                <span style={{
-                  marginLeft: 10, fontSize: 15, color: "#333", minWidth: 52, fontWeight: 500
-                }}>{details?.[name]?.牌型?.[2] || ""}</span>
-                <span style={{
-                  marginLeft: 6, color: "#15803d", fontWeight: 600
-                }}>{details?.[name]?.每道得分?.[2] ? `+${details[name].每道得分[2]}` : ""}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-        <button onClick={onClose}
-          style={{
-            position: "absolute", top: 18, right: 26, fontSize: 19, padding: "7px 20px",
-            border: "none", borderRadius: 5, background: "#3869f6", color: "#fff", fontWeight: 600, cursor: "pointer"
-          }}
-        >关闭</button>
+            关闭
+          </button>
+        </div>
       </div>
     </div>
   );
