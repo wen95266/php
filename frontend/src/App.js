@@ -5,7 +5,7 @@ import CardZone from "./components/CardZone";
 import ControlBar from "./components/ControlBar";
 import GameRoom from "./components/GameRoom";
 import CompareDialog from "./components/CompareDialog";
-import { advancedAiSplit } from "./utils/ai";
+import { cycleAiSplit } from "./utils/ai"; // 只需引入cycleAiSplit
 
 const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
 const MY_NAME = "玩家";
@@ -125,10 +125,10 @@ export default function App() {
     // eslint-disable-next-line
   }, [head.length, tail.length, hand.length]);
 
-  // AI分牌
+  // AI分牌：每次点击变换不同分牌，最优优先
   const handleAiSplit = () => {
     if (hand.length + head.length + tail.length !== 13) return;
-    const [newHead, newMid, newTail] = advancedAiSplit([...hand, ...head, ...tail]);
+    const [newHead, newMid, newTail] = cycleAiSplit([...hand, ...head, ...tail], roomId || "myAI");
     setHead(newHead);
     setMid(newMid);
     setTail(newTail);
