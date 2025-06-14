@@ -16,26 +16,24 @@ export default function CardZone({
   cards,
   onDragStart,
   onDrop,
-  onReturnToHand,
   draggingCard,
   style,
   fullArea = false
 }) {
-  // 是否可放牌
+  // 允许拖拽放置
   const canDrop = (zone !== "mid" && cards.length < maxCards);
 
-  // 说明文字绝对定位，卡牌可以覆盖
+  // 说明文字绝对定位
   const labelLeft = 16;
   const labelTop = 10;
 
-  // 置牌区尺寸与卡牌自适应
-  const cardAreaPaddingTop = 28 + 6;
-  const cardAreaPaddingBottom = 8;
+  // 置牌区高度、卡牌自适应
+  const cardAreaPaddingTop = 34; // 说明文字高度空间
   const cardAreaWidth = "100%";
   const cardAreaHeight = "100%";
+  // 卡牌宽度：按maxCards平分区域，始终左对齐
   const cardWidth = `calc((100vw - 32px) / ${maxCards})`;
   const cardHeight = "calc(100% - 36px)";
-  const justifyContent = "flex-start";
 
   return (
     <div
@@ -46,7 +44,7 @@ export default function CardZone({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#f2f6fa", // 统一按钮区背景色
+        background: "#f2f6fa",
         ...style
       }}
     >
@@ -65,12 +63,12 @@ export default function CardZone({
           boxSizing: "border-box",
           boxShadow: "0 2px 6px #fafafa",
           opacity: (cards.length >= maxCards && zone !== "hand" && zone !== "mid") ? 0.7 : 1,
-          overflow: "hidden",
+          overflow: "hidden"
         }}
         onDragOver={canDrop ? e => { e.preventDefault(); } : undefined}
         onDrop={canDrop ? () => onDrop(zone) : undefined}
       >
-        {/* 说明文字绝对定位，卡牌可以覆盖 */}
+        {/* 说明文字 */}
         <div style={{
           position: "absolute",
           top: labelTop,
@@ -84,19 +82,19 @@ export default function CardZone({
         }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {/* 卡牌区 */}
+        {/* 卡牌区：左对齐且无任何滚动条 */}
         <div
           style={{
             width: cardAreaWidth,
             height: cardAreaHeight,
             display: "flex",
             alignItems: "flex-start",
-            justifyContent: justifyContent,
+            justifyContent: "flex-start",
             paddingTop: cardAreaPaddingTop,
             paddingLeft: labelLeft,
             boxSizing: "border-box",
             gap: 0,
-            overflow: "hidden",
+            overflow: "hidden"
           }}
         >
           {cards.map((card, idx) => (
@@ -105,15 +103,14 @@ export default function CardZone({
               draggable={zone !== "mid"}
               onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
               style={{
-                marginRight: 0,
-                marginLeft: 0,
-                position: "relative",
                 width: cardWidth,
                 height: `calc(${cardWidth} / 0.7)`,
                 maxHeight: cardHeight,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center"
+                justifyContent: "center",
+                position: "relative",
+                margin: 0
               }}
             >
               <img
