@@ -55,12 +55,11 @@ export default function App() {
         setHand(state.myHand);
       }
       // 自动弹出比牌界面
+      // 增加调试日志
+      //console.log("state in polling:", state, showCompare);
       if (state.status === "finished" && state.results && !showCompare) {
         // 比牌弹窗数据
-        const splits = {};
-        (state.players||[]).forEach(name => {
-          splits[name] = state?.submits?.[name] || [];
-        });
+        //console.log("准备比牌弹窗", state);
         setCompareData({
           players: state.players,
           splits: state.submits || {},
@@ -143,7 +142,6 @@ export default function App() {
     }
     await submitHand(roomId, MY_NAME, [head, mid, tail]);
     setSubmitted(true);
-
     // 弹出比牌界面的逻辑由轮询控制
   };
 
