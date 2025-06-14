@@ -15,14 +15,10 @@ export default function CardZone({
   label,
   maxCards,
   cards,
-  onDragStart,
-  onDrop,
-  draggingCard,
-  style,
-  fullArea = false,
-  fixedCardHeight,
-  stacked,
-  onReturnToHand
+  selectedCard,
+  onSelectCard,
+  onZoneClick,
+  style
 }) {
   // 获取实际高度和宽度
   const containerRef = React.useRef(null);
@@ -42,9 +38,9 @@ export default function CardZone({
   const MIN_GAP = Math.max(12, CARD_WIDTH * 0.18);
 
   // 是否需要堆叠
-  let totalWidth = cards.length * CARD_WIDTH + (cards.length - 1) * MIN_GAP;
-  let useStack = totalWidth > size.width;
-  let overlap = useStack && cards.length > 1
+  const totalWidth = cards.length * CARD_WIDTH + (cards.length - 1) * MIN_GAP;
+  const useStack = totalWidth > size.width;
+  const overlap = useStack && cards.length > 1
     ? (size.width - CARD_WIDTH - 32) / (cards.length - 1)
     : CARD_WIDTH + MIN_GAP;
 
@@ -67,6 +63,11 @@ export default function CardZone({
         padding: 0,
         margin: 0,
         overflow: "hidden",
+        cursor: "pointer"
+      }}
+      onClick={e => {
+        // 只在点击空白区时触发onZoneClick
+        if (e.target === e.currentTarget) onZoneClick(zone);
       }}
     >
       {/* 右上角半透明说明 */}
@@ -100,50 +101,60 @@ export default function CardZone({
           overflowX: "visible",
           paddingLeft: 16,
         }}
-        onDragOver={cards.length < maxCards ? e => { e.preventDefault(); } : undefined}
-        onDrop={cards.length < maxCards ? () => onDrop(zone) : undefined}
       >
-        {cards.map((card, idx) => (
-          <div
-            key={card.suit + card.value + idx}
-            className="cardzone-card"
-            style={{
-              position: "absolute",
-              left: useStack ? (idx * overlap + 16) : (idx * (CARD_WIDTH + MIN_GAP) + 16),
-              top: "50%",
-              transform: `translateY(-50%)`,
-              width: CARD_WIDTH,
-              height: CARD_HEIGHT,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxSizing: "border-box",
-              margin: 0,
-              padding: 0,
-              overflow: "hidden",
-              background: "transparent",
-              zIndex: idx
-            }}
-          >
-            <img
-              src={cardImg(card)}
-              alt=""
-              draggable={true}
-              onDragStart={() => onDragStart(card, zone)}
+        {cards.map((card, idx) => {
+          const isSelected =
+            selectedCard &&
+            selectedCard.card.value === card.value &&
+            selectedCard.card.suit === card.suit &&
+            selectedCard.zone === zone;
+          return (
+            <div
+              key={card.suit + card.value + idx}
+              className="cardzone-card"
               style={{
-                borderRadius: 4,
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                display: "block",
-                background: "none",
-                border: "none",
-                pointerEvents: "auto",
-                cursor: "grab"
+                position: "absolute",
+                left: useStack ? (idx * overlap + 16) : (idx * (CARD_WIDTH + MIN_GAP) + 16),
+                top: "50%",
+                transform: `translateY(-50%)`,
+                width: CARD_WIDTH,
+                height: CARD_HEIGHT,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
+                margin: 0,
+                padding: 0,
+                overflow: "hidden",
+                background: isSelected ? "#e2f0ff" : "transparent",
+                zIndex: idx,
+                border: isSelected ? "3px solid #3869f6" : undefined,
+                boxShadow: isSelected ? "0 0 10px #3869f6" : undefined,
+                cursor: "pointer"
               }}
-            />
-          </div>
-        ))}
+              onClick={e => {
+                e.stopPropagation();
+                onSelectCard(card, zone);
+              }}
+            >
+              <img
+                src={cardImg(card)}
+                alt=""
+                style={{
+                  borderRadius: 4,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                  background: "none",
+                  border: "none",
+                  pointerEvents: "auto"
+                }}
+                draggable={false}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
