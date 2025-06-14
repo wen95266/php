@@ -4,6 +4,7 @@ import PlayerStatusBanner from "./components/PlayerStatusBanner";
 import CardZone from "./components/CardZone";
 import ControlBar from "./components/ControlBar";
 import GameRoom from "./components/GameRoom";
+import CompareDialog from "./components/CompareDialog";
 import { advancedAiSplit } from "./utils/ai";
 
 const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
@@ -23,6 +24,10 @@ export default function App() {
   const [mid, setMid] = useState([]);
   const [draggingCard, setDraggingCard] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+
+  // 比牌弹窗
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareData, setCompareData] = useState(null);
 
   // 初始化
   useEffect(() => {
@@ -123,7 +128,19 @@ export default function App() {
     }
     await submitHand(roomId, MY_NAME, [head, mid, tail]);
     setSubmitted(true);
-    alert("你的牌型已提交");
+
+    // 模拟AI分牌（演示用，实际应从后端获取）
+    const splits = {};
+    splits[MY_NAME] = [head, mid, tail];
+    for (let name of AI_NAMES) {
+      // 随机生成AI分牌（建议和后端一致，实际应取后端结果）
+      splits[name] = advancedAiSplit([]); // 这里应传入AI手牌
+    }
+    // 假设分数为0
+    const scores = {};
+    for (let name of [MY_NAME, ...AI_NAMES]) scores[name] = 0;
+    setCompareData({ players: [MY_NAME, ...AI_NAMES], splits, scores });
+    setShowCompare(true);
   };
 
   if (!joined || !roomId) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f6fa"}}>房间初始化中...</div>;
@@ -144,7 +161,6 @@ export default function App() {
       background: "#f2f6fa",
       position: "relative"
     }}>
-      {/* 不要任何transform: scale */}
       <PlayerStatusBanner
         status={status}
         results={results}
@@ -156,7 +172,6 @@ export default function App() {
           maxHeight: statusH,
         }}
       />
-      {/* 2. 头道置牌区 */}
       <CardZone
         zone="head"
         label="头道"
@@ -173,7 +188,6 @@ export default function App() {
         fullArea
         fixedCardHeight={threeZoneH}
       />
-      {/* 3. 中道/手牌区 */}
       {mid.length === 5 ? (
         <CardZone
           zone="mid"
@@ -209,7 +223,6 @@ export default function App() {
           fixedCardHeight={threeZoneH}
         />
       )}
-      {/* 4. 尾道置牌区 */}
       <CardZone
         zone="tail"
         label="尾道"
@@ -226,7 +239,6 @@ export default function App() {
         fullArea
         fixedCardHeight={threeZoneH}
       />
-      {/* 5. 按钮横幅贴底 */}
       <ControlBar
         handleAiSplit={handleAiSplit}
         handleSubmit={handleSubmit}
@@ -243,6 +255,14 @@ export default function App() {
           border: "none"
         }}
       />
+      {showCompare && compareData && (
+        <CompareDialog
+          players={compareData.players}
+          splits={compareData.splits}
+          scores={compareData.scores}
+          onClose={() => setShowCompare(false)}
+        />
+      )}
     </div>
   );
 }
