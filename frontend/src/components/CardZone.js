@@ -10,26 +10,10 @@ function cardImg(card) {
   return `/cards/${v}_of_${card.suit}.svg`;
 }
 
-// 只自适应最大宽高，保证13张牌不溢出横幅，尽量放大宽高
-function calcCardSize(cardCount, areaWidth, areaHeight, gap = 12, aspect = 0.725) {
-  // 在areaWidth范围内排满cardCount张扑克牌的最大宽高
-  // aspect为牌面宽高比，gap为间距
-  const totalGap = gap * (cardCount - 1);
-  // 先按宽限制
-  let cardW = (areaWidth - totalGap) / cardCount;
-  let cardH = cardW / aspect;
-  // 再按高限制
-  if (cardH > areaHeight) {
-    cardH = areaHeight;
-    cardW = cardH * aspect;
-    // 此时需要重新计算gap
-    if (cardCount > 1) {
-      gap = (areaWidth - cardCount * cardW) / (cardCount - 1);
-      if (gap < 0) gap = 0;
-    }
-  }
-  return { cardW, cardH, gap };
-}
+// 固定宽高
+const CARD_WIDTH = 86;
+const CARD_HEIGHT = 120;
+const CARD_GAP = 12;
 
 export default function CardZone({
   zone,
@@ -42,50 +26,11 @@ export default function CardZone({
   style,
   fullArea = false,
   fixedCardHeight,
-  stacked, // 堆叠模式
+  stacked,
   onReturnToHand
 }) {
   // 横向自适应布局
   const containerRef = React.useRef(null);
-  const [containerW, setContainerW] = React.useState(window.innerWidth);
-  const [containerH, setContainerH] = React.useState(120);
-
-  React.useEffect(() => {
-    function update() {
-      if (containerRef.current) {
-        setContainerW(containerRef.current.offsetWidth);
-        setContainerH(containerRef.current.offsetHeight);
-      } else {
-        setContainerW(window.innerWidth);
-        setContainerH(120);
-      }
-    }
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  const cardCount = cards.length;
-  const areaW = containerW;
-  // 允许自定义区域高度或使用默认
-  let areaH = 120;
-  if (fixedCardHeight && typeof fixedCardHeight === "number") {
-    areaH = fixedCardHeight;
-  } else if (typeof fixedCardHeight === "string" && fixedCardHeight.endsWith("px")) {
-    areaH = parseInt(fixedCardHeight, 10);
-  } else if (typeof fixedCardHeight === "string" && fixedCardHeight.endsWith("vh")) {
-    areaH = window.innerHeight * parseFloat(fixedCardHeight) / 100;
-  } else if (containerH) {
-    areaH = containerH;
-  }
-
-  let cardW = 0, cardH = 0, gap = 12;
-  if (cardCount > 0) {
-    const { cardW: w, cardH: h, gap: g } = calcCardSize(cardCount, areaW - 34, areaH * 0.97, 12, 0.725);
-    cardW = w;
-    cardH = h;
-    gap = g;
-  }
 
   // 堆叠模式不变
   if (stacked && cards.length > 1) {
@@ -93,14 +38,14 @@ export default function CardZone({
     return (
       <div ref={containerRef} style={{
         position: "relative",
-        height: areaH,
-        width: (cardW + overlap * (cards.length - 1)),
-        minWidth: cardW,
+        height: CARD_HEIGHT,
+        width: (CARD_WIDTH + overlap * (cards.length - 1)),
+        minWidth: CARD_WIDTH,
         ...style
       }}>
         {cards.map((card, idx) => (
           <img
-            key={idx}
+            key={card.suit + card.value + idx}
             src={cardImg(card)}
             alt=""
             draggable={false}
@@ -108,8 +53,8 @@ export default function CardZone({
               position: "absolute",
               left: idx * overlap,
               top: 0,
-              width: cardW,
-              height: cardH,
+              width: CARD_WIDTH,
+              height: CARD_HEIGHT,
               borderRadius: 4,
               background: "#fff",
               border: "1px solid #ccc",
@@ -122,8 +67,7 @@ export default function CardZone({
     );
   }
 
-  // 保证手牌区自动左对齐，且无重复卡牌
-  // 注意：flex-start+paddingLeft，paddingRight为0
+  // 平铺模式：固定卡片尺寸，自动左对齐
   return (
     <div
       ref={containerRef}
@@ -132,11 +76,11 @@ export default function CardZone({
         width: "100vw",
         minWidth: "100vw",
         maxWidth: "100vw",
-        height: style?.height || areaH,
+        height: style?.height || CARD_HEIGHT + 34,
         borderBottom: style?.borderBottom || "1px solid #eee",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start", // 必须左对齐
         background: "#f2f6fa",
         ...style,
         padding: 0,
@@ -192,10 +136,10 @@ export default function CardZone({
             flexDirection: "row",
             flexWrap: "nowrap",
             alignItems: "center",
-            justifyContent: "flex-start",
+            justifyContent: "flex-start", // 必须左对齐
             boxSizing: "border-box",
             overflowX: "visible",
-            gap: `${gap}px`,
+            gap: `${CARD_GAP}px`,
             paddingLeft: 14,
             paddingRight: 0,
             position: "relative",
@@ -207,10 +151,10 @@ export default function CardZone({
               key={card.suit + card.value + idx}
               className="cardzone-card"
               style={{
-                width: cardW,
-                minWidth: cardW,
-                maxWidth: cardW,
-                height: cardH,
+                width: CARD_WIDTH,
+                minWidth: CARD_WIDTH,
+                maxWidth: CARD_WIDTH,
+                height: CARD_HEIGHT,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
