@@ -1,13 +1,14 @@
 import React, { useRef, useLayoutEffect, useState } from "react";
 
-// 平铺扑克牌，不堆叠，全部卡片都有统一白底+圆角+阴影+边框
+// 极致放大、紧贴的扑克牌平铺行
 function CardRow({ cards, maxWidth, maxHeight }) {
   const len = cards.length;
-  // 最小间隔
-  const gap = Math.max(Math.round(maxWidth * 0.022), 10);
+  // 行内gap极小
+  const gap = Math.max(Math.round(maxWidth * 0.012), 6);
   // 计算最大可能牌宽
   let cardW = (maxWidth - (len - 1) * gap) / len;
   let cardH = cardW * 1.38;
+  // 高度撑满maxHeight
   if (cardH > maxHeight) {
     cardH = maxHeight;
     cardW = cardH / 1.38;
@@ -35,10 +36,10 @@ function CardRow({ cards, maxWidth, maxHeight }) {
             style={{
               width: cardW,
               height: cardH,
-              borderRadius: 10,
+              borderRadius: 11,
               background: "#fff",
-              boxShadow: "0 2px 8px #0001",
-              border: "2px solid #e2e2e6",
+              boxShadow: "0 2px 9px #0002",
+              border: "2.2px solid #e2e2e6",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -51,8 +52,8 @@ function CardRow({ cards, maxWidth, maxHeight }) {
               src={`/cards/${v}_of_${card.suit}.svg`}
               alt={card.value + card.suit[0].toUpperCase()}
               style={{
-                width: "95%",
-                height: "95%",
+                width: "98%",
+                height: "98%",
                 objectFit: "contain",
                 display: "block",
                 borderRadius: 7,
@@ -80,19 +81,19 @@ function PlayerResultCard({ player, splits, details, scores }) {
 
   if (!player || !splits || !splits[player]) return null;
 
-  // 留足padding
-  const paddingV = Math.max(area.h * 0.07, 16);
-  const paddingL = Math.max(area.w * 0.045, 16);
-  const paddingR = Math.max(area.w * 0.11, 36);
-  const gapV = Math.max(area.h * 0.05, 15);
-  // 三道牌最大高度
+  // 极致缩小padding，gap最小
+  const paddingV = Math.max(area.h * 0.035, 7);
+  const paddingL = Math.max(area.w * 0.025, 8);
+  const paddingR = Math.max(area.w * 0.08, 18);
+  const gapV = Math.max(area.h * 0.019, 3); // 行间极窄
+  // 行高度= (总高-上下padding-2*gapV) / 3
   const maxRowHeight = (area.h - paddingV * 2 - gapV * 2) / 3;
   // 右侧信息宽度
   const infoBoxW = Math.max(100, area.w * 0.17);
   // 扑克牌区最大宽度
   const maxRowWidth = area.w - paddingL - paddingR - infoBoxW;
   // 牌型说明字体
-  const fontSize = Math.max(area.h * 0.078, 19);
+  const fontSize = Math.max(area.h * 0.08, 21);
 
   return (
     <div ref={wrapRef} style={{
@@ -124,7 +125,7 @@ function PlayerResultCard({ player, splits, details, scores }) {
         minHeight: 0,
         width: maxRowWidth + 2
       }}>
-        {/* 3道横排，平铺不堆叠 */}
+        {/* 3道横排，平铺不堆叠，极致放大，极小gap */}
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -132,8 +133,8 @@ function PlayerResultCard({ player, splits, details, scores }) {
           width: maxRowWidth,
           minHeight: 0
         }}>
-          <CardRow cards={splits[player][0]} maxWidth={maxRowWidth * 0.92} maxHeight={maxRowHeight} />
-          <span style={{ fontSize, color: "#666", minWidth: 56, marginLeft: 24, whiteSpace: "nowrap" }}>
+          <CardRow cards={splits[player][0]} maxWidth={maxRowWidth * 0.95} maxHeight={maxRowHeight} />
+          <span style={{ fontSize, color: "#666", minWidth: 56, marginLeft: 19, whiteSpace: "nowrap", lineHeight: 1, alignSelf: "center" }}>
             {details && details[player] ? details[player]["牌型"][0] : ""}
           </span>
         </div>
@@ -144,8 +145,8 @@ function PlayerResultCard({ player, splits, details, scores }) {
           width: maxRowWidth,
           minHeight: 0
         }}>
-          <CardRow cards={splits[player][1]} maxWidth={maxRowWidth * 0.92} maxHeight={maxRowHeight} />
-          <span style={{ fontSize, color: "#666", minWidth: 56, marginLeft: 24, whiteSpace: "nowrap" }}>
+          <CardRow cards={splits[player][1]} maxWidth={maxRowWidth * 0.95} maxHeight={maxRowHeight} />
+          <span style={{ fontSize, color: "#666", minWidth: 56, marginLeft: 19, whiteSpace: "nowrap", lineHeight: 1, alignSelf: "center" }}>
             {details && details[player] ? details[player]["牌型"][1] : ""}
           </span>
         </div>
@@ -155,8 +156,8 @@ function PlayerResultCard({ player, splits, details, scores }) {
           width: maxRowWidth,
           minHeight: 0
         }}>
-          <CardRow cards={splits[player][2]} maxWidth={maxRowWidth * 0.92} maxHeight={maxRowHeight} />
-          <span style={{ fontSize, color: "#666", minWidth: 56, marginLeft: 24, whiteSpace: "nowrap" }}>
+          <CardRow cards={splits[player][2]} maxWidth={maxRowWidth * 0.95} maxHeight={maxRowHeight} />
+          <span style={{ fontSize, color: "#666", minWidth: 56, marginLeft: 19, whiteSpace: "nowrap", lineHeight: 1, alignSelf: "center" }}>
             {details && details[player] ? details[player]["牌型"][2] : ""}
           </span>
         </div>
@@ -171,8 +172,8 @@ function PlayerResultCard({ player, splits, details, scores }) {
         alignItems: "flex-end",
         zIndex: 2
       }}>
-        <div style={{ fontWeight: 700, color: "#222", fontSize: Math.max(area.h * 0.14, 28), lineHeight: 1.22 }}>{player}</div>
-        <div style={{ fontSize: Math.max(area.h * 0.115, 23), color: "#3869f6", fontWeight: 700, marginTop: 3, lineHeight: 1.13 }}>
+        <div style={{ fontWeight: 700, color: "#222", fontSize: Math.max(area.h * 0.14, 31), lineHeight: 1.19 }}>{player}</div>
+        <div style={{ fontSize: Math.max(area.h * 0.11, 22), color: "#3869f6", fontWeight: 700, marginTop: 3, lineHeight: 1.13 }}>
           {scores && scores[player] !== undefined ? `${scores[player]}分` : ""}
         </div>
         <div style={{ fontSize: Math.max(area.h * 0.085, 18), color: "#e67e22", fontWeight: 500, marginTop: 2, lineHeight: 1.13 }}>
