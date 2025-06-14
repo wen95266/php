@@ -26,7 +26,6 @@ export default function CardZone({
   // 让区块高度由父级控制
   // 每张牌高度=区块高度=100%，宽=高*0.725
   const CARD_RATIO = 0.725;
-  // 这里不用固定heightPx，直接100%
   return (
     <div
       className="cardzone-outer"
