@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoom, joinRoom, startGame, getRoomState, submitHand } from "./api";
 import GameRoom from "./components/GameRoom";
-import { SUITS, VALUES } from "./utils/cardUtils";
 import { advancedAiSplit } from "./utils/ai";
 
 const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
@@ -17,17 +16,58 @@ function cardImg(card) {
   return `/cards/${v}_of_${card.suit}.svg`;
 }
 
+// 横幅样式
+const bannerStyle = {
+  width: "100vw",
+  minHeight: "16vh",
+  boxSizing: "border-box",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderBottom: "1px solid #eee",
+  background: "#fafbfc"
+};
+
+const dragCardKey = (card) => `${card.value}_${card.suit}`;
+
+// 获取玩家状态字符串
+function getStatusString(status, results, myName) {
+  if (status === "finished" && results) {
+    let arr = [];
+    for (let player in results["总分"]) {
+      let score = results["总分"][player];
+      let hit = results["详情"][player]["打枪"] || 0;
+      arr.push(
+        `${player}${player === myName ? "(你)" : ""}：${score}分${hit ? `（打枪${hit}次）` : ""}`
+      );
+    }
+    return arr.join("　");
+  }
+  if (status === "playing") {
+    return "对局进行中...";
+  }
+  if (status === "waiting") {
+    return "等待玩家准备...";
+  }
+  return "";
+}
+
 export default function App() {
   const [roomId, setRoomId] = useState("");
   const [joined, setJoined] = useState(false);
-  const [aiHands, setAiHands] = useState({});
-  const [myHand, setMyHand] = useState([]);
-  const [mySplit, setMySplit] = useState([[], [], []]); // 头道3，中道5，尾道5
+  const [allPlayers, setAllPlayers] = useState([]);
+  const [status, setStatus] = useState("loading");
+  const [results, setResults] = useState(null);
+
+  // 手牌区，头道区，尾道区（均为牌数组）
+  const [hand, setHand] = useState([]);
+  const [head, setHead] = useState([]);
+  const [tail, setTail] = useState([]);
+  const [mid, setMid] = useState([]); // 只有完成后才出现
   const [draggingCard, setDraggingCard] = useState(null);
-  const [stage, setStage] = useState("loading");
   const [submitted, setSubmitted] = useState(false);
 
-  // 启动即创建房间并加入AI和自己
+  // 初始化，创建房间、加入AI并开局
   useEffect(() => {
     async function setup() {
       const res = await createRoom(MY_NAME);
@@ -41,207 +81,237 @@ export default function App() {
     setup();
   }, []);
 
-  // 获取房间状态和分牌、提交
+  // 轮询房间状态
   useEffect(() => {
     if (!roomId) return;
     let timer = setInterval(async () => {
       const state = await getRoomState(roomId, MY_NAME);
-      if (state.status === "playing") {
-        setStage("playing");
-        if (state.myHand && myHand.length === 0) {
-          setMyHand(state.myHand);
-        }
+      setAllPlayers(state.players || []);
+      setStatus(state.status);
+      setResults(state.results || null);
+      // 只初始化一次手牌
+      if (state.status === "playing" && hand.length === 0 && state.myHand) {
+        setHand(state.myHand);
       }
-      if (state.status === "finished") setStage("results");
     }, 1200);
     return () => clearInterval(timer);
-  }, [roomId, myHand.length]);
+    // eslint-disable-next-line
+  }, [roomId, hand.length]);
 
-  // AI智能分牌辅助
-  const handleMyAiSplit = () => {
-    if (!myHand || myHand.length !== 13) return;
-    const split = advancedAiSplit(myHand);
-    setMySplit(split);
+  // 拖拽事件
+  const onDragStart = (card, from) => {
+    setDraggingCard({ card, from });
   };
-
-  // 拖拽相关
-  const onDragStart = (card, from, fromIdx) => {
-    setDraggingCard({ card, from, fromIdx });
-  };
-  const onDropTo = (toIdx) => {
+  const onDrop = (to) => {
     if (!draggingCard) return;
-    let newSplit = mySplit.map(arr => [...arr]);
-    let newHand = [...myHand];
-    // 从理牌区移出
-    if (draggingCard.from === "split") {
-      newSplit[draggingCard.fromIdx] = newSplit[draggingCard.fromIdx].filter(
-        c => !(c.value === draggingCard.card.value && c.suit === draggingCard.card.suit)
-      );
-      newSplit[toIdx].push(draggingCard.card);
-    }
-    // 从手牌栏移出
-    if (draggingCard.from === "hand") {
-      newHand = newHand.filter(
-        c => !(c.value === draggingCard.card.value && c.suit === draggingCard.card.suit)
-      );
-      newSplit[toIdx].push(draggingCard.card);
-    }
-    // 保证头道3，中道5，尾道5
-    if (
-      newSplit[0].length <= 3 &&
-      newSplit[1].length <= 5 &&
-      newSplit[2].length <= 5 &&
-      newSplit[0].length + newSplit[1].length + newSplit[2].length <= 13
-    ) {
-      setMyHand(newHand);
-      setMySplit(newSplit);
-    }
+    const { card, from } = draggingCard;
+    let newHand = hand.slice();
+    let newHead = head.slice();
+    let newTail = tail.slice();
+    // 从哪个区移除
+    if (from === "hand") newHand = newHand.filter(c => dragCardKey(c) !== dragCardKey(card));
+    if (from === "head") newHead = newHead.filter(c => dragCardKey(c) !== dragCardKey(card));
+    if (from === "tail") newTail = newTail.filter(c => dragCardKey(c) !== dragCardKey(card));
+    // 加入新区域
+    if (to === "hand") newHand.push(card);
+    if (to === "head" && newHead.length < 3) newHead.push(card);
+    if (to === "tail" && newTail.length < 5) newTail.push(card);
+    setHand(newHand);
+    setHead(newHead);
+    setTail(newTail);
     setDraggingCard(null);
   };
-  const onReturnToHand = (splitIdx, cardIdx) => {
-    const card = mySplit[splitIdx][cardIdx];
-    let newHand = [...myHand, card];
-    let newSplit = mySplit.map(arr => [...arr]);
-    newSplit[splitIdx] = newSplit[splitIdx].filter((_, idx) => idx !== cardIdx);
-    setMyHand(newHand);
-    setMySplit(newSplit);
+  // 获取拖拽区样式
+  const getDropStyle = (zone, maxCards) => ({
+    minHeight: "9vh",
+    minWidth: "30vw",
+    border: "2px dashed #bbb",
+    borderRadius: 8,
+    margin: "0 1vw",
+    background: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    transition: "border 0.2s",
+    boxShadow: "0 2px 6px #fafafa",
+    opacity: (zone === "head" && head.length >= 3) || (zone === "tail" && tail.length >= 5) ? 0.7 : 1
+  });
+
+  // 牌拖回手牌
+  const onReturnToHand = (zone, idx) => {
+    let card;
+    let newHead = head.slice();
+    let newTail = tail.slice();
+    if (zone === "head") {
+      card = newHead[idx];
+      newHead.splice(idx, 1);
+      setHead(newHead);
+      setHand([...hand, card]);
+    } else if (zone === "tail") {
+      card = newTail[idx];
+      newTail.splice(idx, 1);
+      setTail(newTail);
+      setHand([...hand, card]);
+    }
   };
 
-  // 玩家提交
+  // 当头道3、尾道5时，手牌自动变成中道，不能再手动拖
+  useEffect(() => {
+    if (head.length === 3 && tail.length === 5 && hand.length === 5) {
+      setMid(hand);
+      setHand([]);
+    }
+    // 若后悔牌，mid需合并回hand
+    if ((head.length < 3 || tail.length < 5) && mid.length > 0) {
+      setHand([...hand, ...mid]);
+      setMid([]);
+    }
+    // eslint-disable-next-line
+  }, [head.length, tail.length, hand.length]);
+
+  // AI智能分牌
+  const handleAiSplit = () => {
+    // 只允许未理牌时智能分牌
+    if (hand.length + head.length + tail.length !== 13) return;
+    const [newHead, newMid, newTail] = advancedAiSplit([...hand, ...head, ...tail]);
+    setHead(newHead);
+    setMid(newMid);
+    setTail(newTail);
+    setHand([]);
+  };
+
+  // 提交
   const handleSubmit = async () => {
-    if (
-      mySplit[0].length !== 3 ||
-      mySplit[1].length !== 5 ||
-      mySplit[2].length !== 5
-    ) {
-      alert("请将13张牌分为头道3张，中道5张，尾道5张！");
+    if (head.length !== 3 || mid.length !== 5 || tail.length !== 5) {
+      alert("请完成头道3张，中道5张，尾道5张！");
       return;
     }
-    await submitHand(roomId, MY_NAME, mySplit);
+    await submitHand(roomId, MY_NAME, [head, mid, tail]);
     setSubmitted(true);
     alert("你的牌型已提交");
   };
 
-  if (!joined || !roomId) return <div>房间初始化中...</div>;
-
-  if (stage === "results") {
+  if (!joined || !roomId) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>房间初始化中...</div>;
+  if (status === "results") {
     return <GameRoom roomId={roomId} playerName={MY_NAME} />;
   }
 
-  // 显示理牌区与手牌
+  // 横幅高度自适应
+  const bannerH = "16vh";
+
   return (
-    <div style={{ maxWidth: 750, margin: "30px auto" }}>
-      <h2>十三水AI对战房间 (你 vs 3个AI)</h2>
-      <p>房间号: {roomId}</p>
-      {stage === "playing" && (
-        <>
-          <h3>你的手牌</h3>
-          <div
-            style={{
-              minHeight: 80,
-              border: "1px solid #ccc",
-              borderRadius: 5,
-              background: "#f7f7f7",
-              padding: 6,
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 18,
-              flexWrap: "wrap"
-            }}
+    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#eef2f8" }}>
+      {/* 1. 玩家状态横幅 */}
+      <div style={{ ...bannerStyle, minHeight: bannerH, background: "#3869f6", color: "#fff", fontWeight: 500, fontSize: 22 }}>
+        <span>
+          {getStatusString(status, results, MY_NAME)}
+        </span>
+      </div>
+      {/* 2. 头道置牌区 */}
+      <div style={{ ...bannerStyle, minHeight: bannerH }}>
+        <div
+          style={getDropStyle("head", 3)}
+          onDragOver={e => {e.preventDefault();}}
+          onDrop={() => onDrop("head")}
+        >
+          <div style={{fontWeight:600,marginRight:18}}>头道 ({head.length}/3):</div>
+          {head.map((card, idx) => (
+            <div
+              key={dragCardKey(card)}
+              draggable
+              onDragStart={() => onDragStart(card, "head")}
+              style={{ marginRight: 3, position:"relative" }}
+            >
+              <img src={cardImg(card)} alt="" width={50} style={{borderRadius:4,boxShadow:"1px 2px 8px #eee"}} />
+              <span
+                onClick={() => onReturnToHand("head", idx)}
+                style={{
+                  position: "absolute", top: 0, right: 0, background: "#f44", color: "#fff",
+                  fontSize: 12, borderRadius: "0 4px 0 4px", cursor: "pointer",padding: "1px 4px"
+                }}
+                title="退回手牌">×</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* 3. 中道/手牌置牌区 */}
+      <div style={{ ...bannerStyle, minHeight: bannerH, background: "#f8fafd" }}>
+        {mid.length === 5 ? (
+          <div style={getDropStyle("mid", 5)}>
+            <div style={{fontWeight:600,marginRight:18}}>中道 (5/5):</div>
+            {mid.map((card, idx) => (
+              <div key={dragCardKey(card)} style={{marginRight:2}}>
+                <img src={cardImg(card)} alt="" width={50} style={{borderRadius:4,boxShadow:"1px 2px 8px #eee"}} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={getDropStyle("hand", 5)}
+            onDragOver={e => {e.preventDefault();}}
+            onDrop={() => onDrop("hand")}
           >
-            {myHand.map((card, i) => (
+            <div style={{fontWeight:600,marginRight:18}}>手牌区 ({hand.length}/13):</div>
+            {hand.map((card, idx) => (
               <div
-                key={i}
+                key={dragCardKey(card)}
                 draggable
-                onDragStart={() => onDragStart(card, "hand", null)}
-                style={{
-                  marginRight: 2,
-                  cursor: "grab"
-                }}
+                onDragStart={() => onDragStart(card, "hand")}
+                style={{ marginRight: 3 }}
               >
-                <img
-                  src={cardImg(card)}
-                  alt={`${card.value} of ${card.suit}`}
-                  width={48}
-                  style={{
-                    border: "1px solid #ccc",
-                    borderRadius: 4,
-                    boxShadow: "2px 2px 4px #eee"
-                  }}
-                />
+                <img src={cardImg(card)} alt="" width={50} style={{borderRadius:4,boxShadow:"1px 2px 8px #eee"}} />
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            {["头道(3张)", "中道(5张)", "尾道(5张)"].map((label, idx) => (
-              <div
-                key={idx}
-                onDragOver={e => e.preventDefault()}
-                onDrop={() => onDropTo(idx)}
+        )}
+      </div>
+      {/* 4. 尾道置牌区 */}
+      <div style={{ ...bannerStyle, minHeight: bannerH }}>
+        <div
+          style={getDropStyle("tail", 5)}
+          onDragOver={e => {e.preventDefault();}}
+          onDrop={() => onDrop("tail")}
+        >
+          <div style={{fontWeight:600,marginRight:18}}>尾道 ({tail.length}/5):</div>
+          {tail.map((card, idx) => (
+            <div
+              key={dragCardKey(card)}
+              draggable
+              onDragStart={() => onDragStart(card, "tail")}
+              style={{ marginRight: 3, position:"relative" }}
+            >
+              <img src={cardImg(card)} alt="" width={50} style={{borderRadius:4,boxShadow:"1px 2px 8px #eee"}} />
+              <span
+                onClick={() => onReturnToHand("tail", idx)}
                 style={{
-                  minHeight: 90,
-                  minWidth: 170,
-                  border: "2px dashed #bbb",
-                  borderRadius: 6,
-                  padding: 8,
-                  margin: 2,
-                  background: "#fcfcfc"
+                  position: "absolute", top: 0, right: 0, background: "#f44", color: "#fff",
+                  fontSize: 12, borderRadius: "0 4px 0 4px", cursor: "pointer",padding: "1px 4px"
                 }}
-              >
-                <div style={{ marginBottom: 8, color: "#444" }}>{label}</div>
-                <div style={{ display: "flex", flexDirection: "row" }}>
-                  {mySplit[idx].map((card, cidx) => (
-                    <div
-                      key={cidx}
-                      draggable
-                      onDragStart={() => onDragStart(card, "split", idx)}
-                      style={{ position: "relative", marginRight: 2 }}
-                    >
-                      <img
-                        src={cardImg(card)}
-                        alt={`${card.value} of ${card.suit}`}
-                        width={50}
-                        style={{
-                          border: "1px solid #aaa",
-                          borderRadius: 4,
-                          background: "#fff"
-                        }}
-                      />
-                      <span
-                        onClick={() => onReturnToHand(idx, cidx)}
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          right: 0,
-                          background: "#f44",
-                          color: "#fff",
-                          fontSize: 12,
-                          borderRadius: "0 4px 0 4px",
-                          cursor: "pointer",
-                          padding: "1px 4px"
-                        }}
-                        title="还原到手牌"
-                      >×</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>
-                  {mySplit[idx].length} / {idx === 0 ? 3 : 5}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 16 }}>
-            <button onClick={handleMyAiSplit}>AI智能分牌</button>
-            <button onClick={handleSubmit} disabled={submitted}>提交牌型</button>
-          </div>
-          <div style={{ margin: "12px 0", color: "#888", fontSize: 14 }}>
-            拖拽手牌到各道区域完成理牌，可点击牌面右上角×退回手牌。
-          </div>
-        </>
-      )}
-      {stage !== "playing" && <div>请稍候...</div>}
+                title="退回手牌">×</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* 5. 按钮区 */}
+      <div style={{
+        ...bannerStyle,
+        minHeight: bannerH,
+        border: "none",
+        background: "#f2f6fa",
+        justifyContent: "center"
+      }}>
+        <button
+          style={{ fontSize: 18, padding: "8px 32px", marginRight: 30, borderRadius: 8 }}
+          onClick={handleAiSplit}
+          disabled={head.length > 0 || tail.length > 0 || mid.length > 0}
+        >AI智能分牌</button>
+        <button
+          style={{ fontSize: 18, padding: "8px 32px", borderRadius: 8 }}
+          onClick={handleSubmit}
+          disabled={submitted || !(head.length === 3 && mid.length === 5 && tail.length === 5)}
+        >提交牌型</button>
+        {submitted && <span style={{marginLeft: 24, color: "#65a30d", fontWeight: 500}}>已提交，等待其它玩家...</span>}
+      </div>
     </div>
   );
 }
