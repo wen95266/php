@@ -180,6 +180,20 @@ function isLegalSplit($split) {
     return true;
 }
 
+// AI自动分牌：增强智能（可替换为更智能算法）
+function aiAutoSplit($hand) {
+    // 这里可以调用你前端的enhancedAiSplit逻辑，或移植主要智能部分
+    // 简单策略：优先按点数分(后续可移植前端ai.js智能分配)
+    usort($hand, function($a, $b) {
+        return cardValue($b['value']) - cardValue($a['value']);
+    });
+    return [
+        array_slice($hand, 0, 3),
+        array_slice($hand, 3, 8),
+        array_slice($hand, 8, 13)
+    ];
+}
+
 // ------------------- API -------------------
 $action = $_GET['action'] ?? '';
 header('Content-Type: application/json');
@@ -233,7 +247,8 @@ if ($action === 'room_state') {
     $ret = [
         "players" => $state['players'],
         "status" => $state['status'],
-        "results" => $state['results']
+        "results" => $state['results'],
+        "submits" => $state['submits'] // <---- 必须添加这个，前端比牌弹窗才能弹出
     ];
     if ($player && isset($state["hands"][$player])) $ret["myHand"] = $state["hands"][$player];
     echo json_encode($ret);
@@ -255,6 +270,18 @@ if ($action === 'submit_hand') {
         die(json_encode(["error" => "前中后道不符合规则"]));
     }
     $rooms[$room]['submits'][$player] = $split;
+
+    // 自动为所有未提交的AI玩家分牌并提交
+    foreach ($rooms[$room]['players'] as $p) {
+        if (!isset($rooms[$room]['submits'][$p]) && preg_match('/^AI-/', $p)) {
+            $hand = $rooms[$room]['hands'][$p];
+            $ai_split = aiAutoSplit($hand);
+            if (isLegalSplit($ai_split)) {
+                $rooms[$room]['submits'][$p] = $ai_split;
+            }
+        }
+    }
+
     // 是否全部提交
     if (count($rooms[$room]['submits']) === count($rooms[$room]['players'])) {
         $rooms[$room]['status'] = 'finished';
