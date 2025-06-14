@@ -9,14 +9,6 @@ function cardImg(card) {
   return `/cards/${v}_of_${card.suit}.svg`;
 }
 
-/**
- * 彻底保证：
- * - 头道/手牌/尾道所有区域的牌永远紧贴左侧，剩余空间透明占位，不居中
- * - 卡牌按maxCards平均分配格子宽度，全部区域一致
- * - 无论什么屏幕无滚动条（body、html、所有div都overflow:hidden）
- * - 卡牌自适应高度，永远不超出置牌区
- * - 说明文字绝对定位，扑克牌可覆盖
- */
 export default function CardZone({
   zone,
   label,
@@ -28,12 +20,11 @@ export default function CardZone({
   style,
   fullArea = false
 }) {
-  // 拖拽放置
   const canDrop = (zone !== "mid" && cards.length < maxCards);
 
-  // 卡牌宽高按maxCards严格平分
-  const cardBoxWidth = `calc((100vw - 40px) / ${maxCards})`; // 40px: 左右都留极小安全边距
-  const cardBoxHeight = `calc(100% - 38px)`; // 38px: 顶部说明文字高度+一点点padding
+  // 固定每张牌宽度（自适应屏幕，最多不超过6.5vw，移动端更小，最多5vw）
+  const cardBoxWidth = "6vw";
+  const cardBoxHeight = "calc(100% - 38px)";
 
   return (
     <div
@@ -48,15 +39,13 @@ export default function CardZone({
         ...style,
         padding: 0,
         margin: 0,
-        overflow: "hidden", // 无滚动条
+        overflow: "hidden",
       }}
     >
       <div
         style={{
           width: fullArea ? "100vw" : "98vw",
           height: fullArea ? "97%" : "94%",
-          minHeight: fullArea ? "85%" : undefined,
-          minWidth: fullArea ? "80vw" : undefined,
           border: "2px dashed #bbb",
           borderRadius: 8,
           margin: "0 auto",
@@ -73,7 +62,7 @@ export default function CardZone({
         onDragOver={canDrop ? e => { e.preventDefault(); } : undefined}
         onDrop={canDrop ? () => onDrop(zone) : undefined}
       >
-        {/* 说明文字绝对定位，扑克牌可覆盖 */}
+        {/* 说明文字 */}
         <div style={{
           position: "absolute",
           top: 8,
@@ -87,7 +76,7 @@ export default function CardZone({
         }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {/* 卡牌区：实际有牌部分紧贴左侧，右侧透明占位 */}
+        {/* 卡牌区：每张牌紧贴左侧，宽度固定 */}
         <div
           style={{
             width: "100%",
@@ -102,7 +91,6 @@ export default function CardZone({
             padding: 0,
           }}
         >
-          {/* 实际有牌部分 */}
           {cards.map((card, idx) => (
             <div
               key={idx}
@@ -139,23 +127,6 @@ export default function CardZone({
                 }}
               />
             </div>
-          ))}
-          {/* 透明占位补足 */}
-          {[...Array(maxCards - cards.length)].map((_, idx) => (
-            <div
-              key={`empty-${idx}`}
-              style={{
-                width: cardBoxWidth,
-                height: cardBoxHeight,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: 0,
-                padding: 0,
-                background: "transparent",
-                opacity: 0,
-              }}
-            />
           ))}
         </div>
       </div>
