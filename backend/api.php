@@ -138,6 +138,8 @@ function compareHand($hand1, $hand2) {
     return 0;
 }
 function isLegalSplit($split) {
+    // 必须严格3-5-5
+    if (count($split) !== 3 || count($split[0]) !== 3 || count($split[1]) !== 5 || count($split[2]) !== 5) return false;
     $t0 = getHandType($split[0]);
     $t1 = getHandType($split[1]);
     $t2 = getHandType($split[2]);
@@ -146,14 +148,32 @@ function isLegalSplit($split) {
     if ($t1[0] == $t2[0] && compareHand($split[1], $split[2]) > 0) return false;
     return true;
 }
+
+// ---- AI分牌（确保3-5-5） ----
 function aiAutoSplit($hand) {
-    usort($hand, function($a, $b) { return cardValue($b['value']) - cardValue($a['value']); });
-    return [
+    // 简单智能：排序，暴力3-5-5分多次尝试，返回第一个合法
+    if (count($hand) !== 13) return [
         array_slice($hand, 0, 3),
         array_slice($hand, 3, 8),
         array_slice($hand, 8, 13)
     ];
+    $best = null;
+    // 生成所有[3,5,5]组合的合理分法（最多尝试几千次）
+    for ($try = 0; $try < 3000; ++$try) {
+        $idx = range(0, 12);
+        shuffle($idx);
+        $head = [$hand[$idx[0]], $hand[$idx[1]], $hand[$idx[2]]];
+        $mid = [$hand[$idx[3]], $hand[$idx[4]], $hand[$idx[5]], $hand[$idx[6]], $hand[$idx[7]]];
+        $tail = [$hand[$idx[8]], $hand[$idx[9]], $hand[$idx[10]], $hand[$idx[11]], $hand[$idx[12]]];
+        $split = [$head, $mid, $tail];
+        if (isLegalSplit($split)) return $split;
+        // 记录第一个分法做兜底
+        if ($try == 0) $best = $split;
+    }
+    // 实在找不到就返回第一个分法（3-5-5，但不一定合法）
+    return $best;
 }
+
 // ---- 多人自动匹配池 ----
 function doMatchPool() {
     $matchPool = loadMatchPool();
@@ -265,29 +285,34 @@ if ($action === 'submit_hand') {
     }
     $rooms[$room]['submits'][$player] = $split;
 
-    // ------ AI自动分牌：加强版，保证AI一定能分出 ------
+    // ------ AI自动分牌：修正版，保证3-5-5，每道张数严格 ------
     foreach ($rooms[$room]['players'] as $p) {
         if (!isset($rooms[$room]['submits'][$p]) && preg_match('/^AI-/', $p)) {
             $hand = $rooms[$room]['hands'][$p];
-            // 先用aiAutoSplit
+            if (count($hand) != 13) continue;
             $ai_split = aiAutoSplit($hand);
-            // 如果不合法，暴力洗牌找一个合法的
-            if (!isLegalSplit($ai_split)) {
+            // 如果不合法或不是3-5-5，暴力分合法的
+            if (
+                !isLegalSplit($ai_split) ||
+                count($ai_split[0])!=3 ||
+                count($ai_split[1])!=5 ||
+                count($ai_split[2])!=5
+            ) {
                 $found = false;
-                for ($try = 0; $try < 2000; ++$try) {
-                    shuffle($hand);
-                    $candidate = [
-                        array_slice($hand, 0, 3),
-                        array_slice($hand, 3, 8),
-                        array_slice($hand, 8, 13)
-                    ];
+                for ($try = 0; $try < 3000; ++$try) {
+                    $idx = range(0, 12);
+                    shuffle($idx);
+                    $head = [$hand[$idx[0]], $hand[$idx[1]], $hand[$idx[2]]];
+                    $mid = [$hand[$idx[3]], $hand[$idx[4]], $hand[$idx[5]], $hand[$idx[6]], $hand[$idx[7]]];
+                    $tail = [$hand[$idx[8]], $hand[$idx[9]], $hand[$idx[10]], $hand[$idx[11]], $hand[$idx[12]]];
+                    $candidate = [$head, $mid, $tail];
                     if (isLegalSplit($candidate)) {
                         $ai_split = $candidate;
                         $found = true;
                         break;
                     }
                 }
-                // 如果找不到合法分法，还是用aiAutoSplit（兜底不阻塞流程）
+                // 实在找不到
                 if (!$found) {
                     $ai_split = [
                         array_slice($hand, 0, 3),
@@ -296,7 +321,14 @@ if ($action === 'submit_hand') {
                     ];
                 }
             }
-            $rooms[$room]['submits'][$p] = $ai_split;
+            // 最终只要3-5-5才提交
+            if (
+                count($ai_split[0])==3 &&
+                count($ai_split[1])==5 &&
+                count($ai_split[2])==5
+            ) {
+                $rooms[$room]['submits'][$p] = $ai_split;
+            }
         }
     }
 
