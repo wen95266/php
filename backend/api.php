@@ -149,29 +149,90 @@ function isLegalSplit($split) {
     return true;
 }
 
-// ---- AI分牌（确保3-5-5） ----
+// ----------- 增强智能AI分牌 --------------
+// 组合枚举函数：从$arr中选n个（返回索引数组）
+function combinations($arr, $n) {
+    $result = [];
+    $len = count($arr);
+    if ($n > $len) return $result;
+    $indexes = range(0, $n - 1);
+    while (true) {
+        $comb = [];
+        for ($i = 0; $i < $n; ++$i) $comb[] = $arr[$indexes[$i]];
+        $result[] = $comb;
+        // move to next
+        $i = $n - 1;
+        while ($i >= 0 && $indexes[$i] == $len - $n + $i) $i--;
+        if ($i < 0) break;
+        $indexes[$i]++;
+        for ($j = $i + 1; $j < $n; ++$j)
+            $indexes[$j] = $indexes[$j - 1] + 1;
+    }
+    return $result;
+}
+
+// 评估分牌优劣
+function aiSplitScore($split) {
+    $scoreTable = [
+        "同花顺"=>900, "四条"=>800, "葫芦"=>600, "同花"=>500, "顺子"=>400,
+        "三条"=>300, "两对"=>200, "一对"=>100, "散牌"=>0
+    ];
+    $t0 = getHandType($split[0])[1];
+    $t1 = getHandType($split[1])[1];
+    $t2 = getHandType($split[2])[1];
+    // 避免头道被鸡蛋
+    $penalty = ($t0 === "散牌") ? -200 : 0;
+    // 尾道>中道>头道
+    $score = $scoreTable[$t2] * 7 + $scoreTable[$t1] * 3 + $scoreTable[$t0] + $penalty;
+    // 同类型点数加权
+    $score += getHandType($split[2])[2] ?? 0;
+    $score += getHandType($split[1])[2] ?? 0;
+    $score += getHandType($split[0])[2] ?? 0;
+    // 头道是三条/两对加分
+    if ($t0 === "三条") $score += 80;
+    if ($t0 === "两对") $score += 40;
+    return $score;
+}
+
+// AI智能分牌主函数
 function aiAutoSplit($hand) {
-    // 简单智能：排序，暴力3-5-5分多次尝试，返回第一个合法
-    if (count($hand) !== 13) return [
+    if (count($hand) !== 13) {
+        return [
+            array_slice($hand, 0, 3),
+            array_slice($hand, 3, 8),
+            array_slice($hand, 8, 13)
+        ];
+    }
+    $allIdx = range(0, 12);
+    $bestSplit = null;
+    $bestScore = -99999;
+    // 只枚举尾道所有5张组合（C(13,5)=1287），然后枚举中道所有5张组合（C(8,5)=56），剩下3张做头道，总约7万种
+    $tailCombos = combinations($allIdx, 5);
+    foreach ($tailCombos as $tailIdx) {
+        $remain1 = array_diff($allIdx, $tailIdx);
+        $midCombos = combinations($remain1, 5);
+        foreach ($midCombos as $midIdx) {
+            $headIdx = array_values(array_diff($remain1, $midIdx));
+            if (count($headIdx) !== 3) continue;
+            $head = [$hand[$headIdx[0]], $hand[$headIdx[1]], $hand[$headIdx[2]]];
+            $mid = [$hand[$midIdx[0]], $hand[$midIdx[1]], $hand[$midIdx[2]], $hand[$midIdx[3]], $hand[$midIdx[4]]];
+            $tail = [$hand[$tailIdx[0]], $hand[$tailIdx[1]], $hand[$tailIdx[2]], $hand[$tailIdx[3]], $hand[$tailIdx[4]]];
+            $split = [$head, $mid, $tail];
+            if (!isLegalSplit($split)) continue;
+            $score = aiSplitScore($split);
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestSplit = $split;
+            }
+        }
+    }
+    // 没找到合法分法，原始分法
+    if ($bestSplit) return $bestSplit;
+    return [
         array_slice($hand, 0, 3),
         array_slice($hand, 3, 8),
         array_slice($hand, 8, 13)
     ];
-    $best = null;
-    // 生成所有[3,5,5]组合的合理分法（最多尝试几千次）
-    for ($try = 0; $try < 3000; ++$try) {
-        $idx = range(0, 12);
-        shuffle($idx);
-        $head = [$hand[$idx[0]], $hand[$idx[1]], $hand[$idx[2]]];
-        $mid = [$hand[$idx[3]], $hand[$idx[4]], $hand[$idx[5]], $hand[$idx[6]], $hand[$idx[7]]];
-        $tail = [$hand[$idx[8]], $hand[$idx[9]], $hand[$idx[10]], $hand[$idx[11]], $hand[$idx[12]]];
-        $split = [$head, $mid, $tail];
-        if (isLegalSplit($split)) return $split;
-        // 记录第一个分法做兜底
-        if ($try == 0) $best = $split;
-    }
-    // 实在找不到就返回第一个分法（3-5-5，但不一定合法）
-    return $best;
 }
 
 // ---- 多人自动匹配池 ----
@@ -214,6 +275,7 @@ function doMatchPool() {
     }
     return [$rooms, $matchPool];
 }
+
 // ---- API ----
 $action = $_GET['action'] ?? '';
 header('Content-Type: application/json');
@@ -285,7 +347,7 @@ if ($action === 'submit_hand') {
     }
     $rooms[$room]['submits'][$player] = $split;
 
-    // ------ AI自动分牌：修正版，保证3-5-5，每道张数严格 ------
+    // ------ AI自动分牌：智能增强 ------
     foreach ($rooms[$room]['players'] as $p) {
         if (!isset($rooms[$room]['submits'][$p]) && preg_match('/^AI-/', $p)) {
             $hand = $rooms[$room]['hands'][$p];
