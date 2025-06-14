@@ -91,7 +91,7 @@ export default function App() {
     }
   };
 
-  // 点击某道牌区空白或任意处进行移动
+  // 点击某道牌区空白或任意处进行移动（不再提前限制数量）
   const handleZoneClick = (toZone) => {
     if (!selectedCard) return;
     const { card, zone: fromZone } = selectedCard;
@@ -99,16 +99,7 @@ export default function App() {
       setSelectedCard(null);
       return;
     }
-    // 限制目标区不能超限
-    if (
-      (toZone === "head" && zones.head.length >= 3) ||
-      (toZone === "mid" && zones.mid.length >= 5) ||
-      (toZone === "tail" && zones.tail.length >= 5)
-    ) {
-      setSelectedCard(null);
-      return;
-    }
-    // 移动牌
+    // 移动牌（不限制数量，允许任意移动）
     const cardKey = c => c.value + "-" + c.suit;
     let newZones = {
       head: zones.head.filter(c => cardKey(c) !== cardKey(card)),
@@ -230,7 +221,6 @@ export default function App() {
         <CardZone
           zone="head"
           label="头道"
-          maxCards={3}
           cards={zones.head}
           selectedCard={selectedCard}
           onSelectCard={handleSelectCard}
@@ -249,7 +239,6 @@ export default function App() {
         <CardZone
           zone="mid"
           label="中道"
-          maxCards={5}
           cards={zones.mid}
           selectedCard={selectedCard}
           onSelectCard={handleSelectCard}
@@ -268,7 +257,6 @@ export default function App() {
         <CardZone
           zone="tail"
           label="尾道"
-          maxCards={5}
           cards={zones.tail}
           selectedCard={selectedCard}
           onSelectCard={handleSelectCard}
@@ -288,7 +276,7 @@ export default function App() {
           handleAiSplit={handleAiSplit}
           handleSubmit={handleSubmit}
           aiDisabled={false}
-          submitDisabled={submitted || !(zones.head.length === 3 && zones.mid.length === 5 && zones.tail.length === 5)}
+          submitDisabled={submitted}
           submitted={submitted}
           style={{
             width: "100vw",
