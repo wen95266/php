@@ -23,6 +23,7 @@ html, body, #root, .main-layout {
   min-width: 100vw;
   max-width: 100vw;
   overflow-x: hidden;
+  position: relative;
 }
 .top-right-btns {
   position: absolute;
@@ -44,11 +45,38 @@ html, body, #root, .main-layout {
   background: #fcfcff !important;
 }
 .cardzone-label {
-  font-size: 20px !important;
-  color: #444 !important;
+  position: absolute !important;
+  top: 10px !important;
+  right: 22px !important;
+  opacity: 0.44 !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #222 !important;
+  z-index: 2 !important;
+  pointer-events: none;
+  user-select: none;
+  background: none !important;
 }
 .cardzone-cards {
+  align-items: center !important;
+  justify-content: flex-start !important;
+  background: none !important;
+  gap: 16px !important;
   min-height: 92px !important;
+  height: 100% !important;
+  padding-left: 16px !important;
+  overflow-x: auto;
+}
+.cardzone-card {
+  /* 卡牌由js动态宽高，不设死 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .game-full-outer {
   width: 100vw; height: 100vh;
@@ -82,7 +110,7 @@ html, body, #root, .main-layout {
   .cardzone-label {
     font-size: 15px !important;
     top: 4px !important;
-    left: 10px !important;
+    right: 8px !important;
   }
   .cardzone-cards {
     min-height: 52px !important;
