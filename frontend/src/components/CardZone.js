@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 
 // 卡牌图片路径
 function cardImg(card) {
@@ -21,13 +21,15 @@ export default function CardZone({
   style,
   fullArea = false
 }) {
-  // 响应式判定（600px为阈值，必要可调整）
-  const isNarrow = useMemo(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth < 600;
+  // 响应式判定
+  const [isNarrow, setIsNarrow] = useState(window.innerWidth < 700);
+  useEffect(() => {
+    function handleResize() {
+      setIsNarrow(window.innerWidth < 700);
     }
-    return false;
-  }, [typeof window !== "undefined" ? window.innerWidth : 1024]);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // 堆叠样式逻辑
   const stackCardStyle = idx => {
@@ -42,15 +44,17 @@ export default function CardZone({
       };
     }
     // 堆叠：每张牌左移一定像素，居中，且不超出
-    const overlap = 24; // 堆叠偏移量(px)
-    const totalWidth = overlap * (cards.length - 1) + 48; // 48为单牌宽
-    const left = idx * overlap - (totalWidth - (isNarrow ? window.innerWidth : 320)) / 2;
+    const overlap = 22; // 堆叠偏移量(px)
+    const cardW = 44;
+    const totalW = cardW + overlap * (cards.length - 1);
+    const maxAvailable = Math.min(window.innerWidth * 0.96, 440); // 限制最大宽度
+    const startLeft = (maxAvailable - totalW) / 2;
     return {
       position: "absolute",
-      left: `${left}px`,
-      width: 48,
-      minWidth: 32,
-      maxWidth: 60,
+      left: `${startLeft + idx * overlap}px`,
+      width: cardW,
+      minWidth: 28,
+      maxWidth: 56,
       zIndex: idx,
       transition: "left 0.18s"
     };
@@ -58,6 +62,7 @@ export default function CardZone({
 
   return (
     <div
+      className="cardzone-outer"
       style={{
         width: "100vw",
         height: style?.height || "16vh",
@@ -73,6 +78,7 @@ export default function CardZone({
       }}
     >
       <div
+        className="cardzone-inner"
         style={{
           width: fullArea ? "100vw" : "98vw",
           height: fullArea ? "97%" : "94%",
@@ -93,21 +99,23 @@ export default function CardZone({
         onDrop={(zone !== "mid" && cards.length < maxCards) ? () => onDrop(zone) : undefined}
       >
         {/* 说明文字 */}
-        <div style={{
-          position: "absolute",
-          top: 8,
-          left: 14,
-          fontWeight: 600,
-          color: "#444",
-          fontSize: 18,
-          zIndex: 2,
-          pointerEvents: "none",
-          userSelect: "none"
-        }}>
+        <div className="cardzone-label"
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 14,
+            fontWeight: 600,
+            color: "#444",
+            fontSize: 18,
+            zIndex: 2,
+            pointerEvents: "none",
+            userSelect: "none"
+          }}>
           {label} ({cards.length}/{maxCards}):
         </div>
         {/* 卡牌区 */}
         <div
+          className={"cardzone-cards" + (isNarrow ? " cardzone-cards-narrow" : "")}
           style={{
             width: "100%",
             height: "100%",
@@ -125,6 +133,7 @@ export default function CardZone({
           {cards.map((card, idx) => (
             <div
               key={idx}
+              className="cardzone-card"
               style={{
                 ...(isNarrow ? stackCardStyle(idx) : {
                   width: "6vw",
@@ -133,7 +142,7 @@ export default function CardZone({
                   marginLeft: idx === 0 ? 0 : -6,
                   zIndex: idx
                 }),
-                height: isNarrow ? 72 : "calc(100% - 38px)",
+                height: isNarrow ? 62 : "calc(100% - 38px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
