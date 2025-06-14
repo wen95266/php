@@ -131,17 +131,17 @@ export default function App() {
     }));
   };
 
-  // 自动中道
-  useEffect(() => {
-    const { head, tail, hand, mid } = zones;
-    if (head.length === 3 && tail.length === 5 && hand.length === 5) {
-      setZones(z => ({ ...z, mid: hand, hand: [] }));
-    }
-    if ((head.length < 3 || tail.length < 5) && mid.length > 0) {
-      setZones(z => ({ ...z, hand: [...hand, ...mid], mid: [] }));
-    }
-    // eslint-disable-next-line
-  }, [zones.head.length, zones.tail.length, zones.hand.length]);
+  // ---------- 删除“自动中道”逻辑 ----------
+  // useEffect(() => {
+  //   const { head, tail, hand, mid } = zones;
+  //   if (head.length === 3 && tail.length === 5 && hand.length === 5) {
+  //     setZones(z => ({ ...z, mid: hand, hand: [] }));
+  //   }
+  //   if ((head.length < 3 || tail.length < 5) && mid.length > 0) {
+  //     setZones(z => ({ ...z, hand: [...hand, ...mid], mid: [] }));
+  //   }
+  //   // eslint-disable-next-line
+  // }, [zones.head.length, zones.tail.length, zones.hand.length]);
 
   // AI分牌
   const handleAiSplit = () => {
@@ -307,16 +307,17 @@ export default function App() {
         fullArea
         fixedCardHeight={threeZoneH}
       />
+      {/* 保持布局不变，手牌区和中道区互斥显示 */}
       {zones.mid.length === 5 ? (
         <CardZone
           zone="mid"
           label="中道"
           maxCards={5}
           cards={zones.mid}
-          onDragStart={() => {}}
-          onDrop={() => {}}
-          onReturnToHand={() => {}}
-          draggingCard={null}
+          onDragStart={onDragStart}
+          onDrop={onDrop}
+          onReturnToHand={onReturnToHand}
+          draggingCard={draggingCard}
           style={{
             height: threeZoneH,
             borderBottom: "1px solid #ededed",
