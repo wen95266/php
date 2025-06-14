@@ -20,36 +20,53 @@ export default function CardZone({
   draggingCard,
   style,
   fullArea = false,
-  fixedCardHeight // 新增，要求外部传入
+  fixedCardHeight,
+  stacked // 新增堆叠模式
 }) {
-  // 固定扑克牌高度，宽度按比例
-  const CARD_RATIO = 0.725; // 扑克牌宽/高
+  const CARD_RATIO = 0.725;
   let heightPx = 120;
-  if (fixedCardHeight && typeof fixedCardHeight === "string" && fixedCardHeight.startsWith("calc")) {
-    // calc((100vh - 90px - 120px) / 3) 简单估算
-    const match = fixedCardHeight.match(/100vh - (\d+)px - (\d+)px/);
-    if (match) {
-      heightPx = (window.innerHeight - parseInt(match[1]) - parseInt(match[2])) / 3;
-    }
-  } else if (typeof fixedCardHeight === "number") {
+  if (fixedCardHeight && typeof fixedCardHeight === "number") {
     heightPx = fixedCardHeight;
   }
   const cardWidth = Math.round(heightPx * CARD_RATIO);
 
-  // 调整：如果卡牌总宽超出区宽，让卡牌自动等比缩小（不滚动）
-  const containerWidth = window.innerWidth; // 100vw
-  const gap = 12;
-  const totalGap = gap * (cards.length - 1);
-  let fitCardWidth = cardWidth;
-  let fitCardHeight = heightPx * 0.97;
-  if (cards.length > 0) {
-    const maxCardW = Math.floor((containerWidth - 28 - totalGap) / cards.length);
-    if (maxCardW < cardWidth) {
-      fitCardWidth = maxCardW;
-      fitCardHeight = Math.floor(fitCardWidth / CARD_RATIO);
-    }
+  // 堆叠模式
+  let overlap = 18;
+  if (stacked && cards.length > 1) {
+    // 只显示部分重叠
+    return (
+      <div style={{
+        position: "relative",
+        height: heightPx,
+        width: (cardWidth + overlap * (cards.length - 1)),
+        minWidth: cardWidth,
+        ...style
+      }}>
+        {cards.map((card, idx) => (
+          <img
+            key={idx}
+            src={cardImg(card)}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              left: idx * overlap,
+              top: 0,
+              width: cardWidth,
+              height: heightPx,
+              borderRadius: 4,
+              background: "#fff",
+              border: "1px solid #ccc",
+              zIndex: idx,
+              boxShadow: "0 1px 6px #0001"
+            }}
+          />
+        ))}
+      </div>
+    );
   }
 
+  // 常规平铺
   return (
     <div
       className="cardzone-outer"
@@ -106,7 +123,6 @@ export default function CardZone({
           }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {/* 卡牌区 */}
         <div
           className="cardzone-cards"
           style={{
@@ -121,8 +137,8 @@ export default function CardZone({
             alignItems: "center",
             justifyContent: "flex-start",
             boxSizing: "border-box",
-            overflow: "visible", // 关键：不出现滚动条
-            gap: `${gap}px`,
+            overflowX: "visible",
+            gap: "12px",
             padding: "0 14px",
             position: "relative",
             background: "none"
@@ -133,10 +149,10 @@ export default function CardZone({
               key={idx}
               className="cardzone-card"
               style={{
-                width: fitCardWidth,
-                minWidth: fitCardWidth,
-                maxWidth: fitCardWidth,
-                height: fitCardHeight,
+                width: cardWidth,
+                minWidth: cardWidth,
+                maxWidth: cardWidth,
+                height: heightPx * 0.97,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
