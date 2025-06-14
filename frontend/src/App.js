@@ -6,9 +6,8 @@ import ControlBar from "./components/ControlBar";
 import CompareDialog from "./components/CompareDialog";
 import { cycleAiSplit } from "./utils/ai";
 
-// AI与匹配部分同旧版
 const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
-const MY_NAME = localStorage.getItem("playerName") || "玩家" + Math.floor(Math.random()*10000);
+const MY_NAME = localStorage.getItem("playerName") || "玩家" + Math.floor(Math.random() * 10000);
 
 export default function App() {
   const [mode, setMode] = useState("ai");
@@ -20,7 +19,7 @@ export default function App() {
   const [status, setStatus] = useState("loading");
   const [results, setResults] = useState(null);
 
-  // 只保留三道，不再有手牌区
+  // 只保留三道，AI分牌后直接分好
   const [zones, setZones] = useState({ head: [], mid: [], tail: [] });
   const [draggingCard, setDraggingCard] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -79,6 +78,7 @@ export default function App() {
 
   // 拖拽逻辑：三道之间拖拽
   const onDragStart = (card, from) => setDraggingCard({ card, from });
+
   const onDrop = (to) => {
     if (!draggingCard) return;
     const { card, from } = draggingCard;
@@ -88,7 +88,7 @@ export default function App() {
     for (let z of zoneKeys) {
       newZones[z] = zones[z].filter(c => cardKey(c) !== cardKey(card));
     }
-    // 放入新区域
+    // 放入新区域（只要没满即可）
     if (to === "head" && newZones.head.length < 3) newZones.head.push(card);
     if (to === "mid" && newZones.mid.length < 5) newZones.mid.push(card);
     if (to === "tail" && newZones.tail.length < 5) newZones.tail.push(card);
@@ -96,12 +96,7 @@ export default function App() {
     setDraggingCard(null);
   };
 
-  // 允许双击移回头道/中道/尾道之间（如需可扩展）
-  const onReturnToOther = (zone, idx) => {
-    // 可选：实现为回到未满的其他区，或不实现
-  };
-
-  // AI分牌按钮
+  // AI分牌按钮（可覆盖当前三道）
   const handleAiSplit = () => {
     const allCards = [...zones.head, ...zones.mid, ...zones.tail];
     if (allCards.length !== 13) return;
@@ -212,7 +207,7 @@ export default function App() {
           cards={zones.head}
           onDragStart={onDragStart}
           onDrop={onDrop}
-          onReturnToHand={onReturnToOther}
+          onReturnToHand={null}
           draggingCard={draggingCard}
           style={{
             height: "100%",
@@ -234,7 +229,7 @@ export default function App() {
           cards={zones.mid}
           onDragStart={onDragStart}
           onDrop={onDrop}
-          onReturnToHand={onReturnToOther}
+          onReturnToHand={null}
           draggingCard={draggingCard}
           style={{
             height: "100%",
@@ -256,7 +251,7 @@ export default function App() {
           cards={zones.tail}
           onDragStart={onDragStart}
           onDrop={onDrop}
-          onReturnToHand={onReturnToOther}
+          onReturnToHand={null}
           draggingCard={draggingCard}
           style={{
             height: "100%",
