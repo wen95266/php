@@ -35,8 +35,6 @@ export default function CardZone({
   const cardAreaHeight = "100%";
   const cardWidth = `calc((100vw - 32px) / ${maxCards})`;
   const cardHeight = "calc(100% - 36px)";
-
-  // 卡牌容器对齐方式：全部左对齐
   const justifyContent = "flex-start";
 
   return (
@@ -48,7 +46,7 @@ export default function CardZone({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#fafbfc",
+        background: "#f2f6fa", // 统一按钮区背景色
         ...style
       }}
     >
@@ -111,13 +109,11 @@ export default function CardZone({
                 marginLeft: 0,
                 position: "relative",
                 width: cardWidth,
-                height: `calc(${cardWidth} / 0.7)`, // 保证卡牌比例
+                height: `calc(${cardWidth} / 0.7)`,
                 maxHeight: cardHeight,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center"
-                // 没有外边框
-                // 没有x/删除按钮
               }}
             >
               <img
