@@ -23,6 +23,36 @@ export default function CardZone({
 }) {
   // 是否可放牌
   const canDrop = (zone !== "mid" && cards.length < maxCards);
+
+  // 让卡牌自适应平铺占满宽度
+  // 只对手牌区做此自适应，其余区居中
+  const isHandZone = zone === "hand";
+  const cardAreaStyle = isHandZone
+    ? {
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: cards.length < 13 ? "flex-start" : "space-between",
+        flexWrap: "nowrap",
+        minHeight: 70,
+        overflow: "hidden",
+        marginLeft: 110,
+        gap: 0,
+      }
+    : {
+        marginLeft: 110,
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        minHeight: 70,
+        justifyContent: "flex-start",
+      };
+
+  // 自适应卡牌宽度
+  const cardWidth = isHandZone && cards.length
+    ? `calc((100vw - 220px) / ${cards.length})`
+    : 50;
+
   return (
     <div
       style={{
@@ -38,7 +68,7 @@ export default function CardZone({
     >
       <div
         style={{
-          width: fullArea ? "92vw" : "auto",
+          width: fullArea ? "94vw" : "auto",
           height: fullArea ? `calc(100% - 24px)` : "auto",
           minHeight: fullArea ? "82%" : undefined,
           minWidth: fullArea ? "80vw" : undefined,
@@ -49,11 +79,11 @@ export default function CardZone({
           display: "flex",
           alignItems: "center",
           justifyContent: "flex-start",
-          flexWrap: "wrap",
           transition: "border 0.2s",
           boxShadow: "0 2px 6px #fafafa",
           opacity: (cards.length >= maxCards && zone !== "hand" && zone !== "mid") ? 0.7 : 1,
           position: "relative",
+          overflow: "hidden"
         }}
         onDragOver={canDrop ? e => { e.preventDefault(); } : undefined}
         onDrop={canDrop ? () => onDrop(zone) : undefined}
@@ -70,25 +100,34 @@ export default function CardZone({
         }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        <div style={{
-          marginLeft: 110,
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          minHeight: 70,
-        }}>
+        <div style={cardAreaStyle}>
           {cards.map((card, idx) => (
             <div
               key={card.value + "_" + card.suit + "_" + idx}
               draggable={zone !== "mid"}
               onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
               style={{
-                margin: "0 3px",
-                position: "relative"
+                margin: isHandZone ? "0 0" : "0 3px",
+                position: "relative",
+                flex: isHandZone ? `0 1 ${cardWidth}` : undefined,
+                minWidth: isHandZone ? cardWidth : undefined,
+                maxWidth: isHandZone ? cardWidth : undefined,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
               }}
             >
-              <img src={cardImg(card)} alt="" width={50}
-                style={{ borderRadius: 4, boxShadow: "1px 2px 8px #eee" }} />
+              <img
+                src={cardImg(card)}
+                alt=""
+                style={{
+                  borderRadius: 4,
+                  boxShadow: "1px 2px 8px #eee",
+                  width: isHandZone ? "94%" : 50,
+                  height: isHandZone ? "auto" : 70,
+                  objectFit: "contain"
+                }}
+              />
               {(zone === "head" || zone === "tail") && (
                 <span
                   onClick={() => onReturnToHand(zone, idx)}
