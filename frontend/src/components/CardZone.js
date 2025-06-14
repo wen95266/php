@@ -42,7 +42,8 @@ export default function CardZone({
   style,
   fullArea = false,
   fixedCardHeight,
-  stacked // 堆叠模式
+  stacked, // 堆叠模式
+  onReturnToHand
 }) {
   // 横向自适应布局
   const containerRef = React.useRef(null);
@@ -121,7 +122,8 @@ export default function CardZone({
     );
   }
 
-  // 平铺模式：只调大牌宽高
+  // 保证手牌区自动左对齐，且无重复卡牌
+  // 注意：flex-start+paddingLeft，paddingRight为0
   return (
     <div
       ref={containerRef}
@@ -194,14 +196,15 @@ export default function CardZone({
             boxSizing: "border-box",
             overflowX: "visible",
             gap: `${gap}px`,
-            padding: "0 14px",
+            paddingLeft: 14,
+            paddingRight: 0,
             position: "relative",
             background: "none"
           }}
         >
           {cards.map((card, idx) => (
             <div
-              key={idx}
+              key={card.suit + card.value + idx}
               className="cardzone-card"
               style={{
                 width: cardW,
@@ -218,6 +221,7 @@ export default function CardZone({
                 background: "transparent",
                 zIndex: idx
               }}
+              onDoubleClick={() => onReturnToHand && onReturnToHand(zone, idx)}
             >
               <img
                 src={cardImg(card)}
