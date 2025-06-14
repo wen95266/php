@@ -5,17 +5,19 @@ export default function ControlBar({
   handleSubmit,
   aiDisabled,
   submitDisabled,
-  submitted
+  submitted,
+  style
 }) {
   return (
     <div style={{
       width: "100vw",
-      minHeight: "16vh",
-      border: "none",
+      minHeight: 120,
       background: "#f2f6fa",
       display: "flex",
       alignItems: "center",
-      justifyContent: "center"
+      justifyContent: "center",
+      border: "none",
+      ...style
     }}>
       <button
         style={{ fontSize: 18, padding: "8px 32px", marginRight: 30, borderRadius: 8 }}
