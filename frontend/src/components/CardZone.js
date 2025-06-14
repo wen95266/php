@@ -20,14 +20,14 @@ export default function CardZone({
   style,
   fullArea = false
 }) {
-  // 允许拖拽放置
+  // 拖拽放置
   const canDrop = (zone !== "mid" && cards.length < maxCards);
 
   // 说明文字绝对定位
   const labelLeft = 12;
   const labelTop = 8;
 
-  // 卡牌宽度：始终平分maxCards，无论有几张都左贴齐
+  // 每区都严格maxCards个格子，牌紧贴左侧
   const cardWidth = `calc((100vw - 36px) / ${maxCards})`;
   const cardHeight = `calc(100% - 30px)`;
 
@@ -42,7 +42,7 @@ export default function CardZone({
         justifyContent: "center",
         background: "#f2f6fa",
         ...style,
-        overflow: "hidden" // 保证无滚动条
+        overflow: "hidden"
       }}
     >
       <div
@@ -66,7 +66,7 @@ export default function CardZone({
         onDragOver={canDrop ? e => { e.preventDefault(); } : undefined}
         onDrop={canDrop ? () => onDrop(zone) : undefined}
       >
-        {/* 说明文字绝对定位，卡牌可覆盖 */}
+        {/* 说明文字 */}
         <div style={{
           position: "absolute",
           top: labelTop,
@@ -80,7 +80,7 @@ export default function CardZone({
         }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {/* 卡牌区：左贴齐，无滚动条 */}
+        {/* 卡牌区：每区用maxCards个格子，牌紧贴左侧，没有滚动条 */}
         <div
           style={{
             width: "100%",
@@ -92,7 +92,8 @@ export default function CardZone({
             alignItems: "flex-start",
             justifyContent: "flex-start",
             boxSizing: "border-box",
-            overflow: "hidden" // 绝不会出现滚动条
+            overflow: "hidden",
+            gap: 0
           }}
         >
           {[...Array(maxCards)].map((_, idx) => (
