@@ -18,12 +18,14 @@ html, body, #root, .main-layout {
   flex-direction: column;
   background: #f2f6fa;
 }
+/* 顶部横幅、底部按钮区、置牌区统一颜色 */
 .zone-status, .zone-head, .zone-mid, .zone-tail, .zone-buttons {
   width: 100vw;
   min-width: 100vw;
   max-width: 100vw;
   overflow-x: hidden;
   position: relative;
+  background: #fcfcff !important;
 }
 .top-right-btns {
   position: absolute;
