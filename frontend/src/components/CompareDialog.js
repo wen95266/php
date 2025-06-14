@@ -1,14 +1,12 @@
 import React, { useRef, useLayoutEffect, useState } from "react";
 
-// 极致放大、紧贴的扑克牌平铺行
+// 平铺扑克牌，无任何边框/阴影/背景，仅显示完整卡牌
 function CardRow({ cards, maxWidth, maxHeight }) {
   const len = cards.length;
-  // 行内gap极小
   const gap = Math.max(Math.round(maxWidth * 0.012), 6);
-  // 计算最大可能牌宽
+  // 最大化牌宽
   let cardW = (maxWidth - (len - 1) * gap) / len;
   let cardH = cardW * 1.38;
-  // 高度撑满maxHeight
   if (cardH > maxHeight) {
     cardH = maxHeight;
     cardW = cardH / 1.38;
@@ -22,7 +20,9 @@ function CardRow({ cards, maxWidth, maxHeight }) {
       height: cardH,
       minHeight: 0,
       minWidth: 0,
-      overflow: "hidden"
+      overflow: "visible",
+      background: "none",
+      boxSizing: "content-box"
     }}>
       {cards.map((card, i) => {
         let v = card.value;
@@ -36,28 +36,31 @@ function CardRow({ cards, maxWidth, maxHeight }) {
             style={{
               width: cardW,
               height: cardH,
-              borderRadius: 11,
-              background: "#fff",
-              boxShadow: "0 2px 9px #0002",
-              border: "2.2px solid #e2e2e6",
+              marginRight: i === cards.length - 1 ? 0 : gap,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginRight: i === cards.length - 1 ? 0 : gap,
-              overflow: "hidden",
-              boxSizing: "border-box"
+              boxSizing: "content-box",
+              overflow: "visible",
+              background: "none",
+              padding: 0
             }}
           >
             <img
               src={`/cards/${v}_of_${card.suit}.svg`}
               alt={card.value + card.suit[0].toUpperCase()}
               style={{
-                width: "98%",
-                height: "98%",
+                width: "100%",
+                height: "100%",
                 objectFit: "contain",
                 display: "block",
-                borderRadius: 7,
-                background: "#fff"
+                background: "none",
+                border: "none",
+                boxShadow: "none",
+                margin: 0,
+                padding: 0,
+                borderRadius: 0,
+                outline: "none"
               }}
               draggable={false}
             />
@@ -85,14 +88,10 @@ function PlayerResultCard({ player, splits, details, scores }) {
   const paddingV = Math.max(area.h * 0.035, 7);
   const paddingL = Math.max(area.w * 0.025, 8);
   const paddingR = Math.max(area.w * 0.08, 18);
-  const gapV = Math.max(area.h * 0.019, 3); // 行间极窄
-  // 行高度= (总高-上下padding-2*gapV) / 3
+  const gapV = Math.max(area.h * 0.019, 3);
   const maxRowHeight = (area.h - paddingV * 2 - gapV * 2) / 3;
-  // 右侧信息宽度
   const infoBoxW = Math.max(100, area.w * 0.17);
-  // 扑克牌区最大宽度
   const maxRowWidth = area.w - paddingL - paddingR - infoBoxW;
-  // 牌型说明字体
   const fontSize = Math.max(area.h * 0.08, 21);
 
   return (
