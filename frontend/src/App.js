@@ -19,9 +19,9 @@ export default function App() {
   const [status, setStatus] = useState("loading");
   const [results, setResults] = useState(null);
 
-  // 只保留三道，AI分牌后直接分好
+  // 三道区
   const [zones, setZones] = useState({ head: [], mid: [], tail: [] });
-  const [draggingCard, setDraggingCard] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null); // 新增：选中牌
   const [submitted, setSubmitted] = useState(false);
 
   // 比牌弹窗
@@ -76,24 +76,48 @@ export default function App() {
     // eslint-disable-next-line
   }, [roomId, showCompare, autoAISplit]);
 
-  // 拖拽逻辑：三道之间拖拽
-  const onDragStart = (card, from) => setDraggingCard({ card, from });
-
-  const onDrop = (to) => {
-    if (!draggingCard) return;
-    const { card, from } = draggingCard;
-    const cardKey = c => c.value + "-" + c.suit;
-    let zoneKeys = ["head", "mid", "tail"];
-    let newZones = { head: [], mid: [], tail: [] };
-    for (let z of zoneKeys) {
-      newZones[z] = zones[z].filter(c => cardKey(c) !== cardKey(card));
+  // ------- 新增：点击选牌与目标区操作 -------
+  // 选中某张牌
+  const handleSelectCard = (card, fromZone) => {
+    if (
+      selectedCard &&
+      selectedCard.card.value === card.value &&
+      selectedCard.card.suit === card.suit &&
+      selectedCard.zone === fromZone
+    ) {
+      setSelectedCard(null); // 再次点击取消选中
+    } else {
+      setSelectedCard({ card, zone: fromZone });
     }
-    // 放入新区域（只要没满即可）
-    if (to === "head" && newZones.head.length < 3) newZones.head.push(card);
-    if (to === "mid" && newZones.mid.length < 5) newZones.mid.push(card);
-    if (to === "tail" && newZones.tail.length < 5) newZones.tail.push(card);
+  };
+
+  // 点击某道牌区空白或任意处进行移动
+  const handleZoneClick = (toZone) => {
+    if (!selectedCard) return;
+    const { card, zone: fromZone } = selectedCard;
+    if (fromZone === toZone) {
+      setSelectedCard(null);
+      return;
+    }
+    // 限制目标区不能超限
+    if (
+      (toZone === "head" && zones.head.length >= 3) ||
+      (toZone === "mid" && zones.mid.length >= 5) ||
+      (toZone === "tail" && zones.tail.length >= 5)
+    ) {
+      setSelectedCard(null);
+      return;
+    }
+    // 移动牌
+    const cardKey = c => c.value + "-" + c.suit;
+    let newZones = {
+      head: zones.head.filter(c => cardKey(c) !== cardKey(card)),
+      mid: zones.mid.filter(c => cardKey(c) !== cardKey(card)),
+      tail: zones.tail.filter(c => cardKey(c) !== cardKey(card)),
+    };
+    newZones[toZone].push(card);
     setZones(newZones);
-    setDraggingCard(null);
+    setSelectedCard(null);
   };
 
   // AI分牌按钮（可覆盖当前三道）
@@ -102,6 +126,7 @@ export default function App() {
     if (allCards.length !== 13) return;
     const [newHead, newMid, newTail] = cycleAiSplit(allCards, roomId || "myAI");
     setZones({ head: newHead, mid: newMid, tail: newTail });
+    setSelectedCard(null);
   };
 
   // 提交
@@ -128,6 +153,7 @@ export default function App() {
     setShowCompare(false);
     setCompareData(null);
     setAutoAISplit(false);
+    setSelectedCard(null);
   };
 
   // 取消匹配/返回AI
@@ -145,6 +171,7 @@ export default function App() {
     setShowCompare(false);
     setCompareData(null);
     setAutoAISplit(false);
+    setSelectedCard(null);
   };
 
   // 布局高度百分比
@@ -205,10 +232,9 @@ export default function App() {
           label="头道"
           maxCards={3}
           cards={zones.head}
-          onDragStart={onDragStart}
-          onDrop={onDrop}
-          onReturnToHand={null}
-          draggingCard={draggingCard}
+          selectedCard={selectedCard}
+          onSelectCard={handleSelectCard}
+          onZoneClick={handleZoneClick}
           style={{
             height: "100%",
             borderBottom: "1px solid #ededed",
@@ -216,8 +242,6 @@ export default function App() {
             alignItems: "center",
             justifyContent: "flex-start"
           }}
-          fullArea
-          fixedCardHeight="100%"
         />
       </div>
       {/* 3. 中道 */}
@@ -227,10 +251,9 @@ export default function App() {
           label="中道"
           maxCards={5}
           cards={zones.mid}
-          onDragStart={onDragStart}
-          onDrop={onDrop}
-          onReturnToHand={null}
-          draggingCard={draggingCard}
+          selectedCard={selectedCard}
+          onSelectCard={handleSelectCard}
+          onZoneClick={handleZoneClick}
           style={{
             height: "100%",
             borderBottom: "1px solid #ededed",
@@ -238,8 +261,6 @@ export default function App() {
             alignItems: "center",
             justifyContent: "flex-start"
           }}
-          fullArea
-          fixedCardHeight="100%"
         />
       </div>
       {/* 4. 尾道 */}
@@ -249,10 +270,9 @@ export default function App() {
           label="尾道"
           maxCards={5}
           cards={zones.tail}
-          onDragStart={onDragStart}
-          onDrop={onDrop}
-          onReturnToHand={null}
-          draggingCard={draggingCard}
+          selectedCard={selectedCard}
+          onSelectCard={handleSelectCard}
+          onZoneClick={handleZoneClick}
           style={{
             height: "100%",
             borderBottom: "1px solid #ededed",
@@ -260,8 +280,6 @@ export default function App() {
             alignItems: "center",
             justifyContent: "flex-start"
           }}
-          fullArea
-          fixedCardHeight="100%"
         />
       </div>
       {/* 5. 按钮区 */}
