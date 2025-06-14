@@ -1,17 +1,16 @@
 import React from "react";
 
-// 堆叠扑克牌展示（支持3、5、5张），自动防止重叠错乱
-function CardStack({ cards, size = 36 }) {
-  const cardW = size, cardH = Math.round(size * 1.38), overlap = Math.round(cardW * 0.47);
+// 堆叠扑克牌（竖直排列）
+function CardStack({ cards, size = 34 }) {
+  const cardW = size, cardH = Math.round(size * 1.38), overlap = Math.round(cardH * 0.44);
   return (
     <div style={{
       position: "relative",
-      width: cardW + (cards.length - 1) * overlap,
-      height: cardH,
+      width: cardW,
+      height: cardH + (cards.length - 1) * overlap,
       display: "inline-block"
     }}>
       {cards.map((card, i) => {
-        // 补充花色英文和数字映射
         let v = card.value;
         if (v === "A") v = "ace";
         if (v === "K") v = "king";
@@ -24,8 +23,8 @@ function CardStack({ cards, size = 36 }) {
             alt={card.value + card.suit[0].toUpperCase()}
             style={{
               position: "absolute",
-              left: i * overlap,
-              top: 0,
+              left: 0,
+              top: i * overlap,
               width: cardW,
               height: cardH,
               borderRadius: 3,
@@ -41,32 +40,66 @@ function CardStack({ cards, size = 36 }) {
   );
 }
 
-// 田字格四人分布
-function FourGrid({ children }) {
+// 单个玩家竖直展示
+function PlayerColumn({ player, splits, details, scores }) {
+  if (!splits || !splits[player]) return null;
   return (
     <div style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gridTemplateRows: "1fr 1fr",
-      gap: "28px 28px",
-      width: "100%",
-      height: "100%",
-      minHeight: 420,
+      background: "#f5f7fc",
+      borderRadius: 12,
+      boxShadow: "0 1px 9px #0001",
+      width: 148,
+      minHeight: 380,
+      textAlign: "center",
+      padding: "12px 4px 10px 4px",
+      margin: "0 12px",
+      display: "flex",
+      flexDirection: "column",
       alignItems: "center",
-      justifyItems: "center",
-      boxSizing: "border-box"
+      justifyContent: "flex-start"
     }}>
-      {children}
+      <div style={{ fontWeight: 600, color: "#333", fontSize: 17, marginBottom: 6 }}>{player}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", marginBottom: 6 }}>
+        <div>
+          <CardStack cards={splits[player][0]} size={33} />
+          <div style={{ fontSize: 13, color: "#555", marginTop: 1 }}>
+            {details && details[player] ? details[player]["牌型"][0] : ""}
+          </div>
+        </div>
+        <div>
+          <CardStack cards={splits[player][1]} size={33} />
+          <div style={{ fontSize: 13, color: "#555", marginTop: 1 }}>
+            {details && details[player] ? details[player]["牌型"][1] : ""}
+          </div>
+        </div>
+        <div>
+          <CardStack cards={splits[player][2]} size={33} />
+          <div style={{ fontSize: 13, color: "#555", marginTop: 1 }}>
+            {details && details[player] ? details[player]["牌型"][2] : ""}
+          </div>
+        </div>
+      </div>
+      <div style={{ fontSize: 15, color: "#3869f6", fontWeight: 700, margin: "6px 0 0 0" }}>
+        {scores && scores[player] !== undefined ? `${scores[player]}分` : ""}
+      </div>
+      <div style={{ fontSize: 13, color: "#e67e22", fontWeight: 500, marginBottom: 2 }}>
+        打枪：{details && details[player] && details[player]["打枪"] ? details[player]["打枪"] : 0}
+      </div>
     </div>
   );
 }
 
-export default function CompareDialog({ players, splits, scores, details, onClose }) {
-  // 2+2田字型分组
-  const groups = [];
-  for (let i = 0; i < players.length; i += 4) {
-    groups.push(players.slice(i, i + 4));
+// 2+2田字型横向分布（全屏居中弹窗，内容居中）
+export default function CompareDialog({ players, splits, scores, details, onRestart }) {
+  // 保证players顺序和数量，分成左右两列
+  let left = [], right = [];
+  for (let i = 0; i < players.length; ++i) {
+    if (i % 2 === 0) left.push(players[i]);
+    else right.push(players[i]);
   }
+  // 填满田字格（最多4人），不足补空
+  while (left.length < 2) left.push("");
+  while (right.length < 2) right.push("");
 
   return (
     <div style={{
@@ -80,86 +113,68 @@ export default function CompareDialog({ players, splits, scores, details, onClos
       justifyContent: "center"
     }}>
       <div style={{
-        width: "90vw",
-        height: "90vh",
-        maxWidth: 820,
-        maxHeight: 620,
+        width: "min(96vw, 900px)",
+        maxWidth: 900,
         minWidth: 480,
-        minHeight: 450,
+        height: "min(92vh, 540px)",
+        minHeight: 430,
         background: "#fff",
-        borderRadius: 18,
+        borderRadius: 22,
         boxShadow: "0 12px 40px #0003",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         position: "relative",
-        padding: "0 0 24px 0"
+        padding: "0 0 28px 0",
+        justifyContent: "space-between"
       }}>
         <div style={{
           fontSize: 26,
           fontWeight: 700,
-          marginTop: 35,
-          marginBottom: 32,
+          marginTop: 32,
+          marginBottom: 24,
           color: "#3869f6",
           textAlign: "center",
-          userSelect: "none"
+          userSelect: "none",
+          letterSpacing: 1.5
         }}>
           比牌结果
         </div>
-        {groups.map((group, gi) => (
-          <FourGrid key={gi}>
-            {group.map((p, idx) => (
-              <div key={p} style={{
-                background: "#f5f7fc",
-                borderRadius: 12,
-                boxShadow: "0 1px 9px #0001",
-                minWidth: 205,
-                minHeight: 200,
-                textAlign: "center",
-                padding: "10px 10px 8px 10px",
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "flex-start"
-              }}>
-                <div style={{ fontWeight: 600, color: "#333", fontSize: 17, marginBottom: 4 }}>{p}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "center", marginBottom: 4 }}>
-                  <div style={{marginBottom: 2}}>
-                    <CardStack cards={splits && splits[p] ? splits[p][0] : []} size={33} />
-                    <div style={{ fontSize: 13, color: "#555", marginTop: 2 }}>
-                      {details && details[p] ? details[p]["牌型"][0] : ""}
-                    </div>
-                  </div>
-                  <div style={{marginBottom: 2}}>
-                    <CardStack cards={splits && splits[p] ? splits[p][1] : []} size={33} />
-                    <div style={{ fontSize: 13, color: "#555", marginTop: 2 }}>
-                      {details && details[p] ? details[p]["牌型"][1] : ""}
-                    </div>
-                  </div>
-                  <div>
-                    <CardStack cards={splits && splits[p] ? splits[p][2] : []} size={33} />
-                    <div style={{ fontSize: 13, color: "#555", marginTop: 2 }}>
-                      {details && details[p] ? details[p]["牌型"][2] : ""}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ fontSize: 16, color: "#3869f6", fontWeight: 700, margin: "6px 0 0 0" }}>
-                  {scores && scores[p] !== undefined ? `${scores[p]}分` : ""}
-                </div>
-                <div style={{ fontSize: 13, color: "#e67e22", fontWeight: 500, marginBottom: 2 }}>
-                  打枪：{details && details[p] && details[p]["打枪"] ? details[p]["打枪"] : 0}
-                </div>
-              </div>
-            ))}
-            {/* 补足4格空框 */}
-            {[...Array(4 - group.length)].map((_, idx) => (
-              <div key={"empty"+idx} />
-            ))}
-          </FourGrid>
-        ))}
-        <div style={{textAlign:"center", marginTop: 18}}>
-          <button onClick={onClose}
+        <div style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          width: "100%",
+          flex: 1
+        }}>
+          {/* 左侧2人竖排 */}
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1
+          }}>
+            <PlayerColumn player={left[0]} splits={splits} details={details} scores={scores} />
+            <PlayerColumn player={left[1]} splits={splits} details={details} scores={scores} />
+          </div>
+          {/* 标题中轴 */}
+          <div style={{
+            width: 58,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            {/* 空，居中用 */}
+          </div>
+          {/* 右侧2人竖排 */}
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1
+          }}>
+            <PlayerColumn player={right[0]} splits={splits} details={details} scores={scores} />
+            <PlayerColumn player={right[1]} splits={splits} details={details} scores={scores} />
+          </div>
+        </div>
+        <div style={{textAlign:"center", marginTop: 10}}>
+          <button onClick={onRestart}
             style={{
               background: "#3869f6",
               color: "#fff",
@@ -170,7 +185,7 @@ export default function CompareDialog({ players, splits, scores, details, onClos
               fontWeight: 500,
               cursor: "pointer"
             }}>
-            关闭
+            继续游戏
           </button>
         </div>
       </div>
