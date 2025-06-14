@@ -1,7 +1,6 @@
 import React from "react";
 import CardZone from "./CardZone";
 
-// 田字型2x2布局
 function gridPosition(idx) {
   // 0 1
   // 2 3
@@ -13,10 +12,8 @@ function gridPosition(idx) {
   ][idx] || {};
 }
 
-export default function CompareDialog({ players, splits, scores, onClose }) {
-  // players: ["玩家", "AI-1", ...]
-  // splits: { 玩家: [[3],[5],[5]], ... }
-  // scores: { 玩家: 12, ... }
+export default function CompareDialog({ players, splits, scores, details, onClose }) {
+  // details: { 玩家: { 每道得分: [x,x,x], 牌型: [头,中,尾], 打枪: x } }
   return (
     <div style={{
       position: "fixed",
@@ -58,11 +55,40 @@ export default function CompareDialog({ players, splits, scores, onClose }) {
               <span style={{ fontWeight: 400, fontSize: 16, marginLeft: 14, color: "#444" }}>
                 分数: {scores?.[name] ?? 0}
               </span>
+              {details?.[name]?.打枪 > 0 &&
+                <span style={{ color: "#e11d48", fontWeight: 600, marginLeft: 12 }}>
+                  打枪 × {details[name].打枪}
+                </span>
+              }
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", alignItems: "center" }}>
-              <CardZone cards={splits[name]?.[0] || []} maxCards={3} label="头道" stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }} />
-              <CardZone cards={splits[name]?.[1] || []} maxCards={5} label="中道" stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }} />
-              <CardZone cards={splits[name]?.[2] || []} maxCards={5} label="尾道" stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }} />
+              <div style={{width: "100%", display: "flex", alignItems: "center"}}>
+                <CardZone cards={splits[name]?.[0] || []} maxCards={3} stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }}/>
+                <span style={{
+                  marginLeft: 10, fontSize: 15, color: "#333", minWidth: 52, fontWeight: 500
+                }}>{details?.[name]?.牌型?.[0] || ""}</span>
+                <span style={{
+                  marginLeft: 6, color: "#15803d", fontWeight: 600
+                }}>{details?.[name]?.每道得分?.[0] ? `+${details[name].每道得分[0]}` : ""}</span>
+              </div>
+              <div style={{width: "100%", display: "flex", alignItems: "center"}}>
+                <CardZone cards={splits[name]?.[1] || []} maxCards={5} stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }}/>
+                <span style={{
+                  marginLeft: 10, fontSize: 15, color: "#333", minWidth: 52, fontWeight: 500
+                }}>{details?.[name]?.牌型?.[1] || ""}</span>
+                <span style={{
+                  marginLeft: 6, color: "#15803d", fontWeight: 600
+                }}>{details?.[name]?.每道得分?.[1] ? `+${details[name].每道得分[1]}` : ""}</span>
+              </div>
+              <div style={{width: "100%", display: "flex", alignItems: "center"}}>
+                <CardZone cards={splits[name]?.[2] || []} maxCards={5} stacked fixedCardHeight={60} style={{ background: "none", border: "none", height: 70, minHeight: 70 }}/>
+                <span style={{
+                  marginLeft: 10, fontSize: 15, color: "#333", minWidth: 52, fontWeight: 500
+                }}>{details?.[name]?.牌型?.[2] || ""}</span>
+                <span style={{
+                  marginLeft: 6, color: "#15803d", fontWeight: 600
+                }}>{details?.[name]?.每道得分?.[2] ? `+${details[name].每道得分[2]}` : ""}</span>
+              </div>
             </div>
           </div>
         ))}
