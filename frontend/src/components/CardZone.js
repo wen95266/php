@@ -9,22 +9,6 @@ function cardImg(card) {
   return `/cards/${v}_of_${card.suit}.svg`;
 }
 
-const getDropStyle = (zone, maxCards, length) => ({
-  minHeight: "9vh",
-  minWidth: "30vw",
-  border: "2px dashed #bbb",
-  borderRadius: 8,
-  margin: "0 1vw",
-  background: "#fff",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexWrap: "wrap",
-  transition: "border 0.2s",
-  boxShadow: "0 2px 6px #fafafa",
-  opacity: (length >= maxCards && zone !== "hand" && zone !== "mid") ? 0.7 : 1
-});
-
 export default function CardZone({
   zone,
   label,
@@ -34,53 +18,90 @@ export default function CardZone({
   onDrop,
   onReturnToHand,
   draggingCard,
-  style
+  style,
+  fullArea = false
 }) {
   // 是否可放牌
   const canDrop = (zone !== "mid" && cards.length < maxCards);
-
   return (
     <div
       style={{
         width: "100vw",
-        minHeight: "16vh",
-        borderBottom: "1px solid #eee",
+        height: style?.height || "16vh",
+        borderBottom: style?.borderBottom || "1px solid #eee",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         background: "#fafbfc",
-        ...(style || {})
+        ...style
       }}
     >
       <div
-        style={getDropStyle(zone, maxCards, cards.length)}
+        style={{
+          width: fullArea ? "92vw" : "auto",
+          height: fullArea ? `calc(100% - 24px)` : "auto",
+          minHeight: fullArea ? "82%" : undefined,
+          minWidth: fullArea ? "80vw" : undefined,
+          border: "2px dashed #bbb",
+          borderRadius: 8,
+          margin: "0 auto",
+          background: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          flexWrap: "wrap",
+          transition: "border 0.2s",
+          boxShadow: "0 2px 6px #fafafa",
+          opacity: (cards.length >= maxCards && zone !== "hand" && zone !== "mid") ? 0.7 : 1,
+          position: "relative",
+        }}
         onDragOver={canDrop ? e => { e.preventDefault(); } : undefined}
         onDrop={canDrop ? () => onDrop(zone) : undefined}
       >
-        <div style={{ fontWeight: 600, marginRight: 18 }}>
+        <div style={{
+          position: "absolute",
+          top: 10,
+          left: 18,
+          fontWeight: 600,
+          color: "#444",
+          fontSize: 18,
+          zIndex: 2,
+          pointerEvents: "none"
+        }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {cards.map((card, idx) => (
-          <div
-            key={card.value + "_" + card.suit + "_" + idx}
-            draggable={zone !== "mid"}
-            onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
-            style={{ marginRight: 3, position: "relative" }}
-          >
-            <img src={cardImg(card)} alt="" width={50}
-              style={{ borderRadius: 4, boxShadow: "1px 2px 8px #eee" }} />
-            {(zone === "head" || zone === "tail") && (
-              <span
-                onClick={() => onReturnToHand(zone, idx)}
-                style={{
-                  position: "absolute", top: 0, right: 0, background: "#f44", color: "#fff",
-                  fontSize: 12, borderRadius: "0 4px 0 4px", cursor: "pointer", padding: "1px 4px"
-                }}
-                title="退回手牌"
-              >×</span>
-            )}
-          </div>
-        ))}
+        <div style={{
+          marginLeft: 110,
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          minHeight: 70,
+        }}>
+          {cards.map((card, idx) => (
+            <div
+              key={card.value + "_" + card.suit + "_" + idx}
+              draggable={zone !== "mid"}
+              onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
+              style={{
+                margin: "0 3px",
+                position: "relative"
+              }}
+            >
+              <img src={cardImg(card)} alt="" width={50}
+                style={{ borderRadius: 4, boxShadow: "1px 2px 8px #eee" }} />
+              {(zone === "head" || zone === "tail") && (
+                <span
+                  onClick={() => onReturnToHand(zone, idx)}
+                  style={{
+                    position: "absolute", top: 0, right: 0, background: "#f44", color: "#fff",
+                    fontSize: 12, borderRadius: "0 4px 0 4px", cursor: "pointer", padding: "1px 4px"
+                  }}
+                  title="退回手牌"
+                >×</span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
