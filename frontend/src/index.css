@@ -11,3 +11,51 @@ html, body, #root {
 * {
   box-sizing: border-box;
 }
+
+.cardzone-outer {
+  background: #f2f6fa;
+}
+
+.cardzone-inner {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cardzone-cards {
+  width: 100%;
+  position: relative;
+  min-height: 68px;
+}
+
+.cardzone-cards-narrow {
+  min-height: 68px;
+  height: 68px;
+  /* 卡牌堆叠在一行区域内，不超出 */
+}
+
+@media (max-width: 700px) {
+  .cardzone-inner {
+    min-height: 74px !important;
+    border-width: 1.5px;
+    padding: 0 2vw;
+  }
+  .cardzone-cards,
+  .cardzone-cards-narrow {
+    min-height: 50px !important;
+    height: 64px !important;
+  }
+  .cardzone-label {
+    font-size: 16px !important;
+    top: 4px !important;
+    left: 10px !important;
+  }
+}
+
+/* 防止按钮横幅溢出 */
+@media (max-width: 700px) {
+  .controlbar {
+    min-height: 64px !important;
+    font-size: 16px !important;
+  }
+}
