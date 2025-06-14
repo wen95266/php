@@ -24,16 +24,12 @@ export default function CardZone({
   const canDrop = (zone !== "mid" && cards.length < maxCards);
 
   // 说明文字绝对定位
-  const labelLeft = 16;
-  const labelTop = 10;
+  const labelLeft = 12;
+  const labelTop = 8;
 
-  // 置牌区高度、卡牌自适应
-  const cardAreaPaddingTop = 34; // 说明文字高度空间
-  const cardAreaWidth = "100%";
-  const cardAreaHeight = "100%";
-  // 卡牌宽度：按maxCards平分区域，始终左对齐
-  const cardWidth = `calc((100vw - 32px) / ${maxCards})`;
-  const cardHeight = "calc(100% - 36px)";
+  // 卡牌宽度：始终平分maxCards，无论有几张都左贴齐
+  const cardWidth = `calc((100vw - 36px) / ${maxCards})`;
+  const cardHeight = `calc(100% - 30px)`;
 
   return (
     <div
@@ -45,20 +41,22 @@ export default function CardZone({
         alignItems: "center",
         justifyContent: "center",
         background: "#f2f6fa",
-        ...style
+        ...style,
+        overflow: "hidden" // 保证无滚动条
       }}
     >
       <div
         style={{
-          width: fullArea ? "96vw" : "auto",
-          height: fullArea ? "94%" : "auto",
-          minHeight: fullArea ? "84%" : undefined,
+          width: fullArea ? "98vw" : "auto",
+          height: fullArea ? "96%" : "auto",
+          minHeight: fullArea ? "86%" : undefined,
           minWidth: fullArea ? "80vw" : undefined,
           border: "2px dashed #bbb",
           borderRadius: 8,
           margin: "0 auto",
           background: "#fff",
-          display: "block",
+          display: "flex",
+          flexDirection: "column",
           position: "relative",
           boxSizing: "border-box",
           boxShadow: "0 2px 6px #fafafa",
@@ -68,7 +66,7 @@ export default function CardZone({
         onDragOver={canDrop ? e => { e.preventDefault(); } : undefined}
         onDrop={canDrop ? () => onDrop(zone) : undefined}
       >
-        {/* 说明文字 */}
+        {/* 说明文字绝对定位，卡牌可覆盖 */}
         <div style={{
           position: "absolute",
           top: labelTop,
@@ -82,53 +80,52 @@ export default function CardZone({
         }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {/* 卡牌区：左对齐且无任何滚动条 */}
+        {/* 卡牌区：左贴齐，无滚动条 */}
         <div
           style={{
-            width: cardAreaWidth,
-            height: cardAreaHeight,
+            width: "100%",
+            height: "100%",
+            marginTop: 30,
+            marginLeft: 0,
+            marginRight: 0,
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "flex-start",
-            paddingTop: cardAreaPaddingTop,
-            paddingLeft: labelLeft,
             boxSizing: "border-box",
-            gap: 0,
-            overflow: "hidden"
+            overflow: "hidden" // 绝不会出现滚动条
           }}
         >
-          {cards.map((card, idx) => (
+          {[...Array(maxCards)].map((_, idx) => (
             <div
-              key={card.value + "_" + card.suit + "_" + idx}
-              draggable={zone !== "mid"}
-              onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
+              key={idx}
               style={{
                 width: cardWidth,
-                height: `calc(${cardWidth} / 0.7)`,
-                maxHeight: cardHeight,
+                height: cardHeight,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                margin: 0
+                justifyContent: "center"
               }}
             >
-              <img
-                src={cardImg(card)}
-                alt=""
-                style={{
-                  borderRadius: 0,
-                  boxShadow: "none",
-                  width: "94%",
-                  height: "auto",
-                  maxHeight: "100%",
-                  objectFit: "contain",
-                  display: "block",
-                  background: "none",
-                  border: "none",
-                  pointerEvents: "auto"
-                }}
-              />
+              {cards[idx] &&
+                <img
+                  src={cardImg(cards[idx])}
+                  alt=""
+                  draggable={zone !== "mid"}
+                  onDragStart={zone !== "mid" ? () => onDragStart(cards[idx], zone) : undefined}
+                  style={{
+                    borderRadius: 0,
+                    boxShadow: "none",
+                    width: "94%",
+                    height: "auto",
+                    maxHeight: "98%",
+                    objectFit: "contain",
+                    display: "block",
+                    background: "none",
+                    border: "none",
+                    pointerEvents: "auto"
+                  }}
+                />
+              }
             </div>
           ))}
         </div>
