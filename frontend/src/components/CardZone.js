@@ -26,7 +26,7 @@ export default function CardZone({
 }) {
   // 获取实际高度和宽度
   const containerRef = React.useRef(null);
-  const [size, setSize] = React.useState({height: 120, width: 600});
+  const [size, setSize] = React.useState({ height: 120, width: 600 });
   React.useLayoutEffect(() => {
     if (containerRef.current) {
       setSize({
@@ -37,15 +37,15 @@ export default function CardZone({
   }, [containerRef.current, style?.height, style?.width]);
 
   // 卡牌宽高比
-  const CARD_HEIGHT = size.height * 0.82; // 预留文字空间
+  const CARD_HEIGHT = size.height * 0.82;
   const CARD_WIDTH = CARD_HEIGHT * 0.7;
   const MIN_GAP = Math.max(12, CARD_WIDTH * 0.18);
 
   // 是否需要堆叠
   let totalWidth = cards.length * CARD_WIDTH + (cards.length - 1) * MIN_GAP;
   let useStack = totalWidth > size.width;
-  let overlap = useStack
-    ? (size.width - CARD_WIDTH) / (cards.length - 1)
+  let overlap = useStack && cards.length > 1
+    ? (size.width - CARD_WIDTH - 32) / (cards.length - 1)
     : CARD_WIDTH + MIN_GAP;
 
   return (
@@ -124,7 +124,6 @@ export default function CardZone({
               background: "transparent",
               zIndex: idx
             }}
-            onDoubleClick={() => onReturnToHand && onReturnToHand(zone, idx)}
           >
             <img
               src={cardImg(card)}
@@ -139,7 +138,8 @@ export default function CardZone({
                 display: "block",
                 background: "none",
                 border: "none",
-                pointerEvents: "auto"
+                pointerEvents: "auto",
+                cursor: "grab"
               }}
             />
           </div>
