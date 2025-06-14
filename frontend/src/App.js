@@ -5,7 +5,7 @@ import CardZone from "./components/CardZone";
 import ControlBar from "./components/ControlBar";
 import { cycleAiSplit } from "./utils/ai";
 
-// 新增API: 自动匹配、取消匹配
+// 自动匹配API
 const API_BASE = "https://9525.ip-ddns.com/backend/api.php";
 async function joinMatchApi(playerName) {
   const res = await fetch(`${API_BASE}?action=join_match&player=${encodeURIComponent(playerName)}`);
@@ -20,18 +20,15 @@ const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
 const MY_NAME = localStorage.getItem("playerName") || "玩家" + Math.floor(Math.random()*10000);
 
 export default function App() {
-  // 新增模式标识
   const [mode, setMode] = useState("ai"); // "ai" | "match"
   const [isMatching, setIsMatching] = useState(false);
 
-  // 普通房间/匹配房间公用的状态
   const [roomId, setRoomId] = useState("");
   const [joined, setJoined] = useState(false);
   const [allPlayers, setAllPlayers] = useState([]);
   const [status, setStatus] = useState("loading");
   const [results, setResults] = useState(null);
 
-  // 各区牌
   const [hand, setHand] = useState([]);
   const [head, setHead] = useState([]);
   const [tail, setTail] = useState([]);
@@ -43,7 +40,7 @@ export default function App() {
   const [showCompare, setShowCompare] = useState(false);
   const [compareData, setCompareData] = useState(null);
 
-  // 初始化AI模式
+  // AI初始化
   useEffect(() => {
     if (mode !== "ai") return;
     async function setup() {
@@ -58,7 +55,7 @@ export default function App() {
     setup();
   }, [mode]);
 
-  // 自动匹配模式：轮询匹配池，匹配成功后进入新房间
+  // 匹配模式
   useEffect(() => {
     if (mode !== "match" || !isMatching) return;
     let timer = setInterval(async () => {
@@ -72,7 +69,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, [mode, isMatching]);
 
-  // 轮询房间状态（无论AI/匹配模式）
+  // 关键：轮询只依赖roomId和showCompare，绝不依赖hand等
   useEffect(() => {
     if (!roomId) return;
     let timer = setInterval(async () => {
@@ -83,7 +80,6 @@ export default function App() {
       if (state.status === "playing" && hand.length === 0 && state.myHand) {
         setHand(state.myHand);
       }
-      // 自动弹出比牌界面
       if (state.status === "finished" && state.results && !showCompare) {
         setCompareData({
           players: state.players,
@@ -97,10 +93,8 @@ export default function App() {
     return () => clearInterval(timer);
   }, [roomId, showCompare]);
 
-  // 拖拽事件
-  const onDragStart = (card, from) => {
-    setDraggingCard({ card, from });
-  };
+  // 拖拽
+  const onDragStart = (card, from) => setDraggingCard({ card, from });
   const onDrop = (to) => {
     if (!draggingCard) return;
     const { card, from } = draggingCard;
@@ -145,7 +139,6 @@ export default function App() {
       setHand([...hand, ...mid]);
       setMid([]);
     }
-    // eslint-disable-next-line
   }, [head.length, tail.length, hand.length]);
 
   // AI分牌
@@ -164,11 +157,11 @@ export default function App() {
       alert("请完成头道3张，中道5张，尾道5张！");
       return;
     }
-    await submitHand(roomId, MY_NAME, [head, mid, tail]);
     setSubmitted(true);
+    await submitHand(roomId, MY_NAME, [head, mid, tail]);
   };
 
-  // 切换到匹配模式
+  // 切换到匹配
   const startMatchMode = () => {
     setMode("match");
     setIsMatching(true);
@@ -190,10 +183,10 @@ export default function App() {
     await cancelMatchApi(MY_NAME);
     setIsMatching(false);
     setMode("ai");
-    window.location.reload(); // 直接刷新回AI模式
+    window.location.reload();
   };
 
-  // 回到AI模式
+  // 回到AI
   const backToAiMode = () => {
     setMode("ai");
     setIsMatching(false);
@@ -210,7 +203,6 @@ export default function App() {
     setCompareData(null);
   };
 
-  // 匹配中界面
   if (mode === "match" && isMatching) {
     return (
       <div style={{
@@ -240,7 +232,6 @@ export default function App() {
   }
 
   if (!joined || !roomId) {
-    // 只显示牌桌，不再显示大厅
     return (
       <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f6fa",flexDirection:"column"}}>
         <div style={{fontSize:26,marginBottom:40}}>多人十三水</div>
@@ -258,8 +249,6 @@ export default function App() {
       </div>
     );
   }
-
-  // 计算置牌区高度
   const statusH = 90;
   const buttonH = 120;
   const threeZoneH = `calc((100vh - ${statusH}px - ${buttonH}px) / 3)`;
@@ -283,7 +272,6 @@ export default function App() {
           maxHeight: statusH,
         }}
       />
-      {/* 新增功能按钮区（只在已进房且未比牌时显示） */}
       <div style={{
         position: "absolute", top: 16, right: 24, zIndex: 20
       }}>
