@@ -87,7 +87,7 @@ export default function CardZone({
         }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {/* 卡牌区：严格maxCards个格子，每个位置左对齐 */}
+        {/* 卡牌区：实际有牌部分紧贴左侧，右侧透明占位 */}
         <div
           style={{
             width: "100%",
@@ -102,7 +102,8 @@ export default function CardZone({
             padding: 0,
           }}
         >
-          {[...Array(maxCards)].map((_, idx) => (
+          {/* 实际有牌部分 */}
+          {cards.map((card, idx) => (
             <div
               key={idx}
               style={{
@@ -118,28 +119,43 @@ export default function CardZone({
                 background: "transparent"
               }}
             >
-              {cards[idx] &&
-                <img
-                  src={cardImg(cards[idx])}
-                  alt=""
-                  draggable={zone !== "mid"}
-                  onDragStart={zone !== "mid" ? () => onDragStart(cards[idx], zone) : undefined}
-                  style={{
-                    borderRadius: 0,
-                    boxShadow: "none",
-                    width: "94%",
-                    height: "auto",
-                    maxHeight: "98%",
-                    maxWidth: "98%",
-                    objectFit: "contain",
-                    display: "block",
-                    background: "none",
-                    border: "none",
-                    pointerEvents: "auto"
-                  }}
-                />
-              }
+              <img
+                src={cardImg(card)}
+                alt=""
+                draggable={zone !== "mid"}
+                onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
+                style={{
+                  borderRadius: 0,
+                  boxShadow: "none",
+                  width: "94%",
+                  height: "auto",
+                  maxHeight: "98%",
+                  maxWidth: "98%",
+                  objectFit: "contain",
+                  display: "block",
+                  background: "none",
+                  border: "none",
+                  pointerEvents: "auto"
+                }}
+              />
             </div>
+          ))}
+          {/* 透明占位补足 */}
+          {[...Array(maxCards - cards.length)].map((_, idx) => (
+            <div
+              key={`empty-${idx}`}
+              style={{
+                width: cardBoxWidth,
+                height: cardBoxHeight,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: 0,
+                padding: 0,
+                background: "transparent",
+                opacity: 0,
+              }}
+            />
           ))}
         </div>
       </div>
