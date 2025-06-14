@@ -1,4 +1,8 @@
 <?php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: *");
+header("Access-Control-Allow-Methods: *");
+
 session_start();
 $roomsFile = __DIR__ . '/rooms.json';
 if (!file_exists($roomsFile)) file_put_contents($roomsFile, "{}");
