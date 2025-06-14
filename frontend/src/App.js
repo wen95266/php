@@ -7,10 +7,26 @@ import GameRoom from "./components/GameRoom";
 import CompareDialog from "./components/CompareDialog";
 import { cycleAiSplit } from "./utils/ai";
 
+// 新增API: 自动匹配、取消匹配
+const API_BASE = "https://9525.ip-ddns.com/backend/api.php";
+async function joinMatchApi(playerName) {
+  const res = await fetch(`${API_BASE}?action=join_match&player=${encodeURIComponent(playerName)}`);
+  return res.json();
+}
+async function cancelMatchApi(playerName) {
+  const res = await fetch(`${API_BASE}?action=cancel_match&player=${encodeURIComponent(playerName)}`);
+  return res.json();
+}
+
 const AI_NAMES = ["AI-1", "AI-2", "AI-3"];
-const MY_NAME = "玩家";
+const MY_NAME = localStorage.getItem("playerName") || "玩家" + Math.floor(Math.random()*10000);
 
 export default function App() {
+  // 新增模式标识
+  const [mode, setMode] = useState("ai"); // "ai" | "match"
+  const [isMatching, setIsMatching] = useState(false);
+
+  // 普通房间/匹配房间公用的状态
   const [roomId, setRoomId] = useState("");
   const [joined, setJoined] = useState(false);
   const [allPlayers, setAllPlayers] = useState([]);
@@ -29,8 +45,9 @@ export default function App() {
   const [showCompare, setShowCompare] = useState(false);
   const [compareData, setCompareData] = useState(null);
 
-  // 初始化
+  // 初始化AI模式
   useEffect(() => {
+    if (mode !== "ai") return;
     async function setup() {
       const res = await createRoom(MY_NAME);
       setRoomId(res.roomId);
@@ -41,9 +58,23 @@ export default function App() {
       await startGame(res.roomId);
     }
     setup();
-  }, []);
+  }, [mode]);
 
-  // 轮询房间状态（只依赖 roomId, showCompare，保证轮询不断）
+  // 自动匹配模式：轮询匹配池，匹配成功后进入新房间
+  useEffect(() => {
+    if (mode !== "match" || !isMatching) return;
+    let timer = setInterval(async () => {
+      const res = await joinMatchApi(MY_NAME);
+      if (res.status === "matched" && res.roomId) {
+        setRoomId(res.roomId);
+        setIsMatching(false);
+        setJoined(true);
+      }
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [mode, isMatching]);
+
+  // 轮询房间状态（无论AI/匹配模式）
   useEffect(() => {
     if (!roomId) return;
     let timer = setInterval(async () => {
@@ -119,7 +150,7 @@ export default function App() {
     // eslint-disable-next-line
   }, [head.length, tail.length, hand.length]);
 
-  // AI分牌：每次点击变换不同分牌，最优优先
+  // AI分牌
   const handleAiSplit = () => {
     if (hand.length + head.length + tail.length !== 13) return;
     const [newHead, newMid, newTail] = cycleAiSplit([...hand, ...head, ...tail], roomId || "myAI");
@@ -137,17 +168,102 @@ export default function App() {
     }
     await submitHand(roomId, MY_NAME, [head, mid, tail]);
     setSubmitted(true);
-    // 弹出比牌界面的逻辑由轮询控制
   };
 
-  if (!joined || !roomId) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f6fa"}}>房间初始化中...</div>;
-  if (status === "results") {
-    return <GameRoom roomId={roomId} playerName={MY_NAME} />;
+  // 切换到匹配模式
+  const startMatchMode = () => {
+    setMode("match");
+    setIsMatching(true);
+    setRoomId("");
+    setJoined(false);
+    setAllPlayers([]);
+    setResults(null);
+    setHand([]);
+    setHead([]);
+    setTail([]);
+    setMid([]);
+    setSubmitted(false);
+    setShowCompare(false);
+    setCompareData(null);
+  };
+
+  // 取消匹配
+  const cancelMatch = async () => {
+    await cancelMatchApi(MY_NAME);
+    setIsMatching(false);
+    setMode("ai");
+    window.location.reload(); // 直接刷新回AI模式
+  };
+
+  // 回到AI模式
+  const backToAiMode = () => {
+    setMode("ai");
+    setIsMatching(false);
+    setRoomId("");
+    setJoined(false);
+    setAllPlayers([]);
+    setResults(null);
+    setHand([]);
+    setHead([]);
+    setTail([]);
+    setMid([]);
+    setSubmitted(false);
+    setShowCompare(false);
+    setCompareData(null);
+  };
+
+  // 匹配中界面
+  if (mode === "match" && isMatching) {
+    return (
+      <div style={{
+        width: "100vw",
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f2f6fa",
+        flexDirection: "column"
+      }}>
+        <div style={{
+          fontSize: 28,
+          color: "#3869f6",
+          fontWeight: 600,
+          marginBottom: 40
+        }}>正在匹配真实玩家，请稍候...</div>
+        <button style={{
+          padding: "10px 40px",
+          fontSize: 20,
+          borderRadius: 8,
+          background: "#fff",
+          border: "1.5px solid #3869f6"
+        }} onClick={cancelMatch}>取消匹配</button>
+      </div>
+    );
   }
 
-  // 计算置牌区高度（全屏-顶部-底部按钮，3等分）
-  const statusH = 90; // 顶部状态横幅高度
-  const buttonH = 120; // 按钮区高度
+  if (!joined || !roomId) {
+    // 只显示牌桌，不再显示大厅
+    return (
+      <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f6fa",flexDirection:"column"}}>
+        <div style={{fontSize:26,marginBottom:40}}>多人十三水</div>
+        <button style={{
+          padding: "12px 44px",
+          fontSize: 21,
+          borderRadius: 8,
+          background: "#3869f6",
+          color: "#fff",
+          fontWeight: 500,
+          border: "none",
+          marginBottom: 18
+        }} onClick={startMatchMode}>自动匹配真实玩家</button>
+        <div style={{color:"#888",fontSize:15,marginTop:10}}>或体验AI对战（默认）</div>
+      </div>
+    );
+  }
+
+  // 计算置牌区高度
+  const statusH = 90;
+  const buttonH = 120;
   const threeZoneH = `calc((100vh - ${statusH}px - ${buttonH}px) / 3)`;
 
   return (
@@ -169,6 +285,36 @@ export default function App() {
           maxHeight: statusH,
         }}
       />
+      {/* 新增功能按钮区（只在已进房且未比牌时显示） */}
+      <div style={{
+        position: "absolute", top: 16, right: 24, zIndex: 20
+      }}>
+        {mode === "ai" && (
+          <button onClick={startMatchMode}
+            style={{
+              background: "#fff",
+              color: "#3869f6",
+              fontWeight: 500,
+              border: "1.5px solid #3869f6",
+              borderRadius: 8,
+              padding: "5px 18px",
+              fontSize: 16,
+              marginRight: 12
+            }}>切换到自动匹配</button>
+        )}
+        {mode === "match" && (
+          <button onClick={backToAiMode}
+            style={{
+              background: "#fff",
+              color: "#3869f6",
+              fontWeight: 500,
+              border: "1.5px solid #3869f6",
+              borderRadius: 8,
+              padding: "5px 18px",
+              fontSize: 16,
+            }}>切回AI对战</button>
+        )}
+      </div>
       <CardZone
         zone="head"
         label="头道"
