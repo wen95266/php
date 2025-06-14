@@ -36,6 +36,20 @@ export default function CardZone({
   }
   const cardWidth = Math.round(heightPx * CARD_RATIO);
 
+  // 调整：如果卡牌总宽超出区宽，让卡牌自动等比缩小（不滚动）
+  const containerWidth = window.innerWidth; // 100vw
+  const gap = 12;
+  const totalGap = gap * (cards.length - 1);
+  let fitCardWidth = cardWidth;
+  let fitCardHeight = heightPx * 0.97;
+  if (cards.length > 0) {
+    const maxCardW = Math.floor((containerWidth - 28 - totalGap) / cards.length);
+    if (maxCardW < cardWidth) {
+      fitCardWidth = maxCardW;
+      fitCardHeight = Math.floor(fitCardWidth / CARD_RATIO);
+    }
+  }
+
   return (
     <div
       className="cardzone-outer"
@@ -107,8 +121,8 @@ export default function CardZone({
             alignItems: "center",
             justifyContent: "flex-start",
             boxSizing: "border-box",
-            overflowX: "auto",
-            gap: "12px",
+            overflow: "visible", // 关键：不出现滚动条
+            gap: `${gap}px`,
             padding: "0 14px",
             position: "relative",
             background: "none"
@@ -119,10 +133,10 @@ export default function CardZone({
               key={idx}
               className="cardzone-card"
               style={{
-                width: cardWidth,
-                minWidth: cardWidth,
-                maxWidth: cardWidth,
-                height: heightPx * 0.97,
+                width: fitCardWidth,
+                minWidth: fitCardWidth,
+                maxWidth: fitCardWidth,
+                height: fitCardHeight,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
