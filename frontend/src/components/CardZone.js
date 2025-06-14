@@ -21,44 +21,94 @@ export default function CardZone({
   style,
   fullArea = false,
   fixedCardHeight,
-  stacked
+  stacked // 新增堆叠模式
 }) {
-  // 让区块高度由父级控制
-  // 每张牌高度=区块高度=100%，宽=高*0.725
   const CARD_RATIO = 0.725;
+  let heightPx = 120;
+  if (fixedCardHeight && typeof fixedCardHeight === "number") {
+    heightPx = fixedCardHeight;
+  }
+  const cardWidth = Math.round(heightPx * CARD_RATIO);
+
+  // 堆叠模式
+  let overlap = 18;
+  if (stacked && cards.length > 1) {
+    // 只显示部分重叠
+    return (
+      <div style={{
+        position: "relative",
+        height: heightPx,
+        width: (cardWidth + overlap * (cards.length - 1)),
+        minWidth: cardWidth,
+        ...style
+      }}>
+        {cards.map((card, idx) => (
+          <img
+            key={idx}
+            src={cardImg(card)}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              left: idx * overlap,
+              top: 0,
+              width: cardWidth,
+              height: heightPx,
+              borderRadius: 4,
+              background: "#fff",
+              border: "1px solid #ccc",
+              zIndex: idx,
+              boxShadow: "0 1px 6px #0001"
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // 常规平铺
   return (
     <div
       className="cardzone-outer"
       style={{
-        ...style,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        justifyContent: "flex-start",
-        width: "100%",
-        height: "100%", // 由父级撑开
-        background: "#f2f6fa",
+        width: "100vw",
+        minWidth: "100vw",
+        maxWidth: "100vw",
+        height: style?.height || heightPx,
         borderBottom: style?.borderBottom || "1px solid #eee",
-        margin: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f2f6fa",
+        ...style,
         padding: 0,
-        overflow: "hidden"
+        margin: 0,
+        overflow: "hidden",
       }}
     >
       <div
         className="cardzone-inner"
         style={{
-          width: "100%",
-          height: "100%",
-          background: "#fff",
-          border: "none",
+          width: "100vw",
+          minWidth: "100vw",
+          maxWidth: "100vw",
+          height: "97%",
+          border: "2px dashed #bbb",
           borderRadius: 0,
           margin: 0,
-          padding: 0,
-          boxSizing: "border-box",
-          overflow: "hidden",
+          background: "#fff",
+          display: "flex",
+          flexDirection: "column",
           position: "relative",
+          boxSizing: "border-box",
+          boxShadow: "0 2px 6px #fafafa",
+          overflow: "hidden",
+          padding: 0,
         }}
+        onDragOver={(zone !== "mid" && cards.length < maxCards) ? e => { e.preventDefault(); } : undefined}
+        onDrop={(zone !== "mid" && cards.length < maxCards) ? () => onDrop(zone) : undefined}
       >
+        {/* 说明文字 */}
         <div className="cardzone-label"
           style={{
             position: "absolute",
@@ -76,17 +126,21 @@ export default function CardZone({
         <div
           className="cardzone-cards"
           style={{
-            width: "100%",
+            width: "100vw",
+            minWidth: "100vw",
+            maxWidth: "100vw",
             height: "100%",
             marginTop: 38,
             display: "flex",
             flexDirection: "row",
+            flexWrap: "nowrap",
             alignItems: "center",
             justifyContent: "flex-start",
             boxSizing: "border-box",
-            overflow: "visible",
-            gap: "1.8vw", // 卡片间隔
-            padding: "0 18px",
+            overflowX: "visible",
+            gap: "12px",
+            padding: "0 14px",
+            position: "relative",
             background: "none"
           }}
         >
@@ -95,17 +149,19 @@ export default function CardZone({
               key={idx}
               className="cardzone-card"
               style={{
-                height: "100%",
-                aspectRatio: `${CARD_RATIO}/1`,
+                width: cardWidth,
+                minWidth: cardWidth,
+                maxWidth: cardWidth,
+                height: heightPx * 0.97,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 boxSizing: "border-box",
                 margin: 0,
                 padding: 0,
-                overflow: "visible",
+                overflow: "hidden",
                 background: "transparent",
-                zIndex: idx,
+                zIndex: idx
               }}
             >
               <img
@@ -114,17 +170,14 @@ export default function CardZone({
                 draggable={zone !== "mid"}
                 onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
                 style={{
-                  width: "auto",
+                  borderRadius: 4,
+                  width: "100%",
                   height: "100%",
                   objectFit: "contain",
                   display: "block",
                   background: "none",
                   border: "none",
-                  pointerEvents: "auto",
-                  boxShadow: "none",
-                  borderRadius: 0,
-                  margin: 0,
-                  padding: 0
+                  pointerEvents: "auto"
                 }}
               />
             </div>
