@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 
+// 卡牌图片路径
 function cardImg(card) {
   let v = card.value;
   if (v === "A") v = "ace";
@@ -20,11 +21,40 @@ export default function CardZone({
   style,
   fullArea = false
 }) {
-  const canDrop = (zone !== "mid" && cards.length < maxCards);
+  // 响应式判定（600px为阈值，必要可调整）
+  const isNarrow = useMemo(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 600;
+    }
+    return false;
+  }, [typeof window !== "undefined" ? window.innerWidth : 1024]);
 
-  // 固定每张牌宽度（自适应屏幕，最多不超过6.5vw，移动端更小，最多5vw）
-  const cardBoxWidth = "6vw";
-  const cardBoxHeight = "calc(100% - 38px)";
+  // 堆叠样式逻辑
+  const stackCardStyle = idx => {
+    if (!isNarrow || cards.length <= 1) {
+      // 宽屏/单张平铺
+      return {
+        width: "6vw",
+        minWidth: 36,
+        maxWidth: 68,
+        marginLeft: idx === 0 ? 0 : -6, // 紧贴
+        zIndex: idx
+      };
+    }
+    // 堆叠：每张牌左移一定像素，居中，且不超出
+    const overlap = 24; // 堆叠偏移量(px)
+    const totalWidth = overlap * (cards.length - 1) + 48; // 48为单牌宽
+    const left = idx * overlap - (totalWidth - (isNarrow ? window.innerWidth : 320)) / 2;
+    return {
+      position: "absolute",
+      left: `${left}px`,
+      width: 48,
+      minWidth: 32,
+      maxWidth: 60,
+      zIndex: idx,
+      transition: "left 0.18s"
+    };
+  };
 
   return (
     <div
@@ -59,8 +89,8 @@ export default function CardZone({
           overflow: "hidden",
           padding: 0,
         }}
-        onDragOver={canDrop ? e => { e.preventDefault(); } : undefined}
-        onDrop={canDrop ? () => onDrop(zone) : undefined}
+        onDragOver={(zone !== "mid" && cards.length < maxCards) ? e => { e.preventDefault(); } : undefined}
+        onDrop={(zone !== "mid" && cards.length < maxCards) ? () => onDrop(zone) : undefined}
       >
         {/* 说明文字 */}
         <div style={{
@@ -76,27 +106,34 @@ export default function CardZone({
         }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {/* 卡牌区：每张牌紧贴左侧，宽度固定 */}
+        {/* 卡牌区 */}
         <div
           style={{
             width: "100%",
             height: "100%",
             marginTop: 38,
-            display: "flex",
+            display: isNarrow ? "block" : "flex",
             alignItems: "flex-start",
             justifyContent: "flex-start",
             boxSizing: "border-box",
             overflow: "hidden",
             gap: 0,
             padding: 0,
+            position: "relative",
           }}
         >
           {cards.map((card, idx) => (
             <div
               key={idx}
               style={{
-                width: cardBoxWidth,
-                height: cardBoxHeight,
+                ...(isNarrow ? stackCardStyle(idx) : {
+                  width: "6vw",
+                  minWidth: 36,
+                  maxWidth: 68,
+                  marginLeft: idx === 0 ? 0 : -6,
+                  zIndex: idx
+                }),
+                height: isNarrow ? 72 : "calc(100% - 38px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -113,9 +150,9 @@ export default function CardZone({
                 draggable={zone !== "mid"}
                 onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
                 style={{
-                  borderRadius: 0,
+                  borderRadius: 4,
                   boxShadow: "none",
-                  width: "94%",
+                  width: "96%",
                   height: "auto",
                   maxHeight: "98%",
                   maxWidth: "98%",
