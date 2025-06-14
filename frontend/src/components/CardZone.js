@@ -10,6 +10,25 @@ function cardImg(card) {
   return `/cards/${v}_of_${card.suit}.svg`;
 }
 
+// 计算最大牌高（自动缩放高度，横向排满且不溢出横幅）
+function calcCardSize(cardCount, areaWidth, maxHeight, gap = 12, aspect = 0.725) {
+  // gap为牌与牌的间距，aspect为牌面宽高比
+  // 计算在areaWidth范围内排满cardCount张扑克牌的最大高度
+  const totalGap = gap * (cardCount - 1);
+  let cardW = (areaWidth - totalGap) / cardCount;
+  let cardH = cardW / aspect;
+  if (cardH > maxHeight) {
+    cardH = maxHeight;
+    cardW = cardH * aspect;
+    // 重新计算gap使整体不溢出
+    if (cardCount > 1) {
+      gap = (areaWidth - cardCount * cardW) / (cardCount - 1);
+      if (gap < 0) gap = 0;
+    }
+  }
+  return { cardW, cardH, gap };
+}
+
 export default function CardZone({
   zone,
   label,
@@ -23,23 +42,57 @@ export default function CardZone({
   fixedCardHeight,
   stacked // 新增堆叠模式
 }) {
-  const CARD_RATIO = 0.725;
-  let heightPx = 120;
+  // 横向自适应布局
+  // 目标：最大化显示高度，在宽度100vw下，13张牌不溢出
+  const containerRef = React.useRef(null);
+  const [containerW, setContainerW] = React.useState(window.innerWidth);
+
+  // 跟踪宽度变化自适应
+  React.useEffect(() => {
+    function update() {
+      if (containerRef.current) {
+        setContainerW(containerRef.current.offsetWidth);
+      } else {
+        setContainerW(window.innerWidth);
+      }
+    }
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // 计算最大牌高和gap
+  const cardCount = cards.length;
+  const areaW = containerW;
+  // 允许自定义区域高度或使用默认
+  let areaH = 120;
   if (fixedCardHeight && typeof fixedCardHeight === "number") {
-    heightPx = fixedCardHeight;
+    if (typeof fixedCardHeight === "string" && fixedCardHeight.endsWith("px")) {
+      areaH = parseInt(fixedCardHeight, 10);
+    } else if (typeof fixedCardHeight === "string" && fixedCardHeight.endsWith("vh")) {
+      areaH = window.innerHeight * parseFloat(fixedCardHeight) / 100;
+    } else {
+      areaH = fixedCardHeight;
+    }
   }
-  const cardWidth = Math.round(heightPx * CARD_RATIO);
+
+  let cardW = 0, cardH = 0, gap = 12;
+  if (cardCount > 0) {
+    const { cardW: w, cardH: h, gap: g } = calcCardSize(cardCount, areaW - 34, areaH * 0.98, 12, 0.725);
+    cardW = w;
+    cardH = h;
+    gap = g;
+  }
 
   // 堆叠模式
-  let overlap = 18;
   if (stacked && cards.length > 1) {
-    // 只显示部分重叠
+    let overlap = 18;
     return (
-      <div style={{
+      <div ref={containerRef} style={{
         position: "relative",
-        height: heightPx,
-        width: (cardWidth + overlap * (cards.length - 1)),
-        minWidth: cardWidth,
+        height: areaH,
+        width: (cardW + overlap * (cards.length - 1)),
+        minWidth: cardW,
         ...style
       }}>
         {cards.map((card, idx) => (
@@ -52,8 +105,8 @@ export default function CardZone({
               position: "absolute",
               left: idx * overlap,
               top: 0,
-              width: cardWidth,
-              height: heightPx,
+              width: cardW,
+              height: cardH,
               borderRadius: 4,
               background: "#fff",
               border: "1px solid #ccc",
@@ -69,12 +122,13 @@ export default function CardZone({
   // 常规平铺
   return (
     <div
+      ref={containerRef}
       className="cardzone-outer"
       style={{
         width: "100vw",
         minWidth: "100vw",
         maxWidth: "100vw",
-        height: style?.height || heightPx,
+        height: style?.height || areaH,
         borderBottom: style?.borderBottom || "1px solid #eee",
         display: "flex",
         alignItems: "center",
@@ -138,7 +192,7 @@ export default function CardZone({
             justifyContent: "flex-start",
             boxSizing: "border-box",
             overflowX: "visible",
-            gap: "12px",
+            gap: `${gap}px`,
             padding: "0 14px",
             position: "relative",
             background: "none"
@@ -149,10 +203,10 @@ export default function CardZone({
               key={idx}
               className="cardzone-card"
               style={{
-                width: cardWidth,
-                minWidth: cardWidth,
-                maxWidth: cardWidth,
-                height: heightPx * 0.97,
+                width: cardW,
+                minWidth: cardW,
+                maxWidth: cardW,
+                height: cardH,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
