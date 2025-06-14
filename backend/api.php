@@ -264,15 +264,45 @@ if ($action === 'submit_hand') {
         die(json_encode(["error" => "前中后道不符合规则"]));
     }
     $rooms[$room]['submits'][$player] = $split;
+
+    // ------ AI自动分牌：加强版，保证AI一定能分出 ------
     foreach ($rooms[$room]['players'] as $p) {
         if (!isset($rooms[$room]['submits'][$p]) && preg_match('/^AI-/', $p)) {
             $hand = $rooms[$room]['hands'][$p];
+            // 先用aiAutoSplit
             $ai_split = aiAutoSplit($hand);
-            if (isLegalSplit($ai_split)) {
-                $rooms[$room]['submits'][$p] = $ai_split;
+            // 如果不合法，暴力洗牌找一个合法的
+            if (!isLegalSplit($ai_split)) {
+                $found = false;
+                for ($try = 0; $try < 2000; ++$try) {
+                    shuffle($hand);
+                    $candidate = [
+                        array_slice($hand, 0, 3),
+                        array_slice($hand, 3, 8),
+                        array_slice($hand, 8, 13)
+                    ];
+                    if (isLegalSplit($candidate)) {
+                        $ai_split = $candidate;
+                        $found = true;
+                        break;
+                    }
+                }
+                // 如果找不到合法分法，还是用aiAutoSplit（兜底不阻塞流程）
+                if (!$found) {
+                    $ai_split = [
+                        array_slice($hand, 0, 3),
+                        array_slice($hand, 3, 8),
+                        array_slice($hand, 8, 13)
+                    ];
+                }
             }
+            $rooms[$room]['submits'][$p] = $ai_split;
         }
     }
+
+    // -----------------------------------------------
+
+    // status推进
     if (count($rooms[$room]['submits']) === count($rooms[$room]['players'])) {
         $rooms[$room]['status'] = 'finished';
         $scores = [];
