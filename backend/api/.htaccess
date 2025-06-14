@@ -1,6 +1,0 @@
-RewriteEngine On
-Header set Access-Control-Allow-Origin "*"
-Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
-Header set Access-Control-Allow-Methods "POST, GET, OPTIONS"
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ index.php [QSA,L]
