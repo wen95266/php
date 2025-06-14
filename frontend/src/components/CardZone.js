@@ -23,14 +23,16 @@ export default function CardZone({
 }) {
   // 响应式判定
   const [isNarrow, setIsNarrow] = useState(window.innerWidth < 700);
-  const [zoneHeight, setZoneHeight] = useState(120);
   const zoneRef = useRef();
+  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
 
   useEffect(() => {
     function handleResize() {
       setIsNarrow(window.innerWidth < 700);
       if (zoneRef.current) {
-        setZoneHeight(zoneRef.current.offsetHeight);
+        setContainerWidth(zoneRef.current.offsetWidth);
+      } else {
+        setContainerWidth(window.innerWidth);
       }
     }
     handleResize();
@@ -38,52 +40,21 @@ export default function CardZone({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    if (zoneRef.current) {
-      setZoneHeight(zoneRef.current.offsetHeight);
-    }
-  }, [style]);
-
-  // 让卡牌自适应父容器高度
-  function getCardSize() {
-    // 头道3张，中道/尾道5张
-    const count = Math.max(cards.length, 1);
-    let maxH = Math.max(zoneHeight - 44, 32); // 44为说明文字及边距
-    // 保证卡牌不会溢出横向
-    let maxW = (window.innerWidth - 32) / count - 6;
-    let size = Math.min(maxH, maxW, 180);
-    if (isNarrow) size = Math.min(maxH, Math.max(44, maxW), 90);
-    return size;
+  // 卡牌宽度算法：保证所有牌完整显示，且最大不超过180px
+  const gap = 12;
+  let cardCount = cards.length || 1;
+  let availWidth = Math.max(containerWidth - 28, 320); // 28=左右padding
+  let cardWidth = Math.min(
+    180,
+    Math.floor((availWidth - gap * (cardCount - 1)) / cardCount)
+  );
+  if (isNarrow) {
+    cardWidth = Math.min(
+      90,
+      Math.floor((availWidth - gap * (cardCount - 1)) / cardCount)
+    );
   }
-  const cardSize = getCardSize();
-
-  // 堆叠样式逻辑
-  const stackCardStyle = idx => {
-    if (!isNarrow || cards.length <= 1) {
-      // 宽屏/单张平铺
-      return {
-        width: cardSize,
-        minWidth: 24,
-        maxWidth: 200,
-        marginLeft: idx === 0 ? 0 : 2,
-        zIndex: idx
-      };
-    }
-    // 堆叠：每张牌左移一定像素，居中，且不超出
-    const overlap = Math.max(12, cardSize * 0.4); // 堆叠偏移量
-    const totalW = cardSize + overlap * (cards.length - 1);
-    const maxAvailable = window.innerWidth * 0.96;
-    const startLeft = (maxAvailable - totalW) / 2;
-    return {
-      position: "absolute",
-      left: `${startLeft + idx * overlap}px`,
-      width: cardSize,
-      minWidth: 18,
-      maxWidth: 120,
-      zIndex: idx,
-      transition: "left 0.18s"
-    };
-  };
+  let cardHeight = Math.round(cardWidth * 1.36);
 
   return (
     <div
@@ -91,6 +62,8 @@ export default function CardZone({
       ref={zoneRef}
       style={{
         width: "100vw",
+        minWidth: "100vw",
+        maxWidth: "100vw",
         height: style?.height || "16vh",
         borderBottom: style?.borderBottom || "1px solid #eee",
         display: "flex",
@@ -107,10 +80,12 @@ export default function CardZone({
         className="cardzone-inner"
         style={{
           width: "100vw",
+          minWidth: "100vw",
+          maxWidth: "100vw",
           height: "97%",
           border: "2px dashed #bbb",
-          borderRadius: 8,
-          margin: "0 auto",
+          borderRadius: 0,
+          margin: 0,
           background: "#fff",
           display: "flex",
           flexDirection: "column",
@@ -141,19 +116,24 @@ export default function CardZone({
         </div>
         {/* 卡牌区 */}
         <div
-          className={"cardzone-cards" + (isNarrow ? " cardzone-cards-narrow" : "")}
+          className="cardzone-cards"
           style={{
             width: "100vw",
+            minWidth: "100vw",
+            maxWidth: "100vw",
             height: "100%",
             marginTop: 38,
-            display: isNarrow ? "block" : "flex",
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: "nowrap",
             alignItems: "flex-start",
             justifyContent: "flex-start",
             boxSizing: "border-box",
-            overflow: "hidden",
-            gap: 0,
-            padding: 0,
+            overflowX: "auto",
+            gap: `${gap}px`,
+            padding: "0 14px",
             position: "relative",
+            background: "none"
           }}
         >
           {cards.map((card, idx) => (
@@ -161,14 +141,10 @@ export default function CardZone({
               key={idx}
               className="cardzone-card"
               style={{
-                ...(isNarrow ? stackCardStyle(idx) : {
-                  width: cardSize,
-                  minWidth: 24,
-                  maxWidth: 200,
-                  marginLeft: idx === 0 ? 0 : 2,
-                  zIndex: idx
-                }),
-                height: cardSize * 1.35,
+                width: cardWidth,
+                minWidth: 24,
+                maxWidth: 240,
+                height: cardHeight,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -176,7 +152,8 @@ export default function CardZone({
                 margin: 0,
                 padding: 0,
                 overflow: "hidden",
-                background: "transparent"
+                background: "transparent",
+                zIndex: idx
               }}
             >
               <img
@@ -186,9 +163,8 @@ export default function CardZone({
                 onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
                 style={{
                   borderRadius: 4,
-                  boxShadow: "none",
-                  width: "96%",
-                  height: "96%",
+                  width: "100%",
+                  height: "100%",
                   objectFit: "contain",
                   display: "block",
                   background: "none",
