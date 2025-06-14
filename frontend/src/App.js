@@ -3,6 +3,7 @@ import { createRoom, joinRoom, startGame, getRoomState, submitHand } from "./api
 import PlayerStatusBanner from "./components/PlayerStatusBanner";
 import CardZone from "./components/CardZone";
 import ControlBar from "./components/ControlBar";
+import CompareDialog from "./components/CompareDialog"; // <--- 必须加这一行
 import { cycleAiSplit } from "./utils/ai";
 
 // 自动匹配API
