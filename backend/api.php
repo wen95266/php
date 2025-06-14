@@ -138,7 +138,6 @@ function compareHand($hand1, $hand2) {
     return 0;
 }
 function isLegalSplit($split) {
-    // 必须严格3-5-5
     if (count($split) !== 3 || count($split[0]) !== 3 || count($split[1]) !== 5 || count($split[2]) !== 5) return false;
     $t0 = getHandType($split[0]);
     $t1 = getHandType($split[1]);
@@ -149,8 +148,8 @@ function isLegalSplit($split) {
     return true;
 }
 
-// ----------- 增强智能AI分牌 --------------
-// 组合枚举函数：从$arr中选n个（返回索引数组）
+// ----------- 提升智能AI分牌 --------------
+// 组合枚举函数
 function combinations($arr, $n) {
     $result = [];
     $len = count($arr);
@@ -160,7 +159,6 @@ function combinations($arr, $n) {
         $comb = [];
         for ($i = 0; $i < $n; ++$i) $comb[] = $arr[$indexes[$i]];
         $result[] = $comb;
-        // move to next
         $i = $n - 1;
         while ($i >= 0 && $indexes[$i] == $len - $n + $i) $i--;
         if ($i < 0) break;
@@ -171,30 +169,28 @@ function combinations($arr, $n) {
     return $result;
 }
 
-// 评估分牌优劣
+// 更高级的评估函数：头道不能鸡蛋，尾道/中道优先大牌型，三条/两对头道加权
 function aiSplitScore($split) {
     $scoreTable = [
-        "同花顺"=>900, "四条"=>800, "葫芦"=>600, "同花"=>500, "顺子"=>400,
-        "三条"=>300, "两对"=>200, "一对"=>100, "散牌"=>0
+        "同花顺"=>900, "四条"=>800, "葫芦"=>650, "同花"=>500, "顺子"=>400,
+        "三条"=>310, "两对"=>180, "一对"=>80, "散牌"=>0
     ];
-    $t0 = getHandType($split[0])[1];
-    $t1 = getHandType($split[1])[1];
-    $t2 = getHandType($split[2])[1];
-    // 避免头道被鸡蛋
-    $penalty = ($t0 === "散牌") ? -200 : 0;
-    // 尾道>中道>头道
-    $score = $scoreTable[$t2] * 7 + $scoreTable[$t1] * 3 + $scoreTable[$t0] + $penalty;
-    // 同类型点数加权
-    $score += getHandType($split[2])[2] ?? 0;
-    $score += getHandType($split[1])[2] ?? 0;
-    $score += getHandType($split[0])[2] ?? 0;
-    // 头道是三条/两对加分
-    if ($t0 === "三条") $score += 80;
-    if ($t0 === "两对") $score += 40;
+    $t0 = getHandType($split[0]);
+    $t1 = getHandType($split[1]);
+    $t2 = getHandType($split[2]);
+    $penalty = ($t0[1] === "散牌") ? -200 : 0;
+    $bonus = 0;
+    if ($t0[1] === "三条") $bonus += 100;
+    if ($t0[1] === "两对") $bonus += 50;
+    if ($t1[1] === "葫芦" || $t2[1] === "葫芦") $bonus += 40;
+    if ($t2[1] === "同花顺") $bonus += 100;
+    // 牌型分+头道点数+中道点数+尾道点数
+    $score = $scoreTable[$t2[1]] * 8 + $scoreTable[$t1[1]] * 3 + $scoreTable[$t0[1]] + $penalty + $bonus;
+    $score += (is_numeric($t0[2]) ? $t0[2] : 0) + (is_numeric($t1[2]) ? $t1[2] : 0) + (is_numeric($t2[2]) ? $t2[2] : 0);
     return $score;
 }
 
-// AI智能分牌主函数
+// 尝试部分优先策略，先枚举尾道大牌型，再枚举中道，头道留给三条/两对/对子/高牌
 function aiAutoSplit($hand) {
     if (count($hand) !== 13) {
         return [
@@ -205,10 +201,24 @@ function aiAutoSplit($hand) {
     }
     $allIdx = range(0, 12);
     $bestSplit = null;
-    $bestScore = -99999;
-    // 只枚举尾道所有5张组合（C(13,5)=1287），然后枚举中道所有5张组合（C(8,5)=56），剩下3张做头道，总约7万种
+    $bestScore = -999999;
     $tailCombos = combinations($allIdx, 5);
-    foreach ($tailCombos as $tailIdx) {
+    // 先按尾道优先炸弹/葫芦/同花顺/同花/顺子/三条/两对
+    $priorTypes = ["同花顺"=>9,"四条"=>8,"葫芦"=>7,"同花"=>6,"顺子"=>5,"三条"=>4,"两对"=>3,"一对"=>2,"散牌"=>1];
+    $tailCombosSorted = [];
+    foreach ($tailCombos as $combo) {
+        $cards = [$hand[$combo[0]],$hand[$combo[1]],$hand[$combo[2]],$hand[$combo[3]],$hand[$combo[4]]];
+        $typ = getHandType($cards);
+        $tailCombosSorted[] = [$combo, $priorTypes[$typ[1]] ?? 0, $typ[0]];
+    }
+    // 优先高牌型
+    usort($tailCombosSorted, function($a, $b) {
+        if ($a[1] != $b[1]) return $b[1] - $a[1];
+        return $b[2] - $a[2];
+    });
+    // 外层优先高牌型尾道
+    foreach ($tailCombosSorted as $tc) {
+        $tailIdx = $tc[0];
         $remain1 = array_diff($allIdx, $tailIdx);
         $midCombos = combinations($remain1, 5);
         foreach ($midCombos as $midIdx) {
@@ -226,8 +236,8 @@ function aiAutoSplit($hand) {
             }
         }
     }
-    // 没找到合法分法，原始分法
     if ($bestSplit) return $bestSplit;
+    // 兜底
     return [
         array_slice($hand, 0, 3),
         array_slice($hand, 3, 8),
@@ -258,7 +268,6 @@ function doMatchPool() {
         $rooms[$roomId]['status'] = "playing";
         $rooms[$roomId]['submits'] = [];
         $rooms[$roomId]['results'] = null;
-        // 玩家与房间绑定
         foreach ($players as $p) {
             $rooms[$roomId]['playerMap'][$p] = $roomId;
         }
@@ -266,7 +275,6 @@ function doMatchPool() {
         $rooms[$roomId]['matched'] = true;
         $rooms[$roomId]['orig_players'] = $players;
         $changed = true;
-        // 记录匹配结果
         file_put_contents(__DIR__.'/matchlog.txt', "[".date('c')."] match: ".json_encode($players)."\n", FILE_APPEND);
     }
     if ($changed) {
@@ -281,7 +289,6 @@ $action = $_GET['action'] ?? '';
 header('Content-Type: application/json');
 $rooms = loadRooms();
 if ($action === 'create_room') {
-    // 仅AI体验模式支持，自动匹配流程不支持
     $roomId = substr(md5(uniqid('', true)), 0, 6);
     $player = $_GET['player'];
     $rooms[$roomId] = [
@@ -353,7 +360,6 @@ if ($action === 'submit_hand') {
             $hand = $rooms[$room]['hands'][$p];
             if (count($hand) != 13) continue;
             $ai_split = aiAutoSplit($hand);
-            // 如果不合法或不是3-5-5，暴力分合法的
             if (
                 !isLegalSplit($ai_split) ||
                 count($ai_split[0])!=3 ||
@@ -374,7 +380,6 @@ if ($action === 'submit_hand') {
                         break;
                     }
                 }
-                // 实在找不到
                 if (!$found) {
                     $ai_split = [
                         array_slice($hand, 0, 3),
@@ -383,7 +388,6 @@ if ($action === 'submit_hand') {
                     ];
                 }
             }
-            // 最终只要3-5-5才提交
             if (
                 count($ai_split[0])==3 &&
                 count($ai_split[1])==5 &&
@@ -394,9 +398,7 @@ if ($action === 'submit_hand') {
         }
     }
 
-    // -----------------------------------------------
-
-    // status推进
+    // 结果计算
     if (count($rooms[$room]['submits']) === count($rooms[$room]['players'])) {
         $rooms[$room]['status'] = 'finished';
         $scores = [];
@@ -446,17 +448,14 @@ if ($action === 'get_results') {
     echo json_encode(["results" => $rooms[$room]['results']]);
     exit;
 }
-// -------- 自动匹配 ---------
 if ($action === 'join_match') {
     $player = $_GET['player'];
     $matchPool = loadMatchPool();
     if (!in_array($player, $matchPool)) $matchPool[] = $player;
     saveMatchPool($matchPool);
-    // 匹配池够4人自动建房
     list($roomsNew, $matchPoolNew) = doMatchPool();
     $rooms = $roomsNew;
     $matchPool = $matchPoolNew;
-    // 查找玩家是否已配好房间
     foreach ($rooms as $rid=>$rm) {
         if (isset($rm['matched']) && in_array($player, $rm['players'])) {
             echo json_encode(["status"=>"matched", "roomId"=>$rid]);
