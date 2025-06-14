@@ -24,19 +24,29 @@ export default function CardZone({
   stacked,
   onReturnToHand
 }) {
-  // 获取实际高度
+  // 获取实际高度和宽度
   const containerRef = React.useRef(null);
-  const [height, setHeight] = React.useState(120);
+  const [size, setSize] = React.useState({height: 120, width: 600});
   React.useLayoutEffect(() => {
     if (containerRef.current) {
-      setHeight(containerRef.current.offsetHeight);
+      setSize({
+        height: containerRef.current.offsetHeight,
+        width: containerRef.current.offsetWidth
+      });
     }
-  }, [containerRef.current, style?.height]);
+  }, [containerRef.current, style?.height, style?.width]);
 
   // 卡牌宽高比
-  const CARD_HEIGHT = height * 0.82; // 预留文字空间
+  const CARD_HEIGHT = size.height * 0.82; // 预留文字空间
   const CARD_WIDTH = CARD_HEIGHT * 0.7;
-  const CARD_GAP = Math.max(12, CARD_WIDTH * 0.18);
+  const MIN_GAP = Math.max(12, CARD_WIDTH * 0.18);
+
+  // 是否需要堆叠
+  let totalWidth = cards.length * CARD_WIDTH + (cards.length - 1) * MIN_GAP;
+  let useStack = totalWidth > size.width;
+  let overlap = useStack
+    ? (size.width - CARD_WIDTH) / (cards.length - 1)
+    : CARD_WIDTH + MIN_GAP;
 
   return (
     <div
@@ -68,7 +78,7 @@ export default function CardZone({
           right: 18,
           fontWeight: 600,
           color: "#444",
-          fontSize: Math.max(18, height * 0.17),
+          fontSize: Math.max(18, size.height * 0.17),
           zIndex: 2,
           opacity: 0.44,
           pointerEvents: "none",
@@ -84,16 +94,11 @@ export default function CardZone({
           minWidth: "100vw",
           maxWidth: "100vw",
           height: "100%",
-          display: "flex",
-          flexDirection: "row",
-          flexWrap: "nowrap",
-          alignItems: "center",
-          justifyContent: "flex-start",
+          display: "block",
+          position: "relative",
           boxSizing: "border-box",
           overflowX: "visible",
-          gap: `${CARD_GAP}px`,
           paddingLeft: 16,
-          paddingRight: 0,
         }}
         onDragOver={cards.length < maxCards ? e => { e.preventDefault(); } : undefined}
         onDrop={cards.length < maxCards ? () => onDrop(zone) : undefined}
@@ -103,9 +108,11 @@ export default function CardZone({
             key={card.suit + card.value + idx}
             className="cardzone-card"
             style={{
+              position: "absolute",
+              left: useStack ? (idx * overlap + 16) : (idx * (CARD_WIDTH + MIN_GAP) + 16),
+              top: "50%",
+              transform: `translateY(-50%)`,
               width: CARD_WIDTH,
-              minWidth: CARD_WIDTH,
-              maxWidth: CARD_WIDTH,
               height: CARD_HEIGHT,
               display: "flex",
               alignItems: "center",
