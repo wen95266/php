@@ -126,7 +126,7 @@ export default function App() {
     alert("你的牌型已提交");
   };
 
-  if (!joined || !roomId) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>房间初始化中...</div>;
+  if (!joined || !roomId) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f6fa"}}>房间初始化中...</div>;
   if (status === "results") {
     return <GameRoom roomId={roomId} playerName={MY_NAME} />;
   }
@@ -137,7 +137,7 @@ export default function App() {
   const threeZoneH = `calc((100vh - ${statusH}px - ${buttonH}px) / 3)`;
 
   return (
-    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#eef2f8", position: "relative" }}>
+    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#f2f6fa", position: "relative" }}>
       {/* 1. 玩家状态横幅 */}
       <PlayerStatusBanner
         status={status}
