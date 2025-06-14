@@ -131,23 +131,11 @@ export default function App() {
     }));
   };
 
-  // ---------- 删除“自动中道”逻辑 ----------
-  // useEffect(() => {
-  //   const { head, tail, hand, mid } = zones;
-  //   if (head.length === 3 && tail.length === 5 && hand.length === 5) {
-  //     setZones(z => ({ ...z, mid: hand, hand: [] }));
-  //   }
-  //   if ((head.length < 3 || tail.length < 5) && mid.length > 0) {
-  //     setZones(z => ({ ...z, hand: [...hand, ...mid], mid: [] }));
-  //   }
-  //   // eslint-disable-next-line
-  // }, [zones.head.length, zones.tail.length, zones.hand.length]);
-
   // AI分牌
   const handleAiSplit = () => {
     const { hand, head, mid, tail } = zones;
-    if (hand.length + head.length + tail.length !== 13) return;
-    const [newHead, newMid, newTail] = cycleAiSplit([...hand, ...head, ...tail], roomId || "myAI");
+    if (hand.length + head.length + mid.length + tail.length !== 13) return;
+    const [newHead, newMid, newTail] = cycleAiSplit([...hand, ...head, ...mid, ...tail], roomId || "myAI");
     setZones({ hand: [], head: newHead, mid: newMid, tail: newTail });
   };
 
@@ -241,7 +229,7 @@ export default function App() {
   }
   const statusH = 90;
   const buttonH = 120;
-  const threeZoneH = `calc((100vh - ${statusH}px - ${buttonH}px) / 3)`;
+  const threeZoneH = `calc((100vh - ${statusH}px - ${buttonH}px) / 4)`;
 
   return (
     <div style={{
@@ -307,42 +295,22 @@ export default function App() {
         fullArea
         fixedCardHeight={threeZoneH}
       />
-      {/* 保持布局不变，手牌区和中道区互斥显示 */}
-      {zones.mid.length === 5 ? (
-        <CardZone
-          zone="mid"
-          label="中道"
-          maxCards={5}
-          cards={zones.mid}
-          onDragStart={onDragStart}
-          onDrop={onDrop}
-          onReturnToHand={onReturnToHand}
-          draggingCard={draggingCard}
-          style={{
-            height: threeZoneH,
-            borderBottom: "1px solid #ededed",
-          }}
-          fullArea
-          fixedCardHeight={threeZoneH}
-        />
-      ) : (
-        <CardZone
-          zone="hand"
-          label="手牌区"
-          maxCards={13}
-          cards={zones.hand}
-          onDragStart={onDragStart}
-          onDrop={onDrop}
-          onReturnToHand={() => {}}
-          draggingCard={draggingCard}
-          style={{
-            height: threeZoneH,
-            borderBottom: "1px solid #ededed",
-          }}
-          fullArea
-          fixedCardHeight={threeZoneH}
-        />
-      )}
+      <CardZone
+        zone="mid"
+        label="中道"
+        maxCards={5}
+        cards={zones.mid}
+        onDragStart={onDragStart}
+        onDrop={onDrop}
+        onReturnToHand={onReturnToHand}
+        draggingCard={draggingCard}
+        style={{
+          height: threeZoneH,
+          borderBottom: "1px solid #ededed",
+        }}
+        fullArea
+        fixedCardHeight={threeZoneH}
+      />
       <CardZone
         zone="tail"
         label="尾道"
@@ -351,6 +319,22 @@ export default function App() {
         onDragStart={onDragStart}
         onDrop={onDrop}
         onReturnToHand={onReturnToHand}
+        draggingCard={draggingCard}
+        style={{
+          height: threeZoneH,
+          borderBottom: "1px solid #ededed",
+        }}
+        fullArea
+        fixedCardHeight={threeZoneH}
+      />
+      <CardZone
+        zone="hand"
+        label="手牌区"
+        maxCards={13}
+        cards={zones.hand}
+        onDragStart={onDragStart}
+        onDrop={onDrop}
+        onReturnToHand={() => {}}
         draggingCard={draggingCard}
         style={{
           height: threeZoneH,
