@@ -12,7 +12,7 @@ export default function ControlBar({
     <div style={{
       width: "100vw",
       minHeight: 120,
-      background: "#f2f6fa",
+      background: "#fcfcff", // 统一颜色
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
