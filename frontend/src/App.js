@@ -39,6 +39,9 @@ export default function App() {
   const [showCompare, setShowCompare] = useState(false);
   const [compareData, setCompareData] = useState(null);
 
+  // 本地记忆（只在发牌后更新），否则拖拽会被服务端状态重置
+  const [localHandInited, setLocalHandInited] = useState(false);
+
   // AI初始化
   useEffect(() => {
     if (mode !== "ai") return;
@@ -68,6 +71,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, [mode, isMatching]);
 
+  // 核心：只在发牌时同步后端手牌，其余操作均用本地zones
   useEffect(() => {
     if (!roomId) return;
     let timer = setInterval(async () => {
@@ -75,9 +79,13 @@ export default function App() {
       setAllPlayers(state.players || []);
       setStatus(state.status);
       setResults(state.results || null);
-      if (state.status === "playing" && zones.hand.length === 0 && state.myHand) {
+
+      // 只在发牌后同步一次手牌，后续完全本地管理，避免拖拽后被重置
+      if (state.status === "playing" && !localHandInited && state.myHand && state.myHand.length === 13) {
         setZones({ hand: state.myHand, head: [], mid: [], tail: [] });
+        setLocalHandInited(true);
       }
+      // 结束后比牌弹窗
       if (state.status === "finished" && state.results && !showCompare) {
         setCompareData({
           players: state.players,
@@ -90,17 +98,15 @@ export default function App() {
     }, 1200);
     return () => clearInterval(timer);
     // eslint-disable-next-line
-  }, [roomId, showCompare]);
+  }, [roomId, showCompare, localHandInited]);
 
-  // 拖拽，只允许每张牌出现在一个区域
+  // 拖拽：只允许每张牌出现在一个区域
   const onDragStart = (card, from) => setDraggingCard({ card, from });
   const onDrop = (to) => {
     if (!draggingCard) return;
     const { card } = draggingCard;
     const cardKey = c => c.value + "-" + c.suit;
     // 移除所有区域该牌
-    let allCards = [...zones.hand, ...zones.head, ...zones.mid, ...zones.tail]
-      .filter(c => cardKey(c) !== cardKey(card));
     let zoneKeys = ["hand", "head", "mid", "tail"];
     let newZones = { hand: [], head: [], mid: [], tail: [] };
     for (let z of zoneKeys) {
@@ -168,6 +174,7 @@ export default function App() {
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
+    setLocalHandInited(false);
   };
 
   // 取消匹配
@@ -190,6 +197,7 @@ export default function App() {
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
+    setLocalHandInited(false);
   };
 
   // 继续游戏
@@ -199,6 +207,7 @@ export default function App() {
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
+    setLocalHandInited(false);
   };
 
   if (mode === "match" && isMatching) {
