@@ -28,12 +28,11 @@ export default function CardZone({
   if (fixedCardHeight && typeof fixedCardHeight === "number") {
     heightPx = fixedCardHeight;
   }
-  const cardWidth = Math.round(heightPx * CARD_RATIO);
 
   // 堆叠模式
   let overlap = 18;
   if (stacked && cards.length > 1) {
-    // 只显示部分重叠
+    const cardWidth = Math.round(heightPx * CARD_RATIO);
     return (
       <div style={{
         position: "relative",
@@ -66,7 +65,7 @@ export default function CardZone({
     );
   }
 
-  // 常规平铺
+  // 常规平铺模式：高度100%撑满，宽度自适应（用flex: 1），不裁切
   return (
     <div
       className="cardzone-outer"
@@ -138,7 +137,7 @@ export default function CardZone({
             justifyContent: "flex-start",
             boxSizing: "border-box",
             overflowX: "visible",
-            gap: "12px",
+            gap: cards.length > 0 ? "2vw" : 0,
             padding: "0 14px",
             position: "relative",
             background: "none"
@@ -149,17 +148,15 @@ export default function CardZone({
               key={idx}
               className="cardzone-card"
               style={{
-                width: cardWidth,
-                minWidth: cardWidth,
-                maxWidth: cardWidth,
-                height: heightPx * 0.97,
+                height: "100%",
+                aspectRatio: `${CARD_RATIO}/1`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 boxSizing: "border-box",
                 margin: 0,
                 padding: 0,
-                overflow: "hidden",
+                overflow: "visible",
                 background: "transparent",
                 zIndex: idx
               }}
@@ -170,7 +167,6 @@ export default function CardZone({
                 draggable={zone !== "mid"}
                 onDragStart={zone !== "mid" ? () => onDragStart(card, zone) : undefined}
                 style={{
-                  borderRadius: 4,
                   width: "100%",
                   height: "100%",
                   objectFit: "contain",
