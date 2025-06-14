@@ -100,17 +100,27 @@ export default function App() {
   const onDrop = (to) => {
     if (!draggingCard) return;
     const { card, from } = draggingCard;
-    let newHand = hand.slice();
-    let newHead = head.slice();
-    let newTail = tail.slice();
-    if (from === "hand") newHand = newHand.filter(c => c.value !== card.value || c.suit !== card.suit);
-    if (from === "head") newHead = newHead.filter(c => c.value !== card.value || c.suit !== card.suit);
-    if (from === "tail") newTail = newTail.filter(c => c.value !== card.value || c.suit !== card.suit);
-    if (to === "hand") newHand.push(card);
-    if (to === "head" && newHead.length < 3) newHead.push(card);
-    if (to === "tail" && newTail.length < 5) newTail.push(card);
+    // 统一去重，确保只有一张牌出现在所有区域
+    const match = (a, b) => a.value === b.value && a.suit === b.suit;
+    // 合并所有牌，移除正在拖拽的牌
+    let allCards = [...hand, ...head, ...mid, ...tail].filter(c => !match(c, card));
+    let newHand = hand.filter(c => !match(c, card));
+    let newHead = head.filter(c => !match(c, card));
+    let newMid = mid.filter(c => !match(c, card));
+    let newTail = tail.filter(c => !match(c, card));
+
+    if (to === "hand") {
+      newHand.push(card);
+    } else if (to === "head" && newHead.length < 3) {
+      newHead.push(card);
+    } else if (to === "mid" && newMid.length < 5) {
+      newMid.push(card);
+    } else if (to === "tail" && newTail.length < 5) {
+      newTail.push(card);
+    }
     setHand(newHand);
     setHead(newHead);
+    setMid(newMid);
     setTail(newTail);
     setDraggingCard(null);
   };
