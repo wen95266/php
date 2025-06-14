@@ -9,17 +9,15 @@ export default function GameRoom({ roomId, playerName }) {
 
   useEffect(() => {
     const timer = setInterval(async () => {
-      let s = await getRoomState(roomId);
+      let s = await getRoomState(roomId, playerName);
       setState(s);
       if (s.status === "playing") setStage("playing");
       if (s.status === "finished") setStage("results");
     }, 2000);
     return () => clearInterval(timer);
-  }, [roomId]);
+  }, [roomId, playerName]);
 
-  // 选牌拆三墩
   function splitHand() {
-    // 按照选择顺序拆三道（3-5-5张）
     if (selected.length !== 13) return alert("选完13张牌");
     return [
       selected.slice(0, 3).map(i => state.myHand[i]),
