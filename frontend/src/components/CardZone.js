@@ -56,7 +56,7 @@ export default function CardZone({
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-start",
-        background: "#f2f6fa",
+        background: "#fcfcff",
         position: "relative",
         ...style,
         padding: 0,
