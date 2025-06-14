@@ -1,5 +1,5 @@
 // API通信
-const API_BASE = "https://9525.ip-ddns.com/api.php";
+const API_BASE = "https://9525.ip-ddns.com/backend/api.php";
 
 export async function createRoom(playerName) {
   const res = await fetch(`${API_BASE}?action=create_room&player=${encodeURIComponent(playerName)}`);
@@ -13,8 +13,12 @@ export async function startGame(roomId) {
   const res = await fetch(`${API_BASE}?action=start_game&room=${roomId}`);
   return res.json();
 }
-export async function getRoomState(roomId) {
-  const res = await fetch(`${API_BASE}?action=room_state&room=${roomId}`);
+export async function getRoomState(roomId, playerName) {
+  // 增加playerName参数，确保myHand返回
+  const url = playerName
+    ? `${API_BASE}?action=room_state&room=${roomId}&player=${encodeURIComponent(playerName)}`
+    : `${API_BASE}?action=room_state&room=${roomId}`;
+  const res = await fetch(url);
   return res.json();
 }
 export async function submitHand(roomId, playerName, hand) {
