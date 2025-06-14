@@ -131,19 +131,26 @@ export default function App() {
     return <GameRoom roomId={roomId} playerName={MY_NAME} />;
   }
 
-  const bannerH = "16vh";
+  // 计算置牌区高度（全屏-顶部-底部按钮，3等分）
+  const statusH = 90; // 顶部状态横幅高度
+  const buttonH = 120; // 按钮区高度
+  const threeZoneH = `calc((100vh - ${statusH}px - ${buttonH}px) / 3)`;
 
   return (
-    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#eef2f8" }}>
-      {/* 玩家状态横幅 */}
+    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#eef2f8", position: "relative" }}>
+      {/* 1. 玩家状态横幅 */}
       <PlayerStatusBanner
         status={status}
         results={results}
         myName={MY_NAME}
         allPlayers={allPlayers}
-        style={{ minHeight: bannerH }}
+        style={{
+          height: statusH,
+          minHeight: statusH,
+          maxHeight: statusH,
+        }}
       />
-      {/* 头道 */}
+      {/* 2. 头道置牌区 */}
       <CardZone
         zone="head"
         label="头道"
@@ -153,9 +160,13 @@ export default function App() {
         onDrop={onDrop}
         onReturnToHand={onReturnToHand}
         draggingCard={draggingCard}
-        style={{ minHeight: bannerH }}
+        style={{
+          height: threeZoneH,
+          borderBottom: "1px solid #ededed",
+        }}
+        fullArea
       />
-      {/* 中道/手牌区 */}
+      {/* 3. 中道/手牌区 */}
       {mid.length === 5 ? (
         <CardZone
           zone="mid"
@@ -166,7 +177,11 @@ export default function App() {
           onDrop={() => {}}
           onReturnToHand={() => {}}
           draggingCard={null}
-          style={{ minHeight: bannerH }}
+          style={{
+            height: threeZoneH,
+            borderBottom: "1px solid #ededed",
+          }}
+          fullArea
         />
       ) : (
         <CardZone
@@ -178,10 +193,14 @@ export default function App() {
           onDrop={onDrop}
           onReturnToHand={() => {}}
           draggingCard={draggingCard}
-          style={{ minHeight: bannerH }}
+          style={{
+            height: threeZoneH,
+            borderBottom: "1px solid #ededed",
+          }}
+          fullArea
         />
       )}
-      {/* 尾道 */}
+      {/* 4. 尾道置牌区 */}
       <CardZone
         zone="tail"
         label="尾道"
@@ -191,15 +210,28 @@ export default function App() {
         onDrop={onDrop}
         onReturnToHand={onReturnToHand}
         draggingCard={draggingCard}
-        style={{ minHeight: bannerH }}
+        style={{
+          height: threeZoneH,
+          borderBottom: "1px solid #ededed",
+        }}
+        fullArea
       />
-      {/* 按钮横幅 */}
+      {/* 5. 按钮横幅贴底 */}
       <ControlBar
         handleAiSplit={handleAiSplit}
         handleSubmit={handleSubmit}
         aiDisabled={head.length > 0 || tail.length > 0 || mid.length > 0}
         submitDisabled={submitted || !(head.length === 3 && mid.length === 5 && tail.length === 5)}
         submitted={submitted}
+        style={{
+          position: "absolute",
+          left: 0,
+          bottom: 0,
+          width: "100vw",
+          minHeight: buttonH,
+          background: "#f2f6fa",
+          border: "none"
+        }}
       />
     </div>
   );
