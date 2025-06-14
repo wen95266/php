@@ -1,7 +1,66 @@
 import React from "react";
 
-// 简单美观的比牌弹窗
+// 田字型2+2布局，堆叠显示扑克牌（3/5/5张）
+function CardStack({ cards }) {
+  // 堆叠参数
+  const cardW = 32, cardH = 44, overlap = 13;
+  return (
+    <div style={{
+      position: "relative",
+      width: cardW + (cards.length - 1) * overlap,
+      height: cardH,
+      display: "inline-block"
+    }}>
+      {cards.map((card, i) => (
+        <img
+          key={i}
+          src={`/cards/${card.value === "A" ? "ace" :
+                        card.value === "K" ? "king" :
+                        card.value === "Q" ? "queen" :
+                        card.value === "J" ? "jack" :
+                        card.value}_of_${card.suit}.svg`}
+          alt={card.value + card.suit[0].toUpperCase()}
+          style={{
+            position: "absolute",
+            left: i * overlap,
+            top: 0,
+            width: cardW,
+            height: cardH,
+            borderRadius: 3,
+            boxShadow: "0 1px 3px #0001",
+            background: "#fff"
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// 田字型2+2布局容器
+function FourGrid({ children }) {
+  // children: [头道, 中道, 尾道, 玩家名等]
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gridTemplateRows: "1fr 1fr",
+      gap: 0,
+      alignItems: "center",
+      justifyItems: "center"
+    }}>
+      {children}
+    </div>
+  );
+}
+
 export default function CompareDialog({ players, splits, scores, details, onClose }) {
+  // 田字型分布：上面两行，下方两行（最多4人刚好）
+  // 若超过4人，自动新起一组
+  const groups = [];
+  for (let i = 0; i < players.length; i += 4) {
+    groups.push(players.slice(i, i + 4));
+  }
+
   return (
     <div style={{
       position: "fixed",
@@ -15,8 +74,8 @@ export default function CompareDialog({ players, splits, scores, details, onClos
       <div style={{
         background: "#fff",
         borderRadius: 10,
-        minWidth: 340,
-        maxWidth: 540,
+        minWidth: 420,
+        maxWidth: 670,
         padding: "32px 28px 18px 28px",
         boxShadow: "0 8px 32px #0003",
         position: "relative"
@@ -30,57 +89,50 @@ export default function CompareDialog({ players, splits, scores, details, onClos
         }}>
           比牌结果
         </div>
-        <table style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          marginBottom: 18
-        }}>
-          <thead>
-            <tr style={{background:"#f6f8fa"}}>
-              <th style={{padding: "5px 8px"}}>玩家</th>
-              <th style={{padding: "5px 8px"}}>头道</th>
-              <th style={{padding: "5px 8px"}}>中道</th>
-              <th style={{padding: "5px 8px"}}>尾道</th>
-              <th style={{padding: "5px 8px"}}>总分</th>
-              <th style={{padding: "5px 8px"}}>打枪</th>
-            </tr>
-          </thead>
-          <tbody>
-            {players.map((p, idx) => (
-              <tr key={p} style={{background: idx%2===0 ? "#fff" : "#f8faff"}}>
-                <td style={{padding: "6px 8px", fontWeight: 500, color: "#222"}}>{p}</td>
-                <td style={{padding: "6px 8px", color: "#444"}}>
-                  {(details && details[p] && details[p]["牌型"]) ? details[p]["牌型"][0] : ""}
-                  {splits && splits[p] ? (
-                    <div style={{fontSize:12, color:"#888"}}>
-                      {splits[p][0].map(c => c.value + c.suit[0].toUpperCase()).join(" ")}
+        {groups.map((group, gi) => (
+          <div key={gi} style={{marginBottom: gi < groups.length-1 ? 18 : 4}}>
+            <FourGrid>
+              {group.map((p, idx) => (
+                <div key={p} style={{
+                  background: idx % 2 === 0 ? "#f9fafc" : "#f3f6fd",
+                  borderRadius: 7,
+                  boxShadow: "0 1px 5px #0002",
+                  margin: 6,
+                  minWidth: 190,
+                  minHeight: 168,
+                  textAlign: "center",
+                  padding: "10px 7px"
+                }}>
+                  <div style={{ fontWeight: 500, color: "#333", fontSize: 16, marginBottom: 8 }}>{p}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", marginBottom: 5 }}>
+                    <div>
+                      <span style={{ fontSize: 13, color: "#555" }}>{details && details[p] ? details[p]["牌型"][0] : ""}</span>
+                      <CardStack cards={splits && splits[p] ? splits[p][0] : []} />
                     </div>
-                  ) : ""}
-                </td>
-                <td style={{padding: "6px 8px", color: "#444"}}>
-                  {(details && details[p] && details[p]["牌型"]) ? details[p]["牌型"][1] : ""}
-                  {splits && splits[p] ? (
-                    <div style={{fontSize:12, color:"#888"}}>
-                      {splits[p][1].map(c => c.value + c.suit[0].toUpperCase()).join(" ")}
+                    <div>
+                      <span style={{ fontSize: 13, color: "#555" }}>{details && details[p] ? details[p]["牌型"][1] : ""}</span>
+                      <CardStack cards={splits && splits[p] ? splits[p][1] : []} />
                     </div>
-                  ) : ""}
-                </td>
-                <td style={{padding: "6px 8px", color: "#444"}}>
-                  {(details && details[p] && details[p]["牌型"]) ? details[p]["牌型"][2] : ""}
-                  {splits && splits[p] ? (
-                    <div style={{fontSize:12, color:"#888"}}>
-                      {splits[p][2].map(c => c.value + c.suit[0].toUpperCase()).join(" ")}
+                    <div>
+                      <span style={{ fontSize: 13, color: "#555" }}>{details && details[p] ? details[p]["牌型"][2] : ""}</span>
+                      <CardStack cards={splits && splits[p] ? splits[p][2] : []} />
                     </div>
-                  ) : ""}
-                </td>
-                <td style={{padding: "6px 8px", fontWeight: 600, color: "#3869f6"}}>{scores && scores[p]}</td>
-                <td style={{padding: "6px 8px", color: "#e67e22"}}>
-                  {(details && details[p] && details[p]["打枪"]) ? details[p]["打枪"] : 0}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </div>
+                  <div style={{ fontSize: 15, color: "#3869f6", fontWeight: 600, margin: "2px 0 1px 0" }}>
+                    {scores && scores[p] !== undefined ? `${scores[p]}分` : ""}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#e67e22", fontWeight: 500 }}>
+                    打枪：{details && details[p] && details[p]["打枪"] ? details[p]["打枪"] : 0}
+                  </div>
+                </div>
+              ))}
+              {/* 补足4格空框 */}
+              {[...Array(4 - group.length)].map((_, idx) => (
+                <div key={"empty"+idx} />
+              ))}
+            </FourGrid>
+          </div>
+        ))}
         <div style={{textAlign:"center", marginBottom:8}}>
           <button onClick={onClose}
             style={{
