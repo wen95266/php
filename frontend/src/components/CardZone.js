@@ -9,6 +9,14 @@ function cardImg(card) {
   return `/cards/${v}_of_${card.suit}.svg`;
 }
 
+/**
+ * 彻底保证：
+ * - 头道/手牌/尾道所有区域的牌永远紧贴左侧，剩余空间透明占位，不居中
+ * - 卡牌按maxCards平均分配格子宽度，全部区域一致
+ * - 无论什么屏幕无滚动条（body、html、所有div都overflow:hidden）
+ * - 卡牌自适应高度，永远不超出置牌区
+ * - 说明文字绝对定位，扑克牌可覆盖
+ */
 export default function CardZone({
   zone,
   label,
@@ -23,13 +31,9 @@ export default function CardZone({
   // 拖拽放置
   const canDrop = (zone !== "mid" && cards.length < maxCards);
 
-  // 说明文字绝对定位
-  const labelLeft = 12;
-  const labelTop = 8;
-
-  // 每区都严格maxCards个格子，牌紧贴左侧
-  const cardWidth = `calc((100vw - 36px) / ${maxCards})`;
-  const cardHeight = `calc(100% - 30px)`;
+  // 卡牌宽高按maxCards严格平分
+  const cardBoxWidth = `calc((100vw - 40px) / ${maxCards})`; // 40px: 左右都留极小安全边距
+  const cardBoxHeight = `calc(100% - 38px)`; // 38px: 顶部说明文字高度+一点点padding
 
   return (
     <div
@@ -42,14 +46,16 @@ export default function CardZone({
         justifyContent: "center",
         background: "#f2f6fa",
         ...style,
-        overflow: "hidden"
+        padding: 0,
+        margin: 0,
+        overflow: "hidden", // 无滚动条
       }}
     >
       <div
         style={{
-          width: fullArea ? "98vw" : "auto",
-          height: fullArea ? "96%" : "auto",
-          minHeight: fullArea ? "86%" : undefined,
+          width: fullArea ? "100vw" : "98vw",
+          height: fullArea ? "97%" : "94%",
+          minHeight: fullArea ? "85%" : undefined,
           minWidth: fullArea ? "80vw" : undefined,
           border: "2px dashed #bbb",
           borderRadius: 8,
@@ -61,16 +67,17 @@ export default function CardZone({
           boxSizing: "border-box",
           boxShadow: "0 2px 6px #fafafa",
           opacity: (cards.length >= maxCards && zone !== "hand" && zone !== "mid") ? 0.7 : 1,
-          overflow: "hidden"
+          overflow: "hidden",
+          padding: 0,
         }}
         onDragOver={canDrop ? e => { e.preventDefault(); } : undefined}
         onDrop={canDrop ? () => onDrop(zone) : undefined}
       >
-        {/* 说明文字 */}
+        {/* 说明文字绝对定位，扑克牌可覆盖 */}
         <div style={{
           position: "absolute",
-          top: labelTop,
-          left: labelLeft,
+          top: 8,
+          left: 14,
           fontWeight: 600,
           color: "#444",
           fontSize: 18,
@@ -80,31 +87,35 @@ export default function CardZone({
         }}>
           {label} ({cards.length}/{maxCards}):
         </div>
-        {/* 卡牌区：每区用maxCards个格子，牌紧贴左侧，没有滚动条 */}
+        {/* 卡牌区：严格maxCards个格子，每个位置左对齐 */}
         <div
           style={{
             width: "100%",
             height: "100%",
-            marginTop: 30,
-            marginLeft: 0,
-            marginRight: 0,
+            marginTop: 38,
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "flex-start",
             boxSizing: "border-box",
             overflow: "hidden",
-            gap: 0
+            gap: 0,
+            padding: 0,
           }}
         >
           {[...Array(maxCards)].map((_, idx) => (
             <div
               key={idx}
               style={{
-                width: cardWidth,
-                height: cardHeight,
+                width: cardBoxWidth,
+                height: cardBoxHeight,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center"
+                justifyContent: "center",
+                boxSizing: "border-box",
+                margin: 0,
+                padding: 0,
+                overflow: "hidden",
+                background: "transparent"
               }}
             >
               {cards[idx] &&
@@ -119,6 +130,7 @@ export default function CardZone({
                     width: "94%",
                     height: "auto",
                     maxHeight: "98%",
+                    maxWidth: "98%",
                     objectFit: "contain",
                     display: "block",
                     background: "none",
