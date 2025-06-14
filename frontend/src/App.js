@@ -21,7 +21,7 @@ export default function App() {
 
   // 三道区
   const [zones, setZones] = useState({ head: [], mid: [], tail: [] });
-  const [selectedCard, setSelectedCard] = useState(null); // 新增：选中牌
+  const [selectedCard, setSelectedCard] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
   // 比牌弹窗
@@ -73,11 +73,9 @@ export default function App() {
       }
     }, 1200);
     return () => clearInterval(timer);
-    // eslint-disable-next-line
   }, [roomId, showCompare, autoAISplit]);
 
-  // ------- 新增：点击选牌与目标区操作 -------
-  // 选中某张牌
+  // 点击选中某张牌
   const handleSelectCard = (card, fromZone) => {
     if (
       selectedCard &&
@@ -85,13 +83,13 @@ export default function App() {
       selectedCard.card.suit === card.suit &&
       selectedCard.zone === fromZone
     ) {
-      setSelectedCard(null); // 再次点击取消选中
+      setSelectedCard(null); // 取消选中
     } else {
       setSelectedCard({ card, zone: fromZone });
     }
   };
 
-  // 点击某道牌区空白或任意处进行移动（不再提前限制数量）
+  // 点击区移动牌（不做数量限制）
   const handleZoneClick = (toZone) => {
     if (!selectedCard) return;
     const { card, zone: fromZone } = selectedCard;
@@ -99,7 +97,6 @@ export default function App() {
       setSelectedCard(null);
       return;
     }
-    // 移动牌（不限制数量，允许任意移动）
     const cardKey = c => c.value + "-" + c.suit;
     let newZones = {
       head: zones.head.filter(c => cardKey(c) !== cardKey(card)),
@@ -111,7 +108,7 @@ export default function App() {
     setSelectedCard(null);
   };
 
-  // AI分牌按钮（可覆盖当前三道）
+  // AI分牌（覆盖三道，依然可继续点选修改）
   const handleAiSplit = () => {
     const allCards = [...zones.head, ...zones.mid, ...zones.tail];
     if (allCards.length !== 13) return;
@@ -120,7 +117,7 @@ export default function App() {
     setSelectedCard(null);
   };
 
-  // 提交
+  // 只有提交时才做3/5/5校验
   const handleSubmit = async () => {
     const { head, mid, tail } = zones;
     if (head.length !== 3 || mid.length !== 5 || tail.length !== 5) {
@@ -281,7 +278,7 @@ export default function App() {
           style={{
             width: "100vw",
             minHeight: "100%",
-            background: "#f2f6fa",
+            background: "#fcfcff",
             border: "none"
           }}
         />
