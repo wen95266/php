@@ -3,7 +3,7 @@ import { createRoom, joinRoom, startGame, getRoomState, submitHand } from "./api
 import PlayerStatusBanner from "./components/PlayerStatusBanner";
 import CardZone from "./components/CardZone";
 import ControlBar from "./components/ControlBar";
-import CompareDialog from "./components/CompareDialog"; // <--- 必须加这一行
+import CompareDialog from "./components/CompareDialog";
 import { cycleAiSplit } from "./utils/ai";
 
 // 自动匹配API
@@ -92,6 +92,7 @@ export default function App() {
       }
     }, 1200);
     return () => clearInterval(timer);
+    // eslint-disable-next-line
   }, [roomId, showCompare]);
 
   // 拖拽
@@ -199,6 +200,18 @@ export default function App() {
     setHead([]);
     setTail([]);
     setMid([]);
+    setSubmitted(false);
+    setShowCompare(false);
+    setCompareData(null);
+  };
+
+  // 继续游戏（新一轮发牌）
+  const handleRestartGame = async () => {
+    await startGame(roomId);
+    setHand([]);
+    setHead([]);
+    setMid([]);
+    setTail([]);
     setSubmitted(false);
     setShowCompare(false);
     setCompareData(null);
@@ -391,7 +404,7 @@ export default function App() {
           splits={compareData.splits}
           scores={compareData.scores}
           details={compareData.details}
-          onClose={() => setShowCompare(false)}
+          onRestart={handleRestartGame}
         />
       )}
     </div>
