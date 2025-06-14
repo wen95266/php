@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { createRoom, joinRoom, startGame, getRoomState, submitHand } from "./api";
+import { createRoom, joinRoom, startGame, getRoomState, submitHand, getResults } from "./api";
 import PlayerStatusBanner from "./components/PlayerStatusBanner";
 import CardZone from "./components/CardZone";
 import ControlBar from "./components/ControlBar";
@@ -54,10 +54,25 @@ export default function App() {
       if (state.status === "playing" && hand.length === 0 && state.myHand) {
         setHand(state.myHand);
       }
+      // 自动弹出比牌界面
+      if (state.status === "finished" && state.results && !showCompare) {
+        // 比牌弹窗数据
+        const splits = {};
+        (state.players||[]).forEach(name => {
+          splits[name] = state?.submits?.[name] || [];
+        });
+        setCompareData({
+          players: state.players,
+          splits: state.submits || {},
+          scores: state.results["总分"] || {},
+          details: state.results["详情"] || {},
+        });
+        setShowCompare(true);
+      }
     }, 1200);
     return () => clearInterval(timer);
     // eslint-disable-next-line
-  }, [roomId, hand.length]);
+  }, [roomId, hand.length, showCompare]);
 
   // 拖拽事件
   const onDragStart = (card, from) => {
@@ -129,18 +144,7 @@ export default function App() {
     await submitHand(roomId, MY_NAME, [head, mid, tail]);
     setSubmitted(true);
 
-    // 模拟AI分牌（演示用，实际应从后端获取）
-    const splits = {};
-    splits[MY_NAME] = [head, mid, tail];
-    for (let name of AI_NAMES) {
-      // 随机生成AI分牌（建议和后端一致，实际应取后端结果）
-      splits[name] = advancedAiSplit([]); // 这里应传入AI手牌
-    }
-    // 假设分数为0
-    const scores = {};
-    for (let name of [MY_NAME, ...AI_NAMES]) scores[name] = 0;
-    setCompareData({ players: [MY_NAME, ...AI_NAMES], splits, scores });
-    setShowCompare(true);
+    // 弹出比牌界面的逻辑由轮询控制
   };
 
   if (!joined || !roomId) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#f2f6fa"}}>房间初始化中...</div>;
@@ -260,6 +264,7 @@ export default function App() {
           players={compareData.players}
           splits={compareData.splits}
           scores={compareData.scores}
+          details={compareData.details}
           onClose={() => setShowCompare(false)}
         />
       )}
