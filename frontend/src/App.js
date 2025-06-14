@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { createRoom, joinRoom, startGame, getRoomState, submitHand, getResults } from "./api";
+import { createRoom, joinRoom, startGame, getRoomState, submitHand } from "./api";
 import PlayerStatusBanner from "./components/PlayerStatusBanner";
 import CardZone from "./components/CardZone";
 import ControlBar from "./components/ControlBar";
-import GameRoom from "./components/GameRoom";
-import CompareDialog from "./components/CompareDialog";
 import { cycleAiSplit } from "./utils/ai";
 
 // 新增API: 自动匹配、取消匹配
