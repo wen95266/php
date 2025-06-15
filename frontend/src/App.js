@@ -75,36 +75,24 @@ export default function App() {
     return () => clearInterval(timer);
   }, [roomId, showCompare, autoAISplit]);
 
-  // 支持多选
-  const handleSelectCard = (card, fromZone, e) => {
-    // 多选操作
+  // 鼠标直接多选（无须Ctrl/Shift）：点选同一区的多张牌可多选，再点已选中取消
+  const handleSelectCard = (card, fromZone) => {
     setSelectedCard(sel => {
-      // 当前选区不一致，直接新建
       if (!sel || sel.zone !== fromZone) {
         return { cards: [card], zone: fromZone };
       }
-      // 已选中的卡牌
       let selectedArr = Array.isArray(sel.cards) ? sel.cards : [];
-      // 是否已被选中
       const exist = selectedArr.some(c => c.value === card.value && c.suit === card.suit);
       let nextArr;
-      // shift/ctrl支持多选
-      if (e && (e.ctrlKey || e.metaKey || e.shiftKey)) {
-        if (exist) {
-          // 取消选中
-          nextArr = selectedArr.filter(c => !(c.value === card.value && c.suit === card.suit));
-        } else {
-          // 增加选中
-          nextArr = [...selectedArr, card];
-        }
-        // 空则取消全部
-        if (nextArr.length === 0) return null;
-        return { cards: nextArr, zone: fromZone };
+      if (exist) {
+        // 再点取消
+        nextArr = selectedArr.filter(c => !(c.value === card.value && c.suit === card.suit));
       } else {
-        // 单选模式
-        if (exist && selectedArr.length === 1) return null;
-        return { cards: [card], zone: fromZone };
+        // 增加选中
+        nextArr = [...selectedArr, card];
       }
+      if (nextArr.length === 0) return null;
+      return { cards: nextArr, zone: fromZone };
     });
   };
 
