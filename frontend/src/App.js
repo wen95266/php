@@ -89,7 +89,7 @@ export default function App() {
     }
   };
 
-  // 点击区移动牌（修正为函数式setZones，彻底解决AI分牌后无法修改的问题）
+  // 点击区移动牌（必须为函数式setZones）
   const handleZoneClick = (toZone) => {
     if (!selectedCard) return;
     const { card, zone: fromZone } = selectedCard;
