@@ -14,8 +14,8 @@ export default function CardZone({
   zone,
   label,
   cards,
-  selectedCard,        // 允许为单张对象或多张数组
-  onSelectCard,        // 修改为支持多选
+  selectedCard,        // {cards:[], zone:""}
+  onSelectCard,
   onZoneClick,
   style
 }) {
@@ -44,7 +44,6 @@ export default function CardZone({
     : CARD_WIDTH + MIN_GAP;
 
   // 多选模式辅助
-  // selectedCard: {cards: [], zone: "xxx"} 或 null
   let selectedArr = [];
   let selectedZone = null;
   if (selectedCard && Array.isArray(selectedCard.cards)) {
@@ -65,10 +64,10 @@ export default function CardZone({
     );
   }
 
-  // 支持 shift/ctrl 多选
+  // 鼠标直接多选/取消选（无需Ctrl/Shift），再点同区已选中牌取消选中，否则多选
   function handleCardClick(e, card, zone) {
     e.stopPropagation();
-    onSelectCard(card, zone, e);
+    onSelectCard(card, zone);
   }
 
   // 支持区块整体点击移动
