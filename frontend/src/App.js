@@ -89,7 +89,7 @@ export default function App() {
     }
   };
 
-  // 点击区移动牌（必须为函数式setZones）
+  // 允许随意移动，无数量限制
   const handleZoneClick = (toZone) => {
     if (!selectedCard) return;
     const { card, zone: fromZone } = selectedCard;
