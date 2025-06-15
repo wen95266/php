@@ -204,7 +204,7 @@ function enhancedAiSplit(hand) {
     let tail = straightFlush;
     let mid = getHighCards(remain, 5);
     let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
-    if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+    if (isLegalOrder([head, mid, tail]) && isLegalSplitResult([head, mid, tail], hand)) return [head, mid, tail];
   }
   // 2. 四条
   let four = getFourOfKind(remain);
@@ -214,7 +214,7 @@ function enhancedAiSplit(hand) {
     let mid = getFullHouse(remain) || getHighCards(remain, 5);
     if (mid) {
       let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
-      if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+      if (isLegalOrder([head, mid, tail]) && isLegalSplitResult([head, mid, tail], hand)) return [head, mid, tail];
     }
   }
   // 3. 葫芦
@@ -225,7 +225,7 @@ function enhancedAiSplit(hand) {
     let mid = getFullHouse(remain) || getHighCards(remain, 5);
     if (mid) {
       let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
-      if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+      if (isLegalOrder([head, mid, tail]) && isLegalSplitResult([head, mid, tail], hand)) return [head, mid, tail];
     }
   }
   // 4. 同花
@@ -235,7 +235,7 @@ function enhancedAiSplit(hand) {
     let tail = flush;
     let mid = getStraight(remain) ? getHighCards(remain, 5) : getHighCards(remain, 5);
     let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
-    if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+    if (isLegalOrder([head, mid, tail]) && isLegalSplitResult([head, mid, tail], hand)) return [head, mid, tail];
   }
   // 5. 顺子
   let straight = getStraight(remain);
@@ -248,7 +248,7 @@ function enhancedAiSplit(hand) {
     remain = remain.filter(c => !tail.includes(c));
     let mid = getHighCards(remain, 5);
     let head = getHighCards(remain.filter(c => !mid.includes(c)), 3);
-    if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+    if (isLegalOrder([head, mid, tail]) && isLegalSplitResult([head, mid, tail], hand)) return [head, mid, tail];
   }
   // 6. 普通高牌分配（优先头道一对，避免鸡蛋）
   let sorted = sortByValueDesc(hand);
@@ -262,14 +262,27 @@ function enhancedAiSplit(hand) {
     // 余下10张分中、尾
     let mid = others.slice(1, 6);
     let tail = others.slice(6, 11);
-    if (isLegalOrder([head, mid, tail])) return [head, mid, tail];
+    if (isLegalOrder([head, mid, tail]) && isLegalSplitResult([head, mid, tail], hand)) return [head, mid, tail];
   }
   // 最后暴力均分
-  return [
+  let fallback = [
     sorted.slice(0, 3),
     sorted.slice(3, 8),
     sorted.slice(8, 13)
   ];
+  if (isLegalSplitResult(fallback, hand)) return fallback;
+  // 兜底（随机合法分牌）
+  for (let t = 0; t < 2000; ++t) {
+    let shuf = hand.slice();
+    for (let i = shuf.length - 1; i > 0; --i) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuf[i], shuf[j]] = [shuf[j], shuf[i]];
+    }
+    let split = [shuf.slice(0, 3), shuf.slice(3, 8), shuf.slice(8, 13)];
+    if (isLegalOrder(split) && isLegalSplitResult(split, hand)) return split;
+  }
+  // 极端兜底
+  return [hand.slice(0,3), hand.slice(3,8), hand.slice(8,13)];
 }
 
 // --- 原来的智能遍历接口，允许多种分法 ---
