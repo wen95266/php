@@ -14,8 +14,8 @@ export default function CardZone({
   zone,
   label,
   cards,
-  selectedCard,
-  onSelectCard,
+  selectedCard,        // 允许为单张对象或多张数组
+  onSelectCard,        // 修改为支持多选
   onZoneClick,
   style
 }) {
@@ -43,12 +43,36 @@ export default function CardZone({
     ? (size.width - CARD_WIDTH - 32) / (cards.length - 1)
     : CARD_WIDTH + MIN_GAP;
 
-  // 判断是否有选中牌，且选中牌不是本区
-  const showMoveHere =
-    selectedCard && selectedCard.zone !== zone;
+  // 多选模式辅助
+  // selectedCard: {cards: [], zone: "xxx"} 或 null
+  let selectedArr = [];
+  let selectedZone = null;
+  if (selectedCard && Array.isArray(selectedCard.cards)) {
+    selectedArr = selectedCard.cards;
+    selectedZone = selectedCard.zone;
+  } else if (selectedCard && selectedCard.card) {
+    selectedArr = [selectedCard.card];
+    selectedZone = selectedCard.zone;
+  }
 
-  // 优化：无论点击卡牌还是label区域都可触发 onZoneClick
-  function handleMoveHereClick(e) {
+  // 判断是否有选中牌（且选区不是本区）
+  const showMoveHere = selectedArr.length > 0 && selectedZone !== zone;
+
+  // 判断卡牌是否被选中
+  function isCardSelected(card) {
+    return selectedArr.some(sel =>
+      sel.value === card.value && sel.suit === card.suit && selectedZone === zone
+    );
+  }
+
+  // 支持 shift/ctrl 多选
+  function handleCardClick(e, card, zone) {
+    e.stopPropagation();
+    onSelectCard(card, zone, e);
+  }
+
+  // 支持区块整体点击移动
+  function handleZoneAreaClick(e) {
     if (showMoveHere) {
       e.stopPropagation();
       onZoneClick(zone);
@@ -76,12 +100,7 @@ export default function CardZone({
         overflow: "hidden",
         cursor: showMoveHere ? "pointer" : "default"
       }}
-      onClick={e => {
-        // 只在点击空白区时触发onZoneClick
-        if (e.target === e.currentTarget && showMoveHere) {
-          onZoneClick(zone);
-        }
-      }}
+      onClick={handleZoneAreaClick}
     >
       {/* 右上角半透明说明，选中牌时显示“移动到此处” */}
       <div
@@ -95,12 +114,11 @@ export default function CardZone({
           fontSize: Math.max(18, size.height * 0.17),
           zIndex: 2,
           opacity: showMoveHere ? 1 : 0.44,
-          pointerEvents: showMoveHere ? "auto" : "none",
+          pointerEvents: "none",
           userSelect: "none",
           transition: "color 0.2s, opacity 0.2s",
           cursor: showMoveHere ? "pointer" : "default"
         }}
-        onClick={handleMoveHereClick}
       >
         {showMoveHere ? `${label}（移动到此处）` : label}
       </div>
@@ -120,11 +138,7 @@ export default function CardZone({
         }}
       >
         {cards.map((card, idx) => {
-          const isSelected =
-            selectedCard &&
-            selectedCard.card.value === card.value &&
-            selectedCard.card.suit === card.suit &&
-            selectedCard.zone === zone;
+          const selected = isCardSelected(card);
           return (
             <div
               key={card.suit + card.value + idx}
@@ -143,16 +157,13 @@ export default function CardZone({
                 margin: 0,
                 padding: 0,
                 overflow: "hidden",
-                background: isSelected ? "#e2f0ff" : "transparent",
+                background: selected ? "#e2f0ff" : "transparent",
                 zIndex: idx,
-                border: isSelected ? "3px solid #3869f6" : undefined,
-                boxShadow: isSelected ? "0 0 10px #3869f6" : undefined,
+                border: selected ? "3px solid #3869f6" : undefined,
+                boxShadow: selected ? "0 0 10px #3869f6" : undefined,
                 cursor: "pointer"
               }}
-              onClick={e => {
-                e.stopPropagation();
-                onSelectCard(card, zone);
-              }}
+              onClick={e => handleCardClick(e, card, zone)}
             >
               <img
                 src={cardImg(card)}
