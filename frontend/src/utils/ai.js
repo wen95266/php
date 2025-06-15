@@ -1,4 +1,4 @@
-// AI分牌与策略模块（增强智能版）
+// AI分牌与策略模块（增强智能版，含健壮性校验）
 
 import { VALUES, SUITS } from "./cardUtils";
 
@@ -170,6 +170,28 @@ function getHighCards(cards, n=5) {
   return sortByValueDesc(cards).slice(0, n);
 }
 
+// 检查分牌是否合法且无重复/遗漏
+function isLegalSplitResult(split, srcHand) {
+  if (!Array.isArray(split) || split.length !== 3) return false;
+  if (split[0].length !== 3 || split[1].length !== 5 || split[2].length !== 5) return false;
+  const all = [...split[0], ...split[1], ...split[2]];
+  if (all.length !== 13) return false;
+  // 检查是否有重复
+  const seen = {};
+  for (const c of all) {
+    const k = c.value + "_" + c.suit;
+    if (seen[k]) return false;
+    seen[k] = 1;
+  }
+  // 检查是否和原始手牌完全一致
+  if (srcHand) {
+    const srcKeys = srcHand.map(c => c.value + "_" + c.suit).sort();
+    const allKeys = all.map(c => c.value + "_" + c.suit).sort();
+    for (let i = 0; i < 13; ++i) if (srcKeys[i] !== allKeys[i]) return false;
+  }
+  return true;
+}
+
 // --- 增强AI分牌：优先大牌道，合理分配头道 ---
 // 优先保证尾道为最大牌型（如同花顺、炸弹、葫芦、同花、顺子等），头道尽量大一对或散牌，避免头道被鸡蛋。
 function enhancedAiSplit(hand) {
@@ -320,13 +342,25 @@ function isLegalOrder([head, mid, tail]) {
 let aiSplitCache = {};
 export function advancedAiSplit(hand, nth = 0) {
   // 先用增强AI分一次
-  if (nth === 0) return enhancedAiSplit(hand);
+  if (nth === 0) {
+    const result = enhancedAiSplit(hand);
+    // 健壮性校验
+    if (isLegalSplitResult(result, hand)) return result;
+    // fallback
+    return [
+      hand.slice(0, 3),
+      hand.slice(3, 8),
+      hand.slice(8, 13)
+    ];
+  }
   // 缓存
   const key = hand.map(c => c.value + c.suit).sort().join(",") + ":" + nth;
   if (aiSplitCache[key]) return aiSplitCache[key];
   let allSplits = [];
   for (let split of splitHandAllWays(hand)) {
     if (!isLegalOrder(split)) continue;
+    // 健壮性校验
+    if (!isLegalSplitResult(split, hand)) continue;
     allSplits.push(split);
     if (allSplits.length > 6000) break;
   }
@@ -341,7 +375,17 @@ let splitIndexMap = {};
 export function cycleAiSplit(hand, uniqueKey = "default") {
   if (!splitIndexMap[uniqueKey]) splitIndexMap[uniqueKey] = 0;
   const idx = splitIndexMap[uniqueKey];
-  const result = advancedAiSplit(hand, idx);
+  let result = advancedAiSplit(hand, idx);
+
+  // 健壮性校验和兜底
+  if (!isLegalSplitResult(result, hand)) {
+    result = [
+      hand.slice(0, 3),
+      hand.slice(3, 8),
+      hand.slice(8, 13)
+    ];
+  }
+
   splitIndexMap[uniqueKey]++;
   return result;
 }
