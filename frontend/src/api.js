@@ -33,3 +33,14 @@ export async function getResults(roomId) {
   const res = await fetch(`${API_BASE}?action=get_results&room=${roomId}`);
   return res.json();
 }
+// ...原有API...
+
+// 新增：后端AI智能分牌
+export async function backendAiSplit(hand) {
+  const res = await fetch("/backend/ai.php", {
+    method: "POST",
+    body: JSON.stringify({ hand }),
+    headers: { "Content-Type": "application/json" }
+  });
+  return res.json();
+}
