@@ -43,6 +43,10 @@ export default function CardZone({
     ? (size.width - CARD_WIDTH - 32) / (cards.length - 1)
     : CARD_WIDTH + MIN_GAP;
 
+  // 判断是否有选中牌，且选中牌不是本区
+  const showMoveHere =
+    selectedCard && selectedCard.zone !== zone;
+
   return (
     <div
       ref={containerRef}
@@ -62,14 +66,16 @@ export default function CardZone({
         padding: 0,
         margin: 0,
         overflow: "hidden",
-        cursor: "pointer"
+        cursor: showMoveHere ? "pointer" : "default"
       }}
       onClick={e => {
         // 只在点击空白区时触发onZoneClick
-        if (e.target === e.currentTarget) onZoneClick(zone);
+        if (e.target === e.currentTarget && showMoveHere) {
+          onZoneClick(zone);
+        }
       }}
     >
-      {/* 右上角半透明说明，只显示头道/中道/尾道 */}
+      {/* 右上角半透明说明，选中牌时显示“移动到此处” */}
       <div
         className="cardzone-label"
         style={{
@@ -77,14 +83,15 @@ export default function CardZone({
           top: 10,
           right: 18,
           fontWeight: 600,
-          color: "#444",
+          color: showMoveHere ? "#3869f6" : "#444",
           fontSize: Math.max(18, size.height * 0.17),
           zIndex: 2,
-          opacity: 0.44,
+          opacity: showMoveHere ? 1 : 0.44,
           pointerEvents: "none",
-          userSelect: "none"
+          userSelect: "none",
+          transition: "color 0.2s, opacity 0.2s"
         }}>
-        {label}
+        {showMoveHere ? `${label}（移动到此处）` : label}
       </div>
       {/* 卡牌区域 */}
       <div
