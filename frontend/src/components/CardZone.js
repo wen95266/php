@@ -47,6 +47,14 @@ export default function CardZone({
   const showMoveHere =
     selectedCard && selectedCard.zone !== zone;
 
+  // 优化：无论点击卡牌还是label区域都可触发 onZoneClick
+  function handleMoveHereClick(e) {
+    if (showMoveHere) {
+      e.stopPropagation();
+      onZoneClick(zone);
+    }
+  }
+
   return (
     <div
       ref={containerRef}
@@ -87,10 +95,13 @@ export default function CardZone({
           fontSize: Math.max(18, size.height * 0.17),
           zIndex: 2,
           opacity: showMoveHere ? 1 : 0.44,
-          pointerEvents: "none",
+          pointerEvents: showMoveHere ? "auto" : "none",
           userSelect: "none",
-          transition: "color 0.2s, opacity 0.2s"
-        }}>
+          transition: "color 0.2s, opacity 0.2s",
+          cursor: showMoveHere ? "pointer" : "default"
+        }}
+        onClick={handleMoveHereClick}
+      >
         {showMoveHere ? `${label}（移动到此处）` : label}
       </div>
       {/* 卡牌区域 */}
