@@ -89,7 +89,7 @@ export default function App() {
     }
   };
 
-  // 点击区移动牌（不做数量限制）
+  // 点击区移动牌（修正为函数式setZones，彻底解决AI分牌后无法修改的问题）
   const handleZoneClick = (toZone) => {
     if (!selectedCard) return;
     const { card, zone: fromZone } = selectedCard;
@@ -98,13 +98,15 @@ export default function App() {
       return;
     }
     const cardKey = c => c.value + "-" + c.suit;
-    let newZones = {
-      head: zones.head.filter(c => cardKey(c) !== cardKey(card)),
-      mid: zones.mid.filter(c => cardKey(c) !== cardKey(card)),
-      tail: zones.tail.filter(c => cardKey(c) !== cardKey(card)),
-    };
-    newZones[toZone].push(card);
-    setZones(newZones);
+    setZones(prevZones => {
+      let newZones = {
+        head: prevZones.head.filter(c => cardKey(c) !== cardKey(card)),
+        mid: prevZones.mid.filter(c => cardKey(c) !== cardKey(card)),
+        tail: prevZones.tail.filter(c => cardKey(c) !== cardKey(card)),
+      };
+      newZones[toZone].push(card);
+      return newZones;
+    });
     setSelectedCard(null);
   };
 
