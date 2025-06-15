@@ -1,6 +1,7 @@
 html, body, #root, .main-layout {
   width: 100vw;
   height: 100vh;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -14,6 +15,7 @@ html, body, #root, .main-layout {
 .main-layout {
   width: 100vw;
   height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: #f2f6fa;
@@ -110,7 +112,7 @@ html, body, #root, .main-layout {
 }
 
 /* 手机端自适应修改 */
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   html, body, #root, .main-layout {
     min-width: 100vw !important;
     max-width: 100vw !important;
@@ -180,7 +182,11 @@ html, body, #root, .main-layout {
   }
 }
 
-@media (max-width: 430px) {
+/* 超小屏幕更紧凑 */
+@media (max-width: 430px), (max-height: 700px) {
+  .main-layout {
+    font-size: 13px !important;
+  }
   .cardzone-label {
     font-size: 11px !important;
     top: 2px !important;
