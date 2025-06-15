@@ -21,7 +21,7 @@ export default function App() {
 
   // 三道区
   const [zones, setZones] = useState({ head: [], mid: [], tail: [] });
-  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null); // {cards:[], zone:""}
   const [submitted, setSubmitted] = useState(false);
 
   // 比牌弹窗
@@ -75,36 +75,57 @@ export default function App() {
     return () => clearInterval(timer);
   }, [roomId, showCompare, autoAISplit]);
 
-  // 点击选中某张牌
-  const handleSelectCard = (card, fromZone) => {
-    if (
-      selectedCard &&
-      selectedCard.card.value === card.value &&
-      selectedCard.card.suit === card.suit &&
-      selectedCard.zone === fromZone
-    ) {
-      setSelectedCard(null); // 取消选中
-    } else {
-      setSelectedCard({ card, zone: fromZone });
-    }
+  // 支持多选
+  const handleSelectCard = (card, fromZone, e) => {
+    // 多选操作
+    setSelectedCard(sel => {
+      // 当前选区不一致，直接新建
+      if (!sel || sel.zone !== fromZone) {
+        return { cards: [card], zone: fromZone };
+      }
+      // 已选中的卡牌
+      let selectedArr = Array.isArray(sel.cards) ? sel.cards : [];
+      // 是否已被选中
+      const exist = selectedArr.some(c => c.value === card.value && c.suit === card.suit);
+      let nextArr;
+      // shift/ctrl支持多选
+      if (e && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+        if (exist) {
+          // 取消选中
+          nextArr = selectedArr.filter(c => !(c.value === card.value && c.suit === card.suit));
+        } else {
+          // 增加选中
+          nextArr = [...selectedArr, card];
+        }
+        // 空则取消全部
+        if (nextArr.length === 0) return null;
+        return { cards: nextArr, zone: fromZone };
+      } else {
+        // 单选模式
+        if (exist && selectedArr.length === 1) return null;
+        return { cards: [card], zone: fromZone };
+      }
+    });
   };
 
   // 允许随意移动，无数量限制
   const handleZoneClick = (toZone) => {
-    if (!selectedCard) return;
-    const { card, zone: fromZone } = selectedCard;
+    if (!selectedCard || !selectedCard.cards || !selectedCard.cards.length) return;
+    const cardsToMove = selectedCard.cards;
+    const fromZone = selectedCard.zone;
     if (fromZone === toZone) {
       setSelectedCard(null);
       return;
     }
     const cardKey = c => c.value + "-" + c.suit;
     setZones(prevZones => {
+      // 先移除所有待移动卡牌
       let newZones = {
-        head: prevZones.head.filter(c => cardKey(c) !== cardKey(card)),
-        mid: prevZones.mid.filter(c => cardKey(c) !== cardKey(card)),
-        tail: prevZones.tail.filter(c => cardKey(c) !== cardKey(card)),
+        head: prevZones.head.filter(c => !cardsToMove.some(m => cardKey(m) === cardKey(c))),
+        mid: prevZones.mid.filter(c => !cardsToMove.some(m => cardKey(m) === cardKey(c))),
+        tail: prevZones.tail.filter(c => !cardsToMove.some(m => cardKey(m) === cardKey(c))),
       };
-      newZones[toZone].push(card);
+      newZones[toZone].push(...cardsToMove);
       return newZones;
     });
     setSelectedCard(null);
