@@ -14,7 +14,7 @@ export default function CardZone({
   zone,
   label,
   cards,
-  selectedCard,        // {cards:[], zone:""}
+  selectedCard,
   onSelectCard,
   onZoneClick,
   style
@@ -32,16 +32,18 @@ export default function CardZone({
   }, [containerRef.current, style?.height, style?.width]);
 
   // 卡牌宽高比
-  const CARD_HEIGHT = size.height * 0.82;
+  const CARD_HEIGHT = Math.max(64, size.height * 0.82);
   const CARD_WIDTH = CARD_HEIGHT * 0.7;
-  const MIN_GAP = Math.max(12, CARD_WIDTH * 0.18);
-
-  // 是否需要堆叠
-  const totalWidth = cards.length * CARD_WIDTH + (cards.length - 1) * MIN_GAP;
-  const useStack = totalWidth > size.width;
-  const overlap = useStack && cards.length > 1
-    ? (size.width - CARD_WIDTH - 32) / (cards.length - 1)
-    : CARD_WIDTH + MIN_GAP;
+  // 计算是否需要堆叠
+  const maxShow = cards.length;
+  const minGap = 10;
+  const totalWidth = maxShow * CARD_WIDTH + (maxShow - 1) * minGap;
+  // 堆叠条件：超出容器宽度
+  let useStack = totalWidth > size.width;
+  // 堆叠时的重叠宽度
+  let overlap = useStack && cards.length > 1
+    ? Math.max((size.width - CARD_WIDTH - 16) / (cards.length - 1), 20)
+    : CARD_WIDTH + minGap;
 
   // 多选模式辅助
   let selectedArr = [];
@@ -64,13 +66,11 @@ export default function CardZone({
     );
   }
 
-  // 鼠标直接多选/取消选（无需Ctrl/Shift），再点同区已选中牌取消选中，否则多选
   function handleCardClick(e, card, zone) {
     e.stopPropagation();
     onSelectCard(card, zone);
   }
 
-  // 支持区块整体点击移动
   function handleZoneAreaClick(e) {
     if (showMoveHere) {
       e.stopPropagation();
@@ -129,22 +129,25 @@ export default function CardZone({
           minWidth: "100vw",
           maxWidth: "100vw",
           height: "100%",
-          display: "block",
           position: "relative",
           boxSizing: "border-box",
           overflowX: "visible",
-          paddingLeft: 16,
+          paddingLeft: 8,
+          display: "block"
         }}
       >
         {cards.map((card, idx) => {
           const selected = isCardSelected(card);
+          // 关键：堆叠时用 absolute+left，平铺时用正常距离
           return (
             <div
               key={card.suit + card.value + idx}
               className="cardzone-card"
               style={{
                 position: "absolute",
-                left: useStack ? (idx * overlap + 16) : (idx * (CARD_WIDTH + MIN_GAP) + 16),
+                left: useStack
+                  ? (idx * overlap + 8)
+                  : (idx * (CARD_WIDTH + minGap) + 8),
                 top: "50%",
                 transform: `translateY(-50%)`,
                 width: CARD_WIDTH,
@@ -160,7 +163,8 @@ export default function CardZone({
                 zIndex: idx,
                 border: selected ? "3px solid #3869f6" : undefined,
                 boxShadow: selected ? "0 0 10px #3869f6" : undefined,
-                cursor: "pointer"
+                cursor: "pointer",
+                transition: "left 0.18s"
               }}
               onClick={e => handleCardClick(e, card, zone)}
             >
